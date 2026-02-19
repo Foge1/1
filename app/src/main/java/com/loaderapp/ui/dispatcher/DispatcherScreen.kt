@@ -69,9 +69,7 @@ fun DispatcherScreen(
     
     Scaffold(
         topBar = {
-            DispatcherTopBar() },
-                onSearchQueryChange = { viewModel.updateSearchQuery(it) }
-            )
+            DispatcherTopBar()
         },
         floatingActionButton = {
             ExtendedFloatingActionButton(
