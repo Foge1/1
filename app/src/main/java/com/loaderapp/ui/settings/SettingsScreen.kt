@@ -11,12 +11,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.loaderapp.LoaderApplication
-import kotlinx.coroutines.launch
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.loaderapp.presentation.settings.SettingsViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -24,16 +23,13 @@ fun SettingsScreen(
     onMenuClick: () -> Unit,
     onBackClick: () -> Unit,
     onDarkThemeChanged: ((Boolean) -> Unit)? = null,
-    onSwitchRole: (() -> Unit)? = null
+    onSwitchRole: (() -> Unit)? = null,
+    viewModel: SettingsViewModel = hiltViewModel()
 ) {
-    val context = LocalContext.current
-    val app = remember(context) { context.applicationContext as LoaderApplication }
-    val scope = rememberCoroutineScope()
-
-    val darkThemeEnabled by app.userPreferences.isDarkTheme.collectAsState(initial = false)
-    val notificationsEnabled by app.userPreferences.isNotificationsEnabled.collectAsState(initial = true)
-    val soundEnabled by app.userPreferences.isSoundEnabled.collectAsState(initial = true)
-    val vibrationEnabled by app.userPreferences.isVibrationEnabled.collectAsState(initial = true)
+    val darkThemeEnabled by viewModel.isDarkTheme.collectAsState()
+    val notificationsEnabled by viewModel.isNotificationsEnabled.collectAsState()
+    val soundEnabled by viewModel.isSoundEnabled.collectAsState()
+    val vibrationEnabled by viewModel.isVibrationEnabled.collectAsState()
 
     Scaffold(
         topBar = {
@@ -63,10 +59,8 @@ fun SettingsScreen(
                 subtitle = "Тёмное оформление интерфейса",
                 checked = darkThemeEnabled,
                 onCheckedChange = { enabled ->
-                    scope.launch {
-                        app.userPreferences.setDarkTheme(enabled)
-                        onDarkThemeChanged?.invoke(enabled)
-                    }
+                    viewModel.setDarkTheme(enabled)
+                    onDarkThemeChanged?.invoke(enabled)
                 }
             )
 
@@ -79,9 +73,7 @@ fun SettingsScreen(
                 title = "Уведомления",
                 subtitle = "Получать уведомления о новых заказах",
                 checked = notificationsEnabled,
-                onCheckedChange = { enabled ->
-                    scope.launch { app.userPreferences.setNotificationsEnabled(enabled) }
-                }
+                onCheckedChange = { viewModel.setNotificationsEnabled(it) }
             )
 
             SettingsToggleItem(
@@ -90,9 +82,7 @@ fun SettingsScreen(
                 subtitle = "Звук при новых заказах",
                 checked = soundEnabled && notificationsEnabled,
                 enabled = notificationsEnabled,
-                onCheckedChange = { enabled ->
-                    scope.launch { app.userPreferences.setSoundEnabled(enabled) }
-                }
+                onCheckedChange = { viewModel.setSoundEnabled(it) }
             )
 
             SettingsToggleItem(
@@ -101,9 +91,7 @@ fun SettingsScreen(
                 subtitle = "Вибрация при новых уведомлениях",
                 checked = vibrationEnabled && notificationsEnabled,
                 enabled = notificationsEnabled,
-                onCheckedChange = { enabled ->
-                    scope.launch { app.userPreferences.setVibrationEnabled(enabled) }
-                }
+                onCheckedChange = { viewModel.setVibrationEnabled(it) }
             )
 
             HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
@@ -126,16 +114,13 @@ fun SettingsScreen(
                 Column {
                     Text("Версия приложения", fontWeight = FontWeight.Medium)
                     Text(
-                        text = "GruzchikiApp 9.4",
+                        text = "GruzchikiApp 2.1",
                         fontSize = 13.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Блок "Аккаунт" — смена роли
             if (onSwitchRole != null) {
                 HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
 
@@ -169,11 +154,9 @@ fun SettingsScreen(
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-
-                Spacer(modifier = Modifier.height(16.dp))
-            } else {
-                Spacer(modifier = Modifier.height(16.dp))
             }
+
+            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 }
@@ -214,7 +197,7 @@ private fun SettingsToggleItem(
                 imageVector = icon,
                 contentDescription = null,
                 tint = if (enabled) MaterialTheme.colorScheme.primary
-                else MaterialTheme.colorScheme.onSurfaceVariant,
+                       else MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(24.dp)
             )
             Spacer(modifier = Modifier.width(16.dp))
@@ -223,7 +206,7 @@ private fun SettingsToggleItem(
                     text = title,
                     style = MaterialTheme.typography.bodyLarge,
                     color = if (enabled) MaterialTheme.colorScheme.onSurface
-                    else MaterialTheme.colorScheme.onSurfaceVariant
+                            else MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Text(
                     text = subtitle,
