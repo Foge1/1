@@ -31,8 +31,7 @@ fun SettingsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Настройки") },
-                }
+                title = { Text("Настройки") }
             )
         }
     ) { padding ->
