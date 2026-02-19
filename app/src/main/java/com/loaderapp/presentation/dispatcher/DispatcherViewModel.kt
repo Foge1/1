@@ -84,7 +84,7 @@ class DispatcherViewModel @Inject constructor(
     fun createOrder(order: OrderModel) {
         launchSafe {
             createOrderUseCase(CreateOrderParams(order))
-                .onSuccess { showSnackbar("Заказ создан успешно") }
+                .onSuccess { _ -> showSnackbar("Заказ создан успешно") }
                 .onError   { msg, _ -> showSnackbar(msg) }
         }
     }
@@ -92,7 +92,7 @@ class DispatcherViewModel @Inject constructor(
     fun cancelOrder(order: OrderModel) {
         launchSafe {
             cancelOrderUseCase(CancelOrderParams(order.id))
-                .onSuccess { showSnackbar("Заказ отменён") }
+                .onSuccess { _ -> showSnackbar("Заказ отменён") }
                 .onError   { msg, _ -> showSnackbar(msg) }
         }
     }

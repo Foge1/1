@@ -1,6 +1,7 @@
 package com.loaderapp.presentation.order
 
 import androidx.lifecycle.SavedStateHandle
+import androidx.lifecycle.viewModelScope
 import com.loaderapp.core.common.UiState
 import com.loaderapp.domain.model.OrderModel
 import com.loaderapp.domain.usecase.order.GetOrderByIdParams
@@ -49,9 +50,8 @@ class OrderDetailViewModel @Inject constructor(
 
     private fun loadOrder() {
         launchSafe {
-            getOrderByIdUseCase(GetOrderByIdParams(orderId))
-                .onSuccess { order -> _orderState.setSuccess(order) }
-                .onError   { msg, _ -> _orderState.setError(msg) }
+            val result = getOrderByIdUseCase(GetOrderByIdParams(orderId))
+            handleResult(result, _orderState)
         }
     }
 
@@ -59,6 +59,6 @@ class OrderDetailViewModel @Inject constructor(
         getWorkerCountUseCase(GetWorkerCountParams(orderId))
             .onEach { count -> _workerCount.value = count }
             .catch  { /* worker count failure is non-critical */ }
-            .launchIn(androidx.lifecycle.viewModelScope)
+            .launchIn(viewModelScope)
     }
 }

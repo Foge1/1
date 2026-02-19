@@ -81,5 +81,3 @@ inline fun <T> UiState<T>.onLoading(action: () -> Unit): UiState<T> {
     if (this is UiState.Loading) {
         action()
     }
-    return this
-}

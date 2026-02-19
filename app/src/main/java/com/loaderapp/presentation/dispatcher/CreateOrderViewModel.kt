@@ -1,6 +1,5 @@
 package com.loaderapp.presentation.dispatcher
 
-import androidx.lifecycle.viewModelScope
 import com.loaderapp.domain.model.OrderModel
 import com.loaderapp.domain.usecase.order.CreateOrderParams
 import com.loaderapp.domain.usecase.order.CreateOrderUseCase
@@ -8,7 +7,6 @@ import com.loaderapp.presentation.base.BaseViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.receiveAsFlow
-import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /**
@@ -37,7 +35,7 @@ class CreateOrderViewModel @Inject constructor(
     fun createOrder(order: OrderModel) {
         launchSafe {
             createOrderUseCase(CreateOrderParams(order))
-                .onSuccess {
+                .onSuccess { _ ->
                     showSnackbar("Заказ создан успешно")
                     _navigationEvent.send(NavigationEvent.NavigateUp)
                 }

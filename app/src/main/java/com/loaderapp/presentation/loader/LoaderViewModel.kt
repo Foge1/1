@@ -99,7 +99,7 @@ class LoaderViewModel @Inject constructor(
         val workerId = _workerId.value ?: return
         launchSafe {
             takeOrderUseCase(TakeOrderParams(order.id, workerId))
-                .onSuccess { showSnackbar("Заказ успешно взят") }
+                .onSuccess { _ -> showSnackbar("Заказ успешно взят") }
                 .onError   { msg, _ -> showSnackbar(msg) }
         }
     }
@@ -107,7 +107,7 @@ class LoaderViewModel @Inject constructor(
     fun completeOrder(order: OrderModel) {
         launchSafe {
             completeOrderUseCase(CompleteOrderParams(order.id))
-                .onSuccess { showSnackbar("Заказ завершён") }
+                .onSuccess { _ -> showSnackbar("Заказ завершён") }
                 .onError   { msg, _ -> showSnackbar(msg) }
         }
     }
