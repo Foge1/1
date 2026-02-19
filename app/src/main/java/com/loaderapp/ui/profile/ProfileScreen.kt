@@ -77,8 +77,6 @@ fun ProfileScreen(
     }
 }
 
-}
-
 // ── Основной контент профиля ──────────────────────────────────────────────────
 
 @OptIn(ExperimentalMaterial3Api::class)
