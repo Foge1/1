@@ -1,39 +1,45 @@
 package com.loaderapp.ui.rating
 
-import androidx.compose.runtime.*
-import androidx.compose.ui.platform.LocalContext
-import com.loaderapp.LoaderApplication
-import com.loaderapp.data.model.OrderStatus
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.loaderapp.core.common.UiState
+import com.loaderapp.presentation.rating.RatingViewModel
+import com.loaderapp.ui.components.ErrorView
+import com.loaderapp.ui.components.LoadingView
 
 /**
- * Обёртка вкладки «Рейтинг».
- * Загружает данные пользователя и статистику из БД.
+ * Вкладка «Рейтинг».
+ * Данные получает через RatingViewModel → UseCases → Repositories.
  */
 @Composable
-fun RatingScreen(userId: Long) {
-    val context = LocalContext.current
-    val app = remember(context) { context.applicationContext as LoaderApplication }
+fun RatingScreen(userId: Long, isDispatcher: Boolean = false) {
+    val viewModel: RatingViewModel = hiltViewModel()
 
-    var userName by remember { mutableStateOf("") }
-    var userRating by remember { mutableStateOf(5.0) }
-    val orders by app.repository.getOrdersByWorker(userId).collectAsState(initial = emptyList())
+    LaunchedEffect(userId) { viewModel.initialize(userId, isDispatcher) }
 
-    LaunchedEffect(userId) {
-        val user = app.repository.getUserById(userId)
-        userName = user?.name ?: ""
-        userRating = user?.rating ?: 5.0
+    val state by viewModel.state.collectAsState()
+
+    when (state) {
+        is UiState.Loading, UiState.Idle -> LoadingView()
+        is UiState.Error -> ErrorView(message = (state as UiState.Error).message)
+        is UiState.Success -> {
+            val data = (state as UiState.Success).data
+            RatingScreen(
+                userName = data.user.name,
+                userRating = data.user.rating,
+                onMenuClick = {},
+                onBackClick = {},
+                completedCount = data.workerStats?.completedOrders ?: 0,
+                totalEarnings = data.workerStats?.totalEarnings ?: 0.0,
+                averageRating = data.workerStats?.averageRating ?: data.user.rating.toFloat(),
+                dispatcherCompletedCount = data.dispatcherStats?.completedOrders ?: 0,
+                dispatcherActiveCount = data.dispatcherStats?.activeOrders ?: 0,
+                isDispatcher = isDispatcher
+            )
+        }
+        else -> {}
     }
-
-    val completed = orders.filter { it.status == OrderStatus.COMPLETED }
-    val totalEarnings = completed.sumOf { it.pricePerHour * it.estimatedHours }
-
-    RatingScreen(
-        userName = userName,
-        userRating = userRating,
-        onMenuClick = {},
-        onBackClick = {},
-        completedCount = completed.size,
-        totalEarnings = totalEarnings,
-        averageRating = userRating.toFloat()
-    )
 }

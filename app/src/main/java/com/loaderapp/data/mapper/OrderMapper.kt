@@ -93,3 +93,6 @@ private fun OrderStatusModel.toEntity(): OrderStatus {
         OrderStatusModel.CANCELLED -> OrderStatus.CANCELLED
     }
 }
+
+// Alias для совместимости: domain → data
+fun OrderMapper.toData(model: OrderModel): Order = OrderMapper.toEntity(model)

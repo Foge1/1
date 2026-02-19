@@ -3,29 +3,30 @@ package com.loaderapp.navigation
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.platform.LocalContext
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.*
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import com.loaderapp.LoaderApplication
+import com.loaderapp.domain.model.UserRoleModel
+import com.loaderapp.presentation.splash.SplashDestination
+import com.loaderapp.presentation.splash.SplashViewModel
 import com.loaderapp.ui.auth.RoleSelectionScreen
 import com.loaderapp.ui.main.MainScaffoldScreen
 import com.loaderapp.ui.order.OrderDetailScreen
 import com.loaderapp.ui.splash.SplashScreen
-import kotlinx.coroutines.launch
 
 /**
- * Корневой NavGraph приложения.
+ * Корневой NavGraph.
+ *
+ * Вся бизнес-логика (кто авторизован, какая роль) вынесена
+ * в SplashViewModel — NavGraph только навигирует.
  *
  * Маршруты:
  *   splash → auth → main/{userId}/{isDispatcher}
- *                           ↓
- *                   MainScaffoldScreen (BottomNav)
- *                           ↓
- *                   order/{orderId}?isDispatcher=...
- *
- * Dispatcher/Loader экраны теперь отображаются внутри MainScaffoldScreen
- * через вложенный BottomNavGraph, а не как отдельные root-маршруты.
+ *                         ↓
+ *               MainScaffoldScreen (BottomNav)
+ *                         ↓
+ *               order/{orderId}?isDispatcher=...
  */
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
@@ -34,10 +35,6 @@ fun AppNavGraph(
     startDestination: String = Route.Splash.route,
     onRequestNotificationPermission: () -> Unit = {}
 ) {
-    val context = LocalContext.current
-    val app = remember(context) { context.applicationContext as LoaderApplication }
-    val scope = rememberCoroutineScope()
-
     NavHost(
         navController = navController,
         startDestination = startDestination,
@@ -53,37 +50,34 @@ fun AppNavGraph(
             enterTransition = { fadeIn(tween(500, easing = FastOutSlowInEasing)) },
             exitTransition = { fadeOut(tween(350)) }
         ) {
-            SplashScreen(
-                onFinished = {
-                    onRequestNotificationPermission()
-                    scope.launch {
-                        val userId = app.userPreferences.getCurrentUserId()
-                        if (userId != null) {
-                            val user = app.repository.getUserById(userId)
-                            if (user != null) {
-                                val isDispatcher =
-                                    user.role == com.loaderapp.data.model.UserRole.DISPATCHER
-                                navController.navigate(
-                                    Route.Main.createRoute(userId, isDispatcher)
-                                ) {
-                                    popUpTo(Route.Splash.route) { inclusive = true }
-                                }
-                            } else {
-                                navController.navigate(Route.Auth.route) {
-                                    popUpTo(Route.Splash.route) { inclusive = true }
-                                }
-                            }
-                        } else {
+            val viewModel: SplashViewModel = hiltViewModel()
+
+            LaunchedEffect(Unit) {
+                viewModel.destination.collect { dest ->
+                    when (dest) {
+                        is SplashDestination.Main -> {
+                            navController.navigate(
+                                Route.Main.createRoute(dest.userId, dest.isDispatcher)
+                            ) { popUpTo(Route.Splash.route) { inclusive = true } }
+                        }
+                        SplashDestination.Auth -> {
                             navController.navigate(Route.Auth.route) {
                                 popUpTo(Route.Splash.route) { inclusive = true }
                             }
                         }
                     }
                 }
+            }
+
+            SplashScreen(
+                onFinished = {
+                    onRequestNotificationPermission()
+                    viewModel.resolveStartDestination()
+                }
             )
         }
 
-        // ── Auth (выбор роли) ────────────────────────────────────────────────
+        // ── Auth ─────────────────────────────────────────────────────────────
         composable(
             route = Route.Auth.route,
             enterTransition = {
@@ -92,13 +86,11 @@ fun AppNavGraph(
             },
             exitTransition = { fadeOut(tween(220)) }
         ) {
+            val viewModel: com.loaderapp.presentation.auth.AuthViewModel = hiltViewModel()
+
             RoleSelectionScreen(
                 onUserCreated = { newUser ->
-                    scope.launch {
-                        val userId = app.repository.createUser(newUser)
-                        app.userPreferences.setCurrentUserId(userId)
-                        val isDispatcher =
-                            newUser.role == com.loaderapp.data.model.UserRole.DISPATCHER
+                    viewModel.createUser(newUser) { userId, isDispatcher ->
                         navController.navigate(Route.Main.createRoute(userId, isDispatcher)) {
                             popUpTo(Route.Auth.route) { inclusive = true }
                         }
@@ -126,21 +118,14 @@ fun AppNavGraph(
                 userId = userId,
                 isDispatcher = isDispatcher,
                 onNavigateToOrderDetail = { orderId ->
-                    navController.navigate(
-                        Route.OrderDetail.createRoute(orderId, isDispatcher)
-                    )
+                    navController.navigate(Route.OrderDetail.createRoute(orderId, isDispatcher))
                 },
                 onSwitchRole = {
-                    scope.launch {
-                        app.userPreferences.clearCurrentUser()
-                        navController.navigate(Route.Auth.route) {
-                            popUpTo(0) { inclusive = true }
-                        }
+                    navController.navigate(Route.Auth.route) {
+                        popUpTo(0) { inclusive = true }
                     }
                 },
-                onDarkThemeChanged = { enabled ->
-                    scope.launch { app.userPreferences.setDarkTheme(enabled) }
-                }
+                onDarkThemeChanged = {}
             )
         }
 

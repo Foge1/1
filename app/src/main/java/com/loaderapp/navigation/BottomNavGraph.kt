@@ -13,8 +13,10 @@ import com.loaderapp.ui.settings.SettingsScreen
 
 /**
  * Вложенный NavHost для Bottom Navigation.
- * Каждая вкладка — отдельный composable с сохранением состояния (restoreState = true).
- * launchSingleTop = true исключает дубликаты в back stack.
+ *
+ * - launchSingleTop = true  → нет дубликатов в back stack
+ * - saveState / restoreState → состояние вкладок сохраняется при переключении
+ * - isDispatcher передаётся во все вкладки, чтобы каждая могла адаптировать контент
  */
 @Composable
 fun BottomNavGraph(
@@ -40,11 +42,11 @@ fun BottomNavGraph(
         }
 
         composable(BottomNavScreen.History.route) {
-            HistoryScreen(userId = userId)
+            HistoryScreen(userId = userId, isDispatcher = isDispatcher)
         }
 
         composable(BottomNavScreen.Rating.route) {
-            RatingScreen(userId = userId)
+            RatingScreen(userId = userId, isDispatcher = isDispatcher)
         }
 
         composable(BottomNavScreen.Settings.route) {
@@ -55,7 +57,11 @@ fun BottomNavGraph(
         }
 
         composable(BottomNavScreen.Profile.route) {
-            ProfileScreen(userId = userId)
+            ProfileScreen(
+                userId = userId,
+                isDispatcher = isDispatcher,
+                onSwitchRole = onSwitchRole
+            )
         }
     }
 }

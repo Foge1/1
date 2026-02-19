@@ -9,8 +9,11 @@ import com.loaderapp.ui.dispatcher.DispatcherScreen
 import com.loaderapp.ui.loader.LoaderScreen
 
 /**
- * Обёртка вкладки «Заказы».
- * Роутит к экрану диспетчера или грузчика в зависимости от роли.
+ * Вкладка «Заказы».
+ *
+ * Пункт 4 исправлен: оба ViewModel создаются всегда (не условно),
+ * но используется только нужный. Это стабильно с Hilt и не вызывает
+ * проблем при пересоздании Composable.
  */
 @Composable
 fun OrdersScreen(
@@ -18,20 +21,24 @@ fun OrdersScreen(
     isDispatcher: Boolean,
     onOrderClick: (Long) -> Unit
 ) {
+    val dispatcherViewModel: DispatcherViewModel = hiltViewModel()
+    val loaderViewModel: LoaderViewModel = hiltViewModel()
+
+    LaunchedEffect(userId) {
+        if (isDispatcher) dispatcherViewModel.initialize(userId)
+        else loaderViewModel.initialize(userId)
+    }
+
     if (isDispatcher) {
-        val viewModel: DispatcherViewModel = hiltViewModel()
-        LaunchedEffect(userId) { viewModel.initialize(userId) }
         DispatcherScreen(
-            viewModel = viewModel,
+            viewModel = dispatcherViewModel,
             onSwitchRole = {},
             onDarkThemeChanged = {},
             onOrderClick = onOrderClick
         )
     } else {
-        val viewModel: LoaderViewModel = hiltViewModel()
-        LaunchedEffect(userId) { viewModel.initialize(userId) }
         LoaderScreen(
-            viewModel = viewModel,
+            viewModel = loaderViewModel,
             onSwitchRole = {},
             onDarkThemeChanged = {},
             onOrderClick = onOrderClick

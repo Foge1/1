@@ -209,3 +209,62 @@ fun SkeletonOrderCard(modifier: Modifier = Modifier) {
 private fun Modifier.shimmerBackground(): Modifier = this.then(
     Modifier.background(MaterialTheme.colorScheme.surfaceVariant)
 )
+
+
+// ════════════════════════════════════════════════════════════════════════════
+// Общие компоненты для карточек заказов (DRY — убираем дублирование)
+// Использовались в LoaderScreen и DispatcherScreen независимо.
+// ════════════════════════════════════════════════════════════════════════════
+
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
+import com.loaderapp.domain.model.OrderStatusModel
+import java.text.SimpleDateFormat
+import java.util.*
+
+@androidx.compose.runtime.Composable
+fun OrderStatusChip(status: OrderStatusModel) {
+    val (text, color) = when (status) {
+        OrderStatusModel.AVAILABLE  -> "Доступен"  to Color(0xFF4CAF50)
+        OrderStatusModel.TAKEN      -> "Взят"      to Color(0xFFFF9800)
+        OrderStatusModel.IN_PROGRESS-> "В работе"  to Color(0xFF2196F3)
+        OrderStatusModel.COMPLETED  -> "Завершён"  to Color(0xFF9C27B0)
+        OrderStatusModel.CANCELLED  -> "Отменён"   to Color(0xFFF44336)
+    }
+    Surface(
+        color = color.copy(alpha = 0.2f),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Text(
+            text = text,
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+            style = MaterialTheme.typography.labelSmall,
+            color = color,
+            fontWeight = FontWeight.SemiBold
+        )
+    }
+}
+
+@androidx.compose.runtime.Composable
+fun OrderParamItem(icon: ImageVector, value: String) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        Icon(icon, null, Modifier.size(16.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(
+            text = value,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+}
+
+fun formatOrderDateTime(timestamp: Long): String {
+    val sdf = SimpleDateFormat("dd MMM, HH:mm", Locale("ru"))
+    return sdf.format(Date(timestamp))
+}
