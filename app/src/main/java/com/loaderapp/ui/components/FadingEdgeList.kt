@@ -7,7 +7,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
@@ -20,34 +19,28 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
 /**
- * LazyColumn с плавным fade-переходом сверху.
+ * LazyColumn с плавным fade-переходом сверху и снизу.
  *
- * ## Принцип работы верхнего фейда
+ * ## Принцип работы
  *
- * Для создания «матового стекла» при скролле используется compositing trick:
- * 1. [graphicsLayer] с [CompositingStrategy.Offscreen] → контент рисуется
- *    во временный offscreen-буфер.
- * 2. [drawWithContent] рисует контент, затем поверх него — Brush с прозрачным
- *    градиентом через [BlendMode.DstIn]. Это обрезает альфа-канал буфера
- *    по форме градиента, создавая плавное затухание.
+ * [CompositingStrategy.Offscreen] рендерит контент во временный буфер.
+ * [BlendMode.DstIn] обрезает альфа-канал буфера по форме градиента —
+ * контент «растворяется» у краёв без каких-либо View-хаков или оверлеев.
  *
- * Результат: карточки при уходе вверх становятся прозрачными через «мутное
- * стекло» без каких-либо View-хаков, clip или отдельных overlay-слоёв.
- * Это нативный, GPU-ускоренный способ в Compose.
+ * Оба fade рисуются в одном [drawWithContent]-вызове:
+ * - Верх: карточки уходят под frosted топбар
+ * - Низ: карточки уходят под навбар без видимой границы
  *
- * ## Нижний край
- * Нижний fade намеренно отсутствует — контент доходит до навбара без
- * видимой границы. Тень на навбаре добавляется в [AppBottomBar] через
- * [shadowElevation], визуально «отделяя» панель от контента.
- *
- * @param fadeHeight    Высота верхнего fade-перехода
- * @param contentPadding Padding для контента LazyColumn
- * @param state         Состояние списка (для внешнего управления прокруткой)
+ * @param topFadeHeight    Высота верхнего fade (должна совпадать с topBarHeight AppScaffold)
+ * @param bottomFadeHeight Высота нижнего fade
+ * @param contentPadding   Padding контента (top должен >= topFadeHeight, bottom >= bottomFadeHeight)
+ * @param state            Состояние списка для внешнего управления прокруткой
  */
 @Composable
 fun FadingEdgeLazyColumn(
     modifier: Modifier = Modifier,
-    fadeHeight: Dp = 56.dp,
+    topFadeHeight: Dp = 88.dp,
+    bottomFadeHeight: Dp = 36.dp,
     contentPadding: PaddingValues = PaddingValues(0.dp),
     state: LazyListState = rememberLazyListState(),
     content: LazyListScope.() -> Unit
@@ -58,22 +51,30 @@ fun FadingEdgeLazyColumn(
             contentPadding = contentPadding,
             modifier       = Modifier
                 .fillMaxSize()
-                // Offscreen rendering — обязательно для BlendMode.DstIn
                 .graphicsLayer(compositingStrategy = CompositingStrategy.Offscreen)
                 .drawWithContent {
                     drawContent()
 
-                    // Верхний fade: прозрачный → непрозрачный
-                    // BlendMode.DstIn оставляет только пересечение альфа-канала
-                    // контента с градиентом → плавное «растворение» карточек вверху
+                    // Верхний fade: прозрачный -> непрозрачный
                     drawRect(
                         brush = Brush.verticalGradient(
-                            colors = listOf(
-                                Color.Transparent,
-                                Color.Black.copy(alpha = 0.5f),
-                                Color.Black
+                            colorStops = arrayOf(
+                                0.00f to Color.Transparent,
+                                0.40f to Color.Black.copy(alpha = 0.6f),
+                                1.00f to Color.Black
                             ),
-                            endY = fadeHeight.toPx()
+                            startY = 0f,
+                            endY   = topFadeHeight.toPx()
+                        ),
+                        blendMode = BlendMode.DstIn
+                    )
+
+                    // Нижний fade: непрозрачный -> прозрачный
+                    drawRect(
+                        brush = Brush.verticalGradient(
+                            colors = listOf(Color.Black, Color.Transparent),
+                            startY = size.height - bottomFadeHeight.toPx(),
+                            endY   = size.height
                         ),
                         blendMode = BlendMode.DstIn
                     )

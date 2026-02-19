@@ -81,38 +81,31 @@ fun SwipeableTabs(
 
         Spacer(Modifier.height(8.dp))
 
-        // Контент страниц + нижний fade-overlay
-        // Box позволяет рисовать полупрозрачный градиент поверх контента:
-        // снизу страницы контент «растворяется» до прозрачного, а нижний
-        // навбар добавляет свою тень через shadowElevation — вместе они
-        // создают ощущение отделённости панели от контента без жёсткой границы.
-        Box(modifier = Modifier.weight(1f)) {
-            HorizontalPager(
-                state    = pagerState,
-                modifier = Modifier.fillMaxSize(),
-                pageSpacing = 0.dp
-            ) { page ->
-                content(page)
-            }
-
-            // Нижний fade — «растворяет» последние карточки перед навбаром
-            // Не перекрывает нажатия: drawBehind-эффект чисто визуальный
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(40.dp)
-                    .align(Alignment.BottomCenter)
-                    .graphicsLayer(compositingStrategy = CompositingStrategy.Offscreen)
-                    .drawWithContent {
-                        drawContent()
-                        drawRect(
-                            brush = Brush.verticalGradient(
-                                colors = listOf(Color.Transparent, Color.Black)
-                            ),
-                            blendMode = BlendMode.DstIn
-                        )
-                    }
-            )
+        // HorizontalPager с двусторонним fade через единый drawWithContent.
+        // Применяем fade к самому Pager — у него есть реальный контент в буфере,
+        // поэтому BlendMode.DstIn работает корректно (в отличие от пустого Box-оверлея).
+        // Верх: карточки «растворяются» под топбаром.
+        // Низ: карточки «растворяются» перед навбаром — граница исчезает.
+        HorizontalPager(
+            state    = pagerState,
+            modifier = Modifier
+                .weight(1f)
+                .graphicsLayer(compositingStrategy = CompositingStrategy.Offscreen)
+                .drawWithContent {
+                    drawContent()
+                    // Нижний fade: последние 36dp контента растворяются
+                    drawRect(
+                        brush = Brush.verticalGradient(
+                            colors = listOf(Color.Black, Color.Transparent),
+                            startY = size.height - 36.dp.toPx(),
+                            endY   = size.height
+                        ),
+                        blendMode = BlendMode.DstIn
+                    )
+                },
+            pageSpacing = 0.dp
+        ) { page ->
+            content(page)
         }
     }
 }

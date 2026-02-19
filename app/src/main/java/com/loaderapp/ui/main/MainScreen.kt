@@ -8,6 +8,8 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.*
@@ -25,37 +27,30 @@ import com.loaderapp.ui.profile.ProfileScreen
 import com.loaderapp.ui.rating.RatingScreen
 import com.loaderapp.ui.settings.SettingsScreen
 
-// ── Конфигурация вкладок ──────────────────────────────────────────────────────
-
 /**
- * Описание одной вкладки нижней панели.
- * Добавить вкладку = добавить одну запись в [tabsForRole].
+ * CompositionLocal для передачи высоты навбара в дочерние экраны.
+ *
+ * Экраны читают это значение и добавляют его к bottomContentPadding списков,
+ * чтобы последняя карточка не была скрыта навбаром при прокрутке в конец.
+ * Fade-эффект скрывает карточки визуально раньше, но физически скролл
+ * должен давать доступ ко всему контенту.
  */
-private data class TabConfig(
-    val route: String,
-    val item: BottomNavItem
-)
+val LocalBottomNavHeight = compositionLocalOf { 0.dp }
 
-/**
- * Централизованная конфигурация вкладок по роли.
- * Диспетчер и Грузчик могут иметь разные наборы вкладок.
- */
+private data class TabConfig(val route: String, val item: BottomNavItem)
+
 @Composable
 private fun tabsForRole(role: UserRoleModel): List<TabConfig> {
-    val homeLabel = if (role == UserRoleModel.DISPATCHER) "Заказы" else "Заказы"
-    val homeIcon  = if (role == UserRoleModel.DISPATCHER) Icons.Default.Dashboard
-                    else Icons.Default.LocalShipping
-
+    val homeIcon = if (role == UserRoleModel.DISPATCHER) Icons.Default.Dashboard
+                   else Icons.Default.LocalShipping
     return listOf(
-        TabConfig(Route.Home.route,     BottomNavItem(homeIcon,                 homeLabel)),
-        TabConfig(Route.History.route,  BottomNavItem(Icons.Default.History,    "История")),
-        TabConfig(Route.Rating.route,   BottomNavItem(Icons.Default.Star,       "Рейтинг")),
-        TabConfig(Route.Profile.route,  BottomNavItem(Icons.Default.Person,     "Профиль")),
-        TabConfig(Route.Settings.route, BottomNavItem(Icons.Default.Settings,   "Настройки"))
+        TabConfig(Route.Home.route,     BottomNavItem(homeIcon,              "Заказы")),
+        TabConfig(Route.History.route,  BottomNavItem(Icons.Default.History,  "История")),
+        TabConfig(Route.Rating.route,   BottomNavItem(Icons.Default.Star,     "Рейтинг")),
+        TabConfig(Route.Profile.route,  BottomNavItem(Icons.Default.Person,   "Профиль")),
+        TabConfig(Route.Settings.route, BottomNavItem(Icons.Default.Settings,  "Настройки"))
     )
 }
-
-// ── Главный экран ─────────────────────────────────────────────────────────────
 
 @Composable
 fun MainScreen(
@@ -68,9 +63,7 @@ fun MainScreen(
     val navController = rememberNavController()
     val navBackStack  by navController.currentBackStackEntryAsState()
     val currentRoute  = navBackStack?.destination?.route
-
-    val tabs = tabsForRole(user.role)
-
+    val tabs          = tabsForRole(user.role)
     val selectedIndex = tabs.indexOfFirst { it.route == currentRoute }.coerceAtLeast(0)
 
     Scaffold(
@@ -93,58 +86,50 @@ fun MainScreen(
             )
         }
     ) { innerPadding ->
-        NavHost(
-            navController    = navController,
-            startDestination = Route.Home.route,
-            modifier         = Modifier.padding(innerPadding),
-            enterTransition  = { fadeIn(tween(200)) },
-            exitTransition   = { fadeOut(tween(150)) },
-            popEnterTransition  = { fadeIn(tween(200)) },
-            popExitTransition   = { fadeOut(tween(150)) }
-        ) {
+        // Передаём только bottom из innerPadding — он несёт высоту навбара
+        // с учётом gesture navigation и системных insets.
+        // top = 0: каждый экран сам управляет отступом под свой TopBar
+        // через LocalTopBarHeightPx из AppScaffold.
+        val bottomNavHeight: Dp = innerPadding.calculateBottomPadding()
 
-            // ── Заказы / Биржа ───────────────────────────────────────────────
-            composable(Route.Home.route) {
-                when (user.role) {
-                    UserRoleModel.DISPATCHER -> {
-                        val vm: DispatcherViewModel = hiltViewModel()
-                        LaunchedEffect(user.id) { vm.initialize(user.id) }
-                        DispatcherScreen(
-                            viewModel    = vm,
-                            onOrderClick = { orderId -> onOrderClick(orderId, true) }
-                        )
-                    }
-                    UserRoleModel.LOADER -> {
-                        val vm: LoaderViewModel = hiltViewModel()
-                        LaunchedEffect(user.id) { vm.initialize(user.id) }
-                        LoaderScreen(
-                            viewModel    = vm,
-                            onOrderClick = { orderId -> onOrderClick(orderId, false) }
-                        )
+        CompositionLocalProvider(LocalBottomNavHeight provides bottomNavHeight) {
+            NavHost(
+                navController       = navController,
+                startDestination    = Route.Home.route,
+                modifier            = Modifier
+                    .fillMaxSize()
+                    .padding(top = innerPadding.calculateTopPadding()),
+                enterTransition     = { fadeIn(tween(200)) },
+                exitTransition      = { fadeOut(tween(150)) },
+                popEnterTransition  = { fadeIn(tween(200)) },
+                popExitTransition   = { fadeOut(tween(150)) }
+            ) {
+                composable(Route.Home.route) {
+                    when (user.role) {
+                        UserRoleModel.DISPATCHER -> {
+                            val vm: DispatcherViewModel = hiltViewModel()
+                            LaunchedEffect(user.id) { vm.initialize(user.id) }
+                            DispatcherScreen(
+                                viewModel    = vm,
+                                onOrderClick = { orderId -> onOrderClick(orderId, true) }
+                            )
+                        }
+                        UserRoleModel.LOADER -> {
+                            val vm: LoaderViewModel = hiltViewModel()
+                            LaunchedEffect(user.id) { vm.initialize(user.id) }
+                            LoaderScreen(
+                                viewModel    = vm,
+                                onOrderClick = { orderId -> onOrderClick(orderId, false) }
+                            )
+                        }
                     }
                 }
-            }
-
-            // ── История ──────────────────────────────────────────────────────
-            composable(Route.History.route) {
-                HistoryScreen(userId = user.id)
-            }
-
-            // ── Рейтинг ──────────────────────────────────────────────────────
-            composable(Route.Rating.route) {
-                RatingScreen()
-            }
-
-            // ── Профиль ──────────────────────────────────────────────────────
-            composable(Route.Profile.route) {
-                ProfileScreen(userId = user.id)
-            }
-
-            // ── Настройки ────────────────────────────────────────────────────
-            composable(Route.Settings.route) {
-                SettingsScreen(
-                    onSwitchRole = { sessionViewModel.logout() }
-                )
+                composable(Route.History.route)  { HistoryScreen(userId = user.id) }
+                composable(Route.Rating.route)   { RatingScreen() }
+                composable(Route.Profile.route)  { ProfileScreen(userId = user.id) }
+                composable(Route.Settings.route) {
+                    SettingsScreen(onSwitchRole = { sessionViewModel.logout() })
+                }
             }
         }
     }

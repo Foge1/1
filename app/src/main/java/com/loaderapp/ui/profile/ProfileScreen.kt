@@ -19,6 +19,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
@@ -31,8 +32,8 @@ import com.loaderapp.domain.model.UserModel
 import com.loaderapp.domain.model.UserRoleModel
 import com.loaderapp.presentation.profile.ProfileStats
 import com.loaderapp.presentation.profile.ProfileViewModel
+import com.loaderapp.ui.components.AppScaffold
 import com.loaderapp.ui.components.ErrorView
-import com.loaderapp.ui.components.GradientTopBar
 import com.loaderapp.ui.components.LoadingView
 import com.loaderapp.ui.components.scrollableGradientBackground
 import java.text.SimpleDateFormat
@@ -41,13 +42,9 @@ import java.util.*
 /**
  * Экран профиля пользователя (Диспетчер и Грузчик).
  *
- * Архитектура фона:
- * - Весь экран — один [Box], заполняющий [fillMaxSize].
- * - Контент ([ProfileContent]) — [Column] с [scrollableGradientBackground]:
- *   градиент привязан к длине контента (endY = INFINITY), а не viewport'у.
- *   При скролле вниз граница не появляется никогда.
- * - [GradientTopBar] — прозрачный, рисуется поверх контента через z-order Box.
- *   Не добавляет свой фон → нет наложения двух градиентов → нет видимой полосы.
+ * Использует [AppScaffold] — единый frosted-glass TopBar.
+ * Иконка Edit убрана из топбара — редактирование через inline-кнопку в контенте.
+ * topBarHeight из [AppScaffoldScope] — реальная высота, без хардкода.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -60,62 +57,26 @@ fun ProfileScreen(
 
     LaunchedEffect(userId) { viewModel.initialize(userId) }
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    AppScaffold(title = "Профиль") {
+        val topBarDp = with(LocalDensity.current) { topBarHeight.toDp() }
 
-        // ── Контент (скролл + градиент) ──────────────────────────────────────
         when (val state = userState) {
-            is UiState.Loading -> LoadingWithBackground()
-            is UiState.Error   -> ErrorWithBackground(message = state.message)
+            is UiState.Loading -> LoadingView()
+            is UiState.Error   -> ErrorView(message = state.message, onRetry = null)
             is UiState.Success -> ProfileContent(
                 user          = state.data,
                 stats         = stats,
+                topPadding    = topBarDp,
+                bottomPadding = 0.dp,
                 onSaveProfile = { name, phone, birthDate ->
                     viewModel.saveProfile(userId, name, phone, birthDate)
                 }
             )
-            is UiState.Idle    -> Unit
+            is UiState.Idle -> Unit
         }
-
-        // ── TopBar поверх всего, полностью прозрачный ────────────────────────
-        // Рендерится последним в Box → поверх контента по z-order.
-        // Не имеет собственного фона → не создаёт видимой полосы.
-        GradientTopBar(
-            title   = "Профиль",
-            actions = {
-                if (userState is UiState.Success) {
-                    IconButton(onClick = { /* редактирование через inline-форму */ }) {
-                        Icon(Icons.Default.Edit, contentDescription = "Редактировать")
-                    }
-                }
-            }
-        )
     }
 }
 
-// ── Состояния Loading / Error с правильным фоном ─────────────────────────────
-
-@Composable
-private fun LoadingWithBackground() {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .scrollableGradientBackground(),
-        contentAlignment = Alignment.Center
-    ) {
-        LoadingView(message = "Загрузка профиля...")
-    }
-}
-
-@Composable
-private fun ErrorWithBackground(message: String) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .scrollableGradientBackground(),
-        contentAlignment = Alignment.Center
-    ) {
-        ErrorView(message = message, onRetry = null)
-    }
 }
 
 // ── Основной контент профиля ──────────────────────────────────────────────────
@@ -125,6 +86,8 @@ private fun ErrorWithBackground(message: String) {
 private fun ProfileContent(
     user: UserModel,
     stats: ProfileStats,
+    topPadding: androidx.compose.ui.unit.Dp,
+    bottomPadding: androidx.compose.ui.unit.Dp,
     onSaveProfile: (name: String, phone: String, birthDate: Long?) -> Unit
 ) {
     val haptic         = LocalHapticFeedback.current
@@ -153,12 +116,10 @@ private fun ProfileContent(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            // Порядок важен: фон рисуется ДО scroll, иначе он не тянется с контентом
+            // Порядок важен: фон рисуется ДО scroll
             .scrollableGradientBackground()
             .verticalScroll(rememberScrollState())
-            // Отступ под статус-бар + высота прозрачного TopBar (~56dp)
-            .statusBarsPadding()
-            .padding(top = 56.dp)
+            .padding(top = topPadding, bottom = bottomPadding + 16.dp)
     ) {
 
         // ── Шапка профиля ─────────────────────────────────────────────────────

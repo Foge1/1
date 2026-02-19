@@ -7,31 +7,33 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import com.loaderapp.core.common.UiState
 import com.loaderapp.domain.model.OrderModel
 import com.loaderapp.domain.model.OrderStatusModel
 import com.loaderapp.presentation.loader.LoaderViewModel
-import com.loaderapp.ui.components.FadingEdgeLazyColumn
+import com.loaderapp.ui.components.AppScaffold
 import com.loaderapp.ui.components.EmptyStateView
 import com.loaderapp.ui.components.ErrorView
-import com.loaderapp.ui.components.GradientBackground
-import com.loaderapp.ui.components.GradientTopBar
+import com.loaderapp.ui.components.FadingEdgeLazyColumn
 import com.loaderapp.ui.components.LoadingView
+import com.loaderapp.ui.components.LocalTopBarHeightPx
 import com.loaderapp.ui.components.OrderCard
 import com.loaderapp.ui.components.SwipeableTabs
 import com.loaderapp.ui.components.TabItem
+import com.loaderapp.ui.main.LocalBottomNavHeight
 
 /**
  * Экран грузчика.
  *
- * Структура:
- * - [GradientTopBar] «Заказы»
- * - Pill-табы «Доступные» / «Мои заказы» с поддержкой свайпа
- * - Первая вкладка: доступные для взятия заказы
- * - Вторая вкладка: взятые / в процессе заказы
+ * TopBar-высота читается из [LocalTopBarHeightPx] — точное значение
+ * в px, измеренное SubcomposeLayout в [AppScaffold]. Конвертируется
+ * в dp через [LocalDensity] для использования в padding/fade.
+ *
+ * Нижний contentPadding = [LocalBottomNavHeight] + запас для fade,
+ * чтобы последняя карточка была полностью доступна при скролле.
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoaderScreen(
     viewModel: LoaderViewModel,
@@ -42,9 +44,7 @@ fun LoaderScreen(
     val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(Unit) {
-        viewModel.snackbarMessage.collect { message ->
-            snackbarHostState.showSnackbar(message)
-        }
+        viewModel.snackbarMessage.collect { snackbarHostState.showSnackbar(it) }
     }
 
     val availableCount = (availableState as? UiState.Success)?.data?.size ?: 0
@@ -55,45 +55,47 @@ fun LoaderScreen(
         TabItem(label = "Мои заказы", badgeCount = myOrdersCount)
     )
 
-    GradientBackground {
-        Scaffold(
-            containerColor = androidx.compose.ui.graphics.Color.Transparent,
-            topBar         = { GradientTopBar(title = "Заказы") },
-            snackbarHost   = { SnackbarHost(snackbarHostState) }
-        ) { paddingValues ->
+    AppScaffold(title = "Заказы") {
+        // Точная высота TopBar из SubcomposeLayout — без хардкода
+        val topBarHeightPx = LocalTopBarHeightPx.current
+        val density        = LocalDensity.current
+        val topBarHeight   = with(density) { topBarHeightPx.toDp() }
+        val bottomNavHeight = LocalBottomNavHeight.current
 
-            SwipeableTabs(
-                tabs     = tabs,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues)
-                    .padding(top = 8.dp)
-            ) { page ->
-                when (page) {
-                    0 -> AvailableOrdersPage(
-                        state        = availableState,
-                        onOrderClick = onOrderClick,
-                        onTakeOrder  = { order ->
-                            viewModel.takeOrder(order)
-                        }
-                    )
-                    1 -> MyOrdersPage(
-                        state           = myOrdersState,
-                        onOrderClick    = onOrderClick,
-                        onCompleteOrder = { order ->
-                            viewModel.completeOrder(order)
-                        }
-                    )
-                }
+        SwipeableTabs(
+            tabs     = tabs,
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(top = topBarHeight + 8.dp)
+        ) { page ->
+            when (page) {
+                0 -> AvailableOrdersPage(
+                    state           = availableState,
+                    bottomNavHeight = bottomNavHeight,
+                    onOrderClick    = onOrderClick,
+                    onTakeOrder     = { viewModel.takeOrder(it) }
+                )
+                1 -> MyOrdersPage(
+                    state           = myOrdersState,
+                    bottomNavHeight = bottomNavHeight,
+                    onOrderClick    = onOrderClick,
+                    onCompleteOrder = { viewModel.completeOrder(it) }
+                )
             }
         }
+
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier  = Modifier.align(androidx.compose.ui.Alignment.BottomCenter)
+                .padding(bottom = bottomNavHeight + 8.dp)
+        )
     }
 }
 
-/** Вкладка доступных заказов */
 @Composable
 private fun AvailableOrdersPage(
     state: UiState<List<OrderModel>>,
+    bottomNavHeight: androidx.compose.ui.unit.Dp,
     onOrderClick: (Long) -> Unit,
     onTakeOrder: (OrderModel) -> Unit
 ) {
@@ -109,8 +111,15 @@ private fun AvailableOrdersPage(
                 )
             } else {
                 FadingEdgeLazyColumn(
-                    modifier        = Modifier.fillMaxSize(),
-                    contentPadding  = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 12.dp),
+                    modifier         = Modifier.fillMaxSize(),
+                    topFadeHeight    = 0.dp,
+                    bottomFadeHeight = 36.dp,
+                    contentPadding   = PaddingValues(
+                        start  = 16.dp,
+                        end    = 16.dp,
+                        top    = 8.dp,
+                        bottom = bottomNavHeight + 48.dp
+                    )
                 ) {
                     items(state.data, key = { it.id }) { order ->
                         OrderCard(
@@ -140,10 +149,10 @@ private fun AvailableOrdersPage(
     }
 }
 
-/** Вкладка «Мои заказы» */
 @Composable
 private fun MyOrdersPage(
     state: UiState<List<OrderModel>>,
+    bottomNavHeight: androidx.compose.ui.unit.Dp,
     onOrderClick: (Long) -> Unit,
     onCompleteOrder: (OrderModel) -> Unit
 ) {
@@ -159,8 +168,15 @@ private fun MyOrdersPage(
                 )
             } else {
                 FadingEdgeLazyColumn(
-                    modifier        = Modifier.fillMaxSize(),
-                    contentPadding  = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 12.dp),
+                    modifier         = Modifier.fillMaxSize(),
+                    topFadeHeight    = 0.dp,
+                    bottomFadeHeight = 36.dp,
+                    contentPadding   = PaddingValues(
+                        start  = 16.dp,
+                        end    = 16.dp,
+                        top    = 8.dp,
+                        bottom = bottomNavHeight + 48.dp
+                    )
                 ) {
                     items(state.data, key = { it.id }) { order ->
                         OrderCard(
