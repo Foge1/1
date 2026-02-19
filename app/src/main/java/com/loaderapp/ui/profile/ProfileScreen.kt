@@ -35,6 +35,7 @@ import com.loaderapp.presentation.profile.ProfileViewModel
 import com.loaderapp.ui.components.AppScaffold
 import com.loaderapp.ui.components.ErrorView
 import com.loaderapp.ui.components.LoadingView
+import com.loaderapp.ui.components.LocalTopBarHeightPx
 import com.loaderapp.ui.components.scrollableGradientBackground
 import java.text.SimpleDateFormat
 import java.util.*
@@ -58,7 +59,9 @@ fun ProfileScreen(
     LaunchedEffect(userId) { viewModel.initialize(userId) }
 
     AppScaffold(title = "Профиль") {
-        val topBarDp = with(LocalDensity.current) { topBarHeight.toDp() }
+        val density        = LocalDensity.current
+        val topBarHeightPx = LocalTopBarHeightPx.current
+        val topBarDp       = with(density) { topBarHeightPx.toDp() }
 
         when (val state = userState) {
             is UiState.Loading -> LoadingView()
