@@ -20,10 +20,7 @@ import com.loaderapp.presentation.settings.SettingsViewModel
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
-    onMenuClick: () -> Unit,
-    onBackClick: () -> Unit,
-    onDarkThemeChanged: ((Boolean) -> Unit)? = null,
-    onSwitchRole: (() -> Unit)? = null,
+    onSwitchRole: () -> Unit,
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
     val darkThemeEnabled by viewModel.isDarkTheme.collectAsState()
@@ -35,10 +32,6 @@ fun SettingsScreen(
         topBar = {
             TopAppBar(
                 title = { Text("Настройки") },
-                navigationIcon = {
-                    IconButton(onClick = onMenuClick) {
-                        Icon(Icons.Default.Menu, contentDescription = "Меню")
-                    }
                 }
             )
         }
@@ -60,7 +53,6 @@ fun SettingsScreen(
                 checked = darkThemeEnabled,
                 onCheckedChange = { enabled ->
                     viewModel.setDarkTheme(enabled)
-                    onDarkThemeChanged?.invoke(enabled)
                 }
             )
 
@@ -121,7 +113,7 @@ fun SettingsScreen(
                 }
             }
 
-            if (onSwitchRole != null) {
+            run {
                 HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
 
                 SettingsSectionHeader("Аккаунт")

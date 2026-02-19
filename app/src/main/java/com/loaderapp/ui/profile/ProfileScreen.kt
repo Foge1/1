@@ -41,8 +41,6 @@ import java.util.*
 @Composable
 fun ProfileScreen(
     userId: Long,
-    onMenuClick: () -> Unit,
-    onSwitchRole: (() -> Unit)? = null,
     viewModel: ProfileViewModel = hiltViewModel()
 ) {
     val userState by viewModel.userState.collectAsState()
@@ -54,11 +52,6 @@ fun ProfileScreen(
         topBar = {
             TopAppBar(
                 title = { Text("Профиль") },
-                navigationIcon = {
-                    IconButton(onClick = onMenuClick) {
-                        Icon(Icons.Default.Menu, contentDescription = "Меню")
-                    }
-                },
                 actions = {
                     if (userState is UiState.Success) {
                         IconButton(onClick = { /* toggle edit — управляется локально */ }) {
@@ -78,7 +71,6 @@ fun ProfileScreen(
                 onSaveProfile = { name, phone, birthDate ->
                     viewModel.saveProfile(userId, name, phone, birthDate)
                 },
-                onSwitchRole = onSwitchRole,
                 modifier    = Modifier.padding(padding)
             )
             is UiState.Idle -> Unit
@@ -92,7 +84,6 @@ private fun ProfileContent(
     user: UserModel,
     stats: com.loaderapp.presentation.profile.ProfileStats,
     onSaveProfile: (name: String, phone: String, birthDate: Long?) -> Unit,
-    onSwitchRole: (() -> Unit)?,
     modifier: Modifier = Modifier
 ) {
     val haptic       = LocalHapticFeedback.current
@@ -246,24 +237,6 @@ private fun ProfileContent(
                 Text("Редактировать профиль")
             }
         }
-
-        if (onSwitchRole != null) {
-            Spacer(Modifier.height(8.dp))
-            HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
-            Spacer(Modifier.height(16.dp))
-            OutlinedButton(
-                onClick = onSwitchRole,
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp).height(48.dp),
-                shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
-                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.error)
-            ) {
-                Icon(Icons.Default.SwitchAccount, null, modifier = Modifier.size(18.dp))
-                Spacer(Modifier.width(8.dp))
-                Text("Сменить роль", fontWeight = FontWeight.Medium)
-            }
-        }
-
         Spacer(Modifier.height(24.dp))
     }
 

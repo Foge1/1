@@ -33,6 +33,10 @@ import com.loaderapp.presentation.loader.LoaderViewModel
 import com.loaderapp.ui.components.EmptyStateView
 import com.loaderapp.ui.components.ErrorView
 import com.loaderapp.ui.components.LoadingView
+import com.loaderapp.ui.components.OrderCard
+import com.loaderapp.ui.components.OrderStatusChip
+import com.loaderapp.ui.components.OrderParamChip
+import com.loaderapp.ui.components.formatOrderDateTime
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
@@ -49,8 +53,6 @@ import java.util.*
 @Composable
 fun LoaderScreen(
     viewModel: LoaderViewModel,
-    onSwitchRole: () -> Unit,
-    onDarkThemeChanged: (Boolean) -> Unit,
     onOrderClick: (Long) -> Unit
 ) {
     val availableOrdersState by viewModel.availableOrdersState.collectAsState()
@@ -320,146 +322,6 @@ private fun MyOrdersTab(
 /**
  * Карточка заказа
  */
-@Composable
-private fun OrderCard(
-    order: OrderModel,
-    onClick: () -> Unit,
-    actionButton: (@Composable () -> Unit)? = null
-) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
-        )
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            // Заголовок
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = order.address,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f)
-                )
-                
-                StatusChip(status = order.status)
-            }
-            
-            // Описание груза
-            Text(
-                text = order.cargoDescription,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis
-            )
-            
-            // Дата и время
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                Icon(
-                    Icons.Default.CalendarToday,
-                    contentDescription = null,
-                    modifier = Modifier.size(16.dp),
-                    tint = MaterialTheme.colorScheme.primary
-                )
-                Text(
-                    text = formatDateTime(order.dateTime),
-                    style = MaterialTheme.typography.bodySmall
-                )
-            }
-            
-            // Параметры заказа
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                OrderParam(
-                    icon = Icons.Default.Person,
-                    value = "${order.requiredWorkers} чел"
-                )
-                OrderParam(
-                    icon = Icons.Default.Schedule,
-                    value = "${order.estimatedHours} ч"
-                )
-                OrderParam(
-                    icon = Icons.Default.AttachMoney,
-                    value = "${order.pricePerHour}₽/ч"
-                )
-                OrderParam(
-                    icon = Icons.Default.Star,
-                    value = "≥${order.minWorkerRating}"
-                )
-            }
-            
-            // Кнопка действия
-            actionButton?.invoke()
-        }
-    }
-}
 
-@Composable
-private fun StatusChip(status: OrderStatusModel) {
-    val (text, color) = when (status) {
-        OrderStatusModel.AVAILABLE -> "Доступен" to Color(0xFF4CAF50)
-        OrderStatusModel.TAKEN -> "Взят" to Color(0xFFFF9800)
-        OrderStatusModel.IN_PROGRESS -> "В работе" to Color(0xFF2196F3)
-        OrderStatusModel.COMPLETED -> "Завершён" to Color(0xFF9C27B0)
-        OrderStatusModel.CANCELLED -> "Отменён" to Color(0xFFF44336)
-    }
-    
-    Surface(
-        color = color.copy(alpha = 0.2f),
-        shape = RoundedCornerShape(12.dp)
-    ) {
-        Text(
-            text = text,
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
-            style = MaterialTheme.typography.labelSmall,
-            color = color,
-            fontWeight = FontWeight.SemiBold
-        )
-    }
-}
 
-@Composable
-private fun OrderParam(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    value: String
-) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(4.dp)
-    ) {
-        Icon(
-            icon,
-            contentDescription = null,
-            modifier = Modifier.size(16.dp),
-            tint = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        Text(
-            text = value,
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-    }
-}
 
-private fun formatDateTime(timestamp: Long): String {
-    val sdf = SimpleDateFormat("dd MMM, HH:mm", Locale("ru"))
-    return sdf.format(Date(timestamp))
-}
