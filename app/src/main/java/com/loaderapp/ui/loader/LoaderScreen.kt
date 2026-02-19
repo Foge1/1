@@ -74,8 +74,7 @@ fun LoaderScreen(
     
     Scaffold(
         topBar = {
-            LoaderTopBar() }
-            )
+            LoaderTopBar()
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { paddingValues ->
