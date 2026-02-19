@@ -84,8 +84,7 @@ fun MainScreen(
             navController    = navController,
             startDestination = Route.Home.route,
             modifier         = Modifier.padding(innerPadding),
-            enterTransition  = { fadeIn(tween(220)) },
-            exitTransition   = { fadeOut(tween(180)) }
+
         ) {
 
             // ── Home (роль определяет контент) ─────────────────────────────

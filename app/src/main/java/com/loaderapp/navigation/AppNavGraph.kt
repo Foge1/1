@@ -96,17 +96,6 @@ fun AppNavGraph(
             )
         }
 
-        // Реагируем на успешный login → переходим на Main
-        LaunchedEffect(destination) {
-            if (destination is SessionDestination.Main) {
-                val cur = navController.currentDestination?.route
-                if (cur == Route.Auth.route) {
-                    navController.navigate(Route.Main.route) {
-                        popUpTo(Route.Auth.route) { inclusive = true }
-                    }
-                }
-            }
-        }
 
         // ── Main (единый для всех ролей) ─────────────────────────────────────
         composable(route = Route.Main.route) {

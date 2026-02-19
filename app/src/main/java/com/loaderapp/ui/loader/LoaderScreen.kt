@@ -225,7 +225,7 @@ private fun AvailableOrdersTab(
                         OrderCard(
                             order = order,
                             onClick = { onOrderClick(order.id) },
-                            actionButton = {
+                            actionContent = {
                                 Button(
                                     onClick = { onTakeOrder(order) },
                                     modifier = Modifier.fillMaxWidth()
@@ -286,7 +286,7 @@ private fun MyOrdersTab(
                         OrderCard(
                             order = order,
                             onClick = { onOrderClick(order.id) },
-                            actionButton = if (order.status == OrderStatusModel.TAKEN || order.status == OrderStatusModel.IN_PROGRESS) {
+                            actionContent = if (order.status == OrderStatusModel.TAKEN || order.status == OrderStatusModel.IN_PROGRESS) {
                                 {
                                     Button(
                                         onClick = { onCompleteOrder(order) },
