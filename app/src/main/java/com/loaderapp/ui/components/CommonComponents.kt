@@ -3,6 +3,7 @@ package com.loaderapp.ui.components
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.Search
@@ -11,10 +12,14 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.loaderapp.domain.model.OrderStatusModel
+import java.text.SimpleDateFormat
+import java.util.*
 
 /**
  * Компонент пустого состояния
@@ -213,20 +218,9 @@ private fun Modifier.shimmerBackground(): Modifier = this.then(
 
 // ════════════════════════════════════════════════════════════════════════════
 // Общие компоненты для карточек заказов (DRY — убираем дублирование)
-// Использовались в LoaderScreen и DispatcherScreen независимо.
 // ════════════════════════════════════════════════════════════════════════════
 
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.text.font.FontWeight
-import com.loaderapp.domain.model.OrderStatusModel
-import java.text.SimpleDateFormat
-import java.util.*
-
-@androidx.compose.runtime.Composable
+@Composable
 fun OrderStatusChip(status: OrderStatusModel) {
     val (text, color) = when (status) {
         OrderStatusModel.AVAILABLE  -> "Доступен"  to Color(0xFF4CAF50)
@@ -249,7 +243,7 @@ fun OrderStatusChip(status: OrderStatusModel) {
     }
 }
 
-@androidx.compose.runtime.Composable
+@Composable
 fun OrderParamItem(icon: ImageVector, value: String) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
