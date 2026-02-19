@@ -16,14 +16,10 @@ import com.loaderapp.ui.auth.RoleSelectionScreen
 import com.loaderapp.ui.dispatcher.DispatcherScreen
 import com.loaderapp.ui.loader.LoaderScreen
 import com.loaderapp.ui.order.OrderDetailScreen
+import com.loaderapp.presentation.order.OrderDetailViewModel
 import com.loaderapp.ui.splash.SplashScreen
 import kotlinx.coroutines.launch
 
-/**
- * Главный NavGraph приложения.
- * Маршрутизация делегирована SessionViewModel (Hilt) — никакого прямого
- * обращения к Application, Repository или DataStore.
- */
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
 fun AppNavGraph(
@@ -35,8 +31,7 @@ fun AppNavGraph(
     val destination by sessionViewModel.destination.collectAsState()
     val scope = rememberCoroutineScope()
 
-    // Обрабатываем выход из системы: при clearSession() destination → Auth,
-    // навигируем с очисткой back-stack независимо от текущего экрана.
+    // Реагируем на clearSession() — навигируем на Auth с очисткой стека
     LaunchedEffect(destination) {
         if (destination is SessionDestination.Auth) {
             val currentRoute = navController.currentDestination?.route
@@ -64,19 +59,21 @@ fun AppNavGraph(
             exitTransition = { fadeOut(tween(350)) }
         ) {
             SplashScreen(
+                // Race condition fix: Splash ждёт пока SessionViewModel прочитает DataStore
+                isSessionResolved = destination.isResolved,
                 onFinished = {
                     onRequestNotificationPermission()
                     when (val dest = destination) {
-                        is SessionDestination.Loading -> { /* ViewModel ещё определяет маршрут */ }
+                        is SessionDestination.Loading    -> { /* не должны сюда попасть */ }
                         is SessionDestination.Dispatcher ->
                             navController.navigate(Route.Dispatcher.createRoute(dest.userId)) {
                                 popUpTo(Route.Splash.route) { inclusive = true }
                             }
-                        is SessionDestination.Loader ->
+                        is SessionDestination.Loader     ->
                             navController.navigate(Route.Loader.createRoute(dest.userId)) {
                                 popUpTo(Route.Splash.route) { inclusive = true }
                             }
-                        is SessionDestination.Auth ->
+                        is SessionDestination.Auth       ->
                             navController.navigate(Route.Auth.route) {
                                 popUpTo(Route.Splash.route) { inclusive = true }
                             }
@@ -125,7 +122,6 @@ fun AppNavGraph(
         ) { backStackEntry ->
             val userId = backStackEntry.arguments?.getLong(NavArgs.USER_ID) ?: return@composable
             val viewModel: DispatcherViewModel = hiltViewModel()
-
             LaunchedEffect(userId) { viewModel.initialize(userId) }
 
             DispatcherScreen(
@@ -145,7 +141,6 @@ fun AppNavGraph(
         ) { backStackEntry ->
             val userId = backStackEntry.arguments?.getLong(NavArgs.USER_ID) ?: return@composable
             val viewModel: LoaderViewModel = hiltViewModel()
-
             LaunchedEffect(userId) { viewModel.initialize(userId) }
 
             LoaderScreen(
@@ -179,9 +174,11 @@ fun AppNavGraph(
         ) { backStackEntry ->
             val orderId = backStackEntry.arguments?.getLong(NavArgs.ORDER_ID) ?: return@composable
             val isDispatcher = backStackEntry.arguments?.getBoolean(NavArgs.IS_DISPATCHER) ?: false
+            val viewModel: OrderDetailViewModel = hiltViewModel()
+            LaunchedEffect(orderId) { viewModel.loadOrder(orderId) }
 
             OrderDetailScreen(
-                orderId = orderId,
+                viewModel = viewModel,
                 isDispatcher = isDispatcher,
                 onBack = { navController.popBackStack() }
             )

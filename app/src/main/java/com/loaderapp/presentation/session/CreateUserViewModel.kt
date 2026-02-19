@@ -1,26 +1,34 @@
 package com.loaderapp.presentation.session
 
 import androidx.lifecycle.ViewModel
-import com.loaderapp.data.dao.UserDao
+import com.loaderapp.core.common.Result
+import com.loaderapp.data.mapper.UserMapper
 import com.loaderapp.data.model.User
+import com.loaderapp.domain.repository.UserRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 
 /**
- * Тонкий ViewModel для создания пользователя на экране Auth.
- * Работает с data.model.User напрямую — RoleSelectionScreen создаёт Entity,
- * нет смысла гонять через domain слой туда-обратно на этапе первичной регистрации.
+ * ViewModel для создания пользователя на экране Auth.
+ *
+ * Использует [UserRepository] (domain-интерфейс), а не DAO напрямую —
+ * слои соблюдены, маппинг Entity→Model скрыт в репозитории.
  */
 @HiltViewModel
 class CreateUserViewModel @Inject constructor(
-    private val userDao: UserDao
+    private val userRepository: UserRepository
 ) : ViewModel() {
 
+    /**
+     * Создаёт пользователя и возвращает его ID.
+     * [user] — data.model.User из RoleSelectionScreen;
+     * конвертируется в domain-модель через UserMapper.
+     */
     suspend fun createUser(user: User): Long? {
-        return try {
-            userDao.insertUser(user)
-        } catch (e: Exception) {
-            null
+        val domainModel = UserMapper.toDomain(user)
+        return when (val result = userRepository.createUser(domainModel)) {
+            is Result.Success -> result.data
+            else -> null
         }
     }
 }

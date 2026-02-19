@@ -2,28 +2,28 @@ package com.loaderapp.presentation.session
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.loaderapp.core.common.Result
 import com.loaderapp.data.model.User
 import com.loaderapp.data.model.UserRole
 import com.loaderapp.data.preferences.UserPreferences
+import com.loaderapp.domain.model.UserRoleModel
 import com.loaderapp.domain.repository.UserRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 sealed class SessionDestination {
+    /** DataStore ещё читается — навигировать нельзя */
     object Loading : SessionDestination()
     data class Dispatcher(val userId: Long) : SessionDestination()
     data class Loader(val userId: Long) : SessionDestination()
     object Auth : SessionDestination()
+
+    /** Сессия определена (любой исход кроме Loading) */
+    val isResolved: Boolean get() = this !is Loading
 }
 
-/**
- * Отвечает за определение стартового маршрута на основе сохранённой сессии.
- * Инжектируется через Hilt — не требует ручного создания в Application.
- */
 @HiltViewModel
 class SessionViewModel @Inject constructor(
     private val userPreferences: UserPreferences,
@@ -44,21 +44,13 @@ class SessionViewModel @Inject constructor(
                 _destination.value = SessionDestination.Auth
                 return@launch
             }
-
-            val result = userRepository.getUserById(userId)
-            val user = (result as? com.loaderapp.core.common.Result.Success)?.data
-
-            _destination.value = when (user?.role) {
-                com.loaderapp.domain.model.UserRoleModel.DISPATCHER -> SessionDestination.Dispatcher(userId)
-                com.loaderapp.domain.model.UserRoleModel.LOADER -> SessionDestination.Loader(userId)
-                null -> SessionDestination.Auth
+            _destination.value = when (val result = userRepository.getUserById(userId)) {
+                is Result.Success -> when (result.data.role) {
+                    UserRoleModel.DISPATCHER -> SessionDestination.Dispatcher(userId)
+                    UserRoleModel.LOADER     -> SessionDestination.Loader(userId)
+                }
+                else -> SessionDestination.Auth
             }
-        }
-    }
-
-    fun saveSession(userId: Long) {
-        viewModelScope.launch {
-            userPreferences.setCurrentUserId(userId)
         }
     }
 
@@ -70,21 +62,15 @@ class SessionViewModel @Inject constructor(
     }
 
     fun setDarkTheme(enabled: Boolean) {
-        viewModelScope.launch {
-            userPreferences.setDarkTheme(enabled)
-        }
+        viewModelScope.launch { userPreferences.setDarkTheme(enabled) }
     }
 
-    /**
-     * Вызывается после успешного создания пользователя на экране Auth.
-     * Принимает data.model.User (Entity) — RouteSelectionScreen работает с ним напрямую.
-     */
     fun onUserCreated(user: User, userId: Long) {
         viewModelScope.launch {
             userPreferences.setCurrentUserId(userId)
             _destination.value = when (user.role) {
                 UserRole.DISPATCHER -> SessionDestination.Dispatcher(userId)
-                UserRole.LOADER -> SessionDestination.Loader(userId)
+                UserRole.LOADER     -> SessionDestination.Loader(userId)
             }
         }
     }
