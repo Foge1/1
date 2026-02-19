@@ -2,19 +2,18 @@ package com.loaderapp.navigation
 
 sealed class Route(val route: String) {
 
-    object Splash : Route("splash")
+    object Splash   : Route("splash")
+    object Auth     : Route("auth")
+    object Main     : Route("main")
 
-    object Auth : Route("auth")
-
-    /** Единый главный экран для всех ролей */
-    object Main : Route("main")
-
-    // Вложенные роуты внутри Main (bottom nav)
+    // ── Вкладки Bottom Nav ───────────────────────────────────────────────────
     object Home     : Route("home")
+    object History  : Route("history")
+    object Rating   : Route("rating")
     object Profile  : Route("profile")
     object Settings : Route("settings")
 
-    // Детали заказа — поверх Main
+    // ── Поверх Main ──────────────────────────────────────────────────────────
     object OrderDetail : Route("order/{orderId}?isDispatcher={isDispatcher}") {
         fun createRoute(orderId: Long, isDispatcher: Boolean) =
             "order/$orderId?isDispatcher=$isDispatcher"

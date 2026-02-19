@@ -1,16 +1,11 @@
 package com.loaderapp.ui.components
 
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.spring
-import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -24,11 +19,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
+// ── Модель вкладки ────────────────────────────────────────────────────────────
+
 data class BottomNavItem(
     val icon: ImageVector,
     val label: String,
     val badgeCount: Int = 0
 )
+
+// ── Панель ────────────────────────────────────────────────────────────────────
 
 @Composable
 fun AppBottomBar(
@@ -38,34 +37,36 @@ fun AppBottomBar(
     modifier: Modifier = Modifier
 ) {
     Surface(
-        modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp),
-        color = MaterialTheme.colorScheme.surface,
-        tonalElevation = 0.dp,
+        modifier      = modifier.fillMaxWidth(),
+        shape         = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp),
+        color         = MaterialTheme.colorScheme.surface,
+        tonalElevation  = 0.dp,
         shadowElevation = 16.dp
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .windowInsetsPadding(WindowInsets.navigationBars)
-                .padding(horizontal = 8.dp, vertical = 8.dp),
+                .padding(horizontal = 4.dp, vertical = 8.dp),
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.Top
         ) {
             items.forEachIndexed { index, item ->
-                AppBottomBarItem(
-                    item = item,
+                BottomNavItemView(
+                    item       = item,
                     isSelected = index == selectedIndex,
-                    onClick = { onItemSelected(index) },
-                    modifier = Modifier.weight(1f)
+                    onClick    = { onItemSelected(index) },
+                    modifier   = Modifier.weight(1f)
                 )
             }
         }
     }
 }
 
+// ── Один элемент ──────────────────────────────────────────────────────────────
+
 @Composable
-private fun AppBottomBarItem(
+private fun BottomNavItemView(
     item: BottomNavItem,
     isSelected: Boolean,
     onClick: () -> Unit,
@@ -73,41 +74,43 @@ private fun AppBottomBarItem(
 ) {
     val interactionSource = remember { MutableInteractionSource() }
 
+    // Масштаб капсулы — пружинная анимация при нажатии
     val scale by animateFloatAsState(
-        targetValue = if (isSelected) 1.08f else 1f,
-        animationSpec = spring(
+        targetValue    = if (isSelected) 1.08f else 1f,
+        animationSpec  = spring(
             dampingRatio = Spring.DampingRatioMediumBouncy,
-            stiffness = Spring.StiffnessMedium
+            stiffness    = Spring.StiffnessMedium
         ),
         label = "scale"
     )
 
-    val iconColor by animateColorAsState(
-        targetValue = if (isSelected) MaterialTheme.colorScheme.primary
-        else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+    // Цвет иконки и подписи
+    val contentColor by animateColorAsState(
+        targetValue   = if (isSelected) MaterialTheme.colorScheme.primary
+                        else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
         animationSpec = tween(200, easing = FastOutSlowInEasing),
-        label = "iconColor"
+        label         = "contentColor"
     )
 
-    val textColor by animateColorAsState(
-        targetValue = if (isSelected) MaterialTheme.colorScheme.primary
-        else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+    // Прозрачность фона капсулы
+    val capsuleAlpha by animateFloatAsState(
+        targetValue   = if (isSelected) 1f else 0f,
         animationSpec = tween(200, easing = FastOutSlowInEasing),
-        label = "textColor"
+        label         = "capsuleAlpha"
     )
 
     Column(
         modifier = modifier
             .clickable(
                 interactionSource = interactionSource,
-                indication = null,
-                onClick = onClick
+                indication        = null,
+                onClick           = onClick
             )
             .padding(vertical = 4.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Top
     ) {
-        // Тонкая бирюзовая линия-индикатор сверху (как на референсе)
+        // Линия-индикатор сверху (точно как на скриншоте)
         Box(
             modifier = Modifier
                 .width(24.dp)
@@ -119,57 +122,59 @@ private fun AppBottomBarItem(
                 )
         )
 
-        Spacer(modifier = Modifier.height(4.dp))
+        Spacer(Modifier.height(4.dp))
 
-        // Компактная капсула только вокруг иконки
+        // Капсула с иконкой
         Box(
             contentAlignment = Alignment.Center,
             modifier = Modifier
                 .scale(scale)
                 .clip(RoundedCornerShape(50))
                 .background(
-                    if (isSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f)
-                    else Color.Transparent
+                    MaterialTheme.colorScheme.primaryContainer.copy(
+                        alpha = capsuleAlpha * 0.6f
+                    )
                 )
-                .padding(horizontal = 12.dp, vertical = 6.dp)
+                .padding(horizontal = 14.dp, vertical = 6.dp)
         ) {
-            Box {
-                Icon(
-                    imageVector = item.icon,
-                    contentDescription = item.label,
-                    tint = iconColor,
-                    modifier = Modifier.size(22.dp)
-                )
-                if (item.badgeCount > 0) {
-                    Box(
-                        modifier = Modifier
-                            .align(Alignment.TopEnd)
-                            .offset(x = 5.dp, y = (-3).dp)
-                            .size(15.dp)
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.error),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = if (item.badgeCount > 99) "99+" else "${item.badgeCount}",
-                            fontSize = 8.sp,
-                            color = Color.White,
-                            fontWeight = FontWeight.Bold,
-                            lineHeight = 8.sp
-                        )
+            // Badge
+            if (item.badgeCount > 0) {
+                BadgedBox(
+                    badge = {
+                        Badge {
+                            Text(
+                                text = if (item.badgeCount > 99) "99+" else "${item.badgeCount}",
+                                fontSize = 8.sp
+                            )
+                        }
                     }
+                ) {
+                    Icon(
+                        imageVector    = item.icon,
+                        contentDescription = item.label,
+                        tint           = contentColor,
+                        modifier       = Modifier.size(22.dp)
+                    )
                 }
+            } else {
+                Icon(
+                    imageVector    = item.icon,
+                    contentDescription = item.label,
+                    tint           = contentColor,
+                    modifier       = Modifier.size(22.dp)
+                )
             }
         }
 
-        Spacer(modifier = Modifier.height(3.dp))
+        Spacer(Modifier.height(3.dp))
 
+        // Подпись
         Text(
-            text = item.label,
-            fontSize = 10.sp,
+            text       = item.label,
+            fontSize   = 10.sp,
             fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
-            color = textColor,
-            maxLines = 1
+            color      = contentColor,
+            maxLines   = 1
         )
     }
 }
