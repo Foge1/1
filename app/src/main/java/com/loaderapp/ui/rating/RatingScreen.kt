@@ -5,6 +5,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import com.loaderapp.ui.components.GradientTopBar
+import com.loaderapp.ui.components.PlaceholderContent
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 
