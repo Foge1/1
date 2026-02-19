@@ -10,14 +10,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 
 /**
- * Переиспользуемый фон с вертикальным градиентом для всех экранов.
+ * Переиспользуемый полноэкранный градиентный фон.
  *
- * Градиент строится от [MaterialTheme.colorScheme.primaryContainer] (верх)
- * до [MaterialTheme.colorScheme.background] (низ) и автоматически
- * адаптируется к светлой и тёмной теме.
+ * Цвета: primaryContainer (верх, слабый оттенок) → background (низ).
+ * Автоматически адаптируется к светлой и тёмной теме.
  *
- * Для скролл-экранов (Profile и др.) используй [scrollableGradientModifier] —
- * он растягивает градиент вместе с контентом, устраняя жёсткую границу.
+ * Используется на всех экранах кроме Профиля, где контент скроллится.
+ * Для скролл-экранов используй [scrollableGradientBackground].
  */
 @Composable
 fun GradientBackground(
@@ -30,29 +29,30 @@ fun GradientBackground(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    colors = listOf(topColor, bottomColor)
-                )
-            ),
+            .background(Brush.verticalGradient(listOf(topColor, bottomColor))),
         content = content
     )
 }
 
 /**
- * Modifier для скролл-контейнеров, которым нужен бесшовный градиент.
+ * Modifier-расширение для скролл-контейнеров с бесшовным градиентом.
  *
- * В отличие от [GradientBackground], градиент здесь привязан не к высоте
- * экрана, а к реальной высоте контента через [endY] = [Float.POSITIVE_INFINITY].
- * Это даёт плавный переход без жёсткой границы при скролле вниз.
+ * Ключевое отличие от [GradientBackground]:
+ * `endY = Float.POSITIVE_INFINITY` привязывает конец градиента к реальной
+ * высоте контента, а не к высоте viewport'а. Это устраняет жёсткую цветовую
+ * границу при скролле — градиент тянется вместе с контентом бесконечно.
  *
- * Использование:
- * ```
+ * Порядок модификаторов важен: [scrollableGradientBackground] нужно применять
+ * ДО [androidx.compose.foundation.verticalScroll], чтобы фон рисовался
+ * под контентом, а не поверх него.
+ *
+ * Пример:
+ * ```kotlin
  * Column(
  *     modifier = Modifier
  *         .fillMaxSize()
+ *         .scrollableGradientBackground()   // ← сначала фон
  *         .verticalScroll(rememberScrollState())
- *         .scrollableGradientBackground(topColor, bottomColor)
  * ) { ... }
  * ```
  */
@@ -63,8 +63,6 @@ fun Modifier.scrollableGradientBackground(): Modifier {
     return this.background(
         Brush.verticalGradient(
             colors = listOf(topColor, bottomColor),
-            // Float.POSITIVE_INFINITY → градиент растягивается на всю длину контента,
-            // не ограничиваясь высотой видимой области
             endY   = Float.POSITIVE_INFINITY
         )
     )

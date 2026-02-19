@@ -1,28 +1,32 @@
 package com.loaderapp.ui.components
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 /**
- * Единый TopBar с градиентом для всего приложения.
+ * Единый TopBar для всего приложения.
  *
- * Градиент: surface → прозрачный (сверху вниз), без границ и теней.
- * Используется на всех экранах для консистентного вида.
+ * Полностью прозрачный фон — TopBar «плавает» поверх градиентного
+ * контента экрана. Цвета шрифта и иконок берутся из [MaterialTheme.colorScheme.onSurface]
+ * и одинаково читаемы на светлом градиентном фоне.
  *
- * @param title       Заголовок экрана
- * @param navigationIcon  Иконка назад (null = не показывать)
- * @param onNavigationClick  Клик по navigationIcon
- * @param actions     Слот для action-кнопок справа
+ * Почему убран gradient-фон самого TopBar:
+ * На экране Профиля контент скроллится, и градиент GradientTopBar (surface→transparent)
+ * накладывался поверх градиента контента (primaryContainer→background), создавая
+ * видимую «полосу». Правильное решение — TopBar прозрачный, единственный
+ * источник цвета фона — сам контент/GradientBackground.
+ *
+ * @param title              Заголовок экрана
+ * @param navigationIcon     Иконка назад (null = не показывать)
+ * @param onNavigationClick  Обработчик клика по navigationIcon
+ * @param actions            Слот для action-кнопок справа
  */
 @Composable
 fun GradientTopBar(
@@ -32,23 +36,12 @@ fun GradientTopBar(
     onNavigationClick: () -> Unit = {},
     actions: @Composable RowScope.() -> Unit = {}
 ) {
-    val surfaceColor = MaterialTheme.colorScheme.surface
-
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .background(
-                Brush.verticalGradient(
-                    colors = listOf(
-                        surfaceColor,
-                        surfaceColor.copy(alpha = 0f)
-                    )
-                )
-            )
             .windowInsetsPadding(WindowInsets.statusBars)
             .padding(horizontal = 4.dp, vertical = 8.dp)
     ) {
-        // Навигационная иконка слева
         if (navigationIcon != null) {
             IconButton(
                 onClick  = onNavigationClick,
@@ -62,7 +55,6 @@ fun GradientTopBar(
             }
         }
 
-        // Заголовок — центр или с отступом если есть nav icon
         Text(
             text       = title,
             fontSize   = 22.sp,
@@ -76,7 +68,6 @@ fun GradientTopBar(
                 )
         )
 
-        // Actions справа
         Row(
             modifier          = Modifier.align(Alignment.CenterEnd),
             verticalAlignment = Alignment.CenterVertically,
