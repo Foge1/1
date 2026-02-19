@@ -6,8 +6,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -15,10 +13,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -31,6 +26,7 @@ import com.loaderapp.domain.usecase.order.DispatcherStats
 import com.loaderapp.presentation.dispatcher.DispatcherViewModel
 import com.loaderapp.ui.components.DispatcherOrderCard
 import com.loaderapp.ui.components.EmptyStateView
+import com.loaderapp.ui.components.GradientTopBar
 import com.loaderapp.ui.components.ErrorView
 import com.loaderapp.ui.components.LoadingView
 import com.loaderapp.ui.components.OrderStatusChip
@@ -59,8 +55,6 @@ fun DispatcherScreen(
 ) {
     val ordersState by viewModel.ordersState.collectAsState()
     val statsState by viewModel.statsState.collectAsState()
-    val searchQuery by viewModel.searchQuery.collectAsState()
-    val isSearchActive by viewModel.isSearchActive.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     
@@ -75,11 +69,7 @@ fun DispatcherScreen(
     
     Scaffold(
         topBar = {
-            DispatcherTopBar(
-                statsState = statsState,
-                isSearchActive = isSearchActive,
-                searchQuery = searchQuery,
-                onSearchActiveChange = { viewModel.setSearchActive(it) },
+            DispatcherTopBar() },
                 onSearchQueryChange = { viewModel.updateSearchQuery(it) }
             )
         },
@@ -126,92 +116,8 @@ fun DispatcherScreen(
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun DispatcherTopBar(
-    statsState: UiState<DispatcherStats>,
-    isSearchActive: Boolean,
-    searchQuery: String,
-    onSearchActiveChange: (Boolean) -> Unit,
-    onSearchQueryChange: (String) -> Unit
-) {
-    val focusRequester = remember { FocusRequester() }
-    val focusManager = LocalFocusManager.current
-    
-    if (isSearchActive) {
-        // Поисковая строка
-        SearchBar(
-            query = searchQuery,
-            onQueryChange = onSearchQueryChange,
-            onSearch = { focusManager.clearFocus() },
-            active = true,
-            onActiveChange = {
-                if (!it) {
-                    onSearchActiveChange(false)
-                    onSearchQueryChange("")
-                }
-            },
-            placeholder = { Text("Поиск по адресу, грузу...") },
-            leadingIcon = {
-                IconButton(onClick = {
-                    onSearchActiveChange(false)
-                    onSearchQueryChange("")
-                }) {
-                    Icon(Icons.Default.ArrowBack, "Назад")
-                }
-            },
-            trailingIcon = {
-                if (searchQuery.isNotEmpty()) {
-                    IconButton(onClick = { onSearchQueryChange("") }) {
-                        Icon(Icons.Default.Clear, "Очистить")
-                    }
-                }
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .focusRequester(focusRequester)
-        ) {}
-        
-        LaunchedEffect(Unit) {
-            focusRequester.requestFocus()
-        }
-    } else {
-        // Обычный TopBar
-        SmallTopAppBar(
-            title = {
-                Column {
-                    Text(
-                        text = "Диспетчер",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold
-                    )
-                    
-                    when (statsState) {
-                        is UiState.Success -> {
-                            Text(
-                                text = "${statsState.data.activeOrders} активных • ${statsState.data.completedOrders} завершено",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                        else -> {
-                            Text(
-                                text = "Загрузка...",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
-                }
-            },
-            actions = {
-                IconButton(onClick = { onSearchActiveChange(true) }) {
-                    Icon(Icons.Default.Search, "Поиск")
-                }
-            },
-            colors = TopAppBarDefaults.smallTopAppBarColors(
-                containerColor = MaterialTheme.colorScheme.surface
-            )
-        )
-    }
+private fun DispatcherTopBar() {
+    GradientTopBar(title = "Диспетчер")
 }
 
 /**

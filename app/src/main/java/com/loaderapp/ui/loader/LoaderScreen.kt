@@ -31,6 +31,7 @@ import com.loaderapp.domain.model.OrderStatusModel
 import com.loaderapp.domain.usecase.order.WorkerStats
 import com.loaderapp.presentation.loader.LoaderViewModel
 import com.loaderapp.ui.components.EmptyStateView
+import com.loaderapp.ui.components.GradientTopBar
 import com.loaderapp.ui.components.ErrorView
 import com.loaderapp.ui.components.LoadingView
 import com.loaderapp.ui.components.OrderCard
@@ -73,9 +74,7 @@ fun LoaderScreen(
     
     Scaffold(
         topBar = {
-            LoaderTopBar(
-                statsState = statsState,
-                onRefresh = { viewModel.refresh() }
+            LoaderTopBar() }
             )
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }
@@ -152,47 +151,8 @@ fun LoaderScreen(
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun LoaderTopBar(
-    statsState: UiState<WorkerStats>,
-    onRefresh: () -> Unit
-) {
-    SmallTopAppBar(
-        title = {
-            Column {
-                Text(
-                    text = "Грузчик",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold
-                )
-                
-                // Показываем статистику
-                when (statsState) {
-                    is UiState.Success -> {
-                        Text(
-                            text = "${statsState.data.completedOrders} выполнено • ${statsState.data.totalEarnings.toInt()}₽ • ⭐ ${String.format("%.1f", statsState.data.averageRating)}",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                    else -> {
-                        Text(
-                            text = "Загрузка статистики...",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-            }
-        },
-        actions = {
-            IconButton(onClick = onRefresh) {
-                Icon(Icons.Default.Refresh, "Обновить")
-            }
-        },
-        colors = TopAppBarDefaults.smallTopAppBarColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        )
-    )
+private fun LoaderTopBar() {
+    GradientTopBar(title = "Грузчик")
 }
 
 /**

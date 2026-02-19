@@ -11,6 +11,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
+import com.loaderapp.ui.components.GradientTopBar
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -59,13 +60,10 @@ fun CreateOrderScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Новый заказ", fontWeight = FontWeight.SemiBold) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, "Назад")
-                    }
-                }
+            GradientTopBar(
+                title = "Новый заказ",
+                navigationIcon = Icons.Default.ArrowBack,
+                onNavigationClick = onBack
             )
         }
     ) { padding ->

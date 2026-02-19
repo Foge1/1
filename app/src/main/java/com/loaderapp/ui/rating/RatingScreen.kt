@@ -4,9 +4,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
+import com.loaderapp.ui.components.GradientTopBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import com.loaderapp.ui.components.PlaceholderContent
 
 /**
  * Экран рейтинга.
@@ -16,7 +16,7 @@ import com.loaderapp.ui.components.PlaceholderContent
 @Composable
 fun RatingScreen() {
     Scaffold(
-        topBar = { TopAppBar(title = { Text("Рейтинг") }) }
+        topBar = { GradientTopBar(title = "Рейтинг") }
     ) { padding ->
         PlaceholderContent(
             icon     = Icons.Default.Star,

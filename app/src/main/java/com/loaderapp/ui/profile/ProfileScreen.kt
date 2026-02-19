@@ -32,6 +32,7 @@ import com.loaderapp.domain.model.UserModel
 import com.loaderapp.domain.model.UserRoleModel
 import com.loaderapp.presentation.profile.ProfileViewModel
 import com.loaderapp.ui.components.ErrorView
+import com.loaderapp.ui.components.GradientTopBar
 import com.loaderapp.ui.components.LoadingView
 import com.loaderapp.ui.theme.GoldStar
 import java.text.SimpleDateFormat
@@ -50,11 +51,11 @@ fun ProfileScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Профиль") },
+            GradientTopBar(
+                title = "Профиль",
                 actions = {
                     if (userState is UiState.Success) {
-                        IconButton(onClick = { /* toggle edit — управляется локально */ }) {
+                        IconButton(onClick = { /* edit */ }) {
                             Icon(Icons.Default.Edit, contentDescription = "Редактировать")
                         }
                     }

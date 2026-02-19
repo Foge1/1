@@ -16,6 +16,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.loaderapp.presentation.settings.SettingsViewModel
+import com.loaderapp.ui.components.GradientTopBar
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -29,11 +30,7 @@ fun SettingsScreen(
     val vibrationEnabled by viewModel.isVibrationEnabled.collectAsState()
 
     Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Настройки") }
-            )
-        }
+        topBar = { GradientTopBar(title = "Настройки") }
     ) { padding ->
         Column(
             modifier = Modifier
