@@ -13,6 +13,7 @@ import com.loaderapp.domain.model.OrderModel
 import com.loaderapp.domain.model.OrderStatusModel
 import com.loaderapp.presentation.loader.LoaderViewModel
 import com.loaderapp.ui.components.FadingEdgeLazyColumn
+import com.loaderapp.ui.components.EmptyStateView
 import com.loaderapp.ui.components.ErrorView
 import com.loaderapp.ui.components.GradientBackground
 import com.loaderapp.ui.components.GradientTopBar
