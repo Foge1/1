@@ -6,16 +6,22 @@ import androidx.compose.material.icons.filled.Star
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.loaderapp.presentation.rating.RatingViewModel
 import com.loaderapp.ui.components.GradientBackground
 import com.loaderapp.ui.components.GradientTopBar
 import com.loaderapp.ui.components.PlaceholderContent
 
 /**
  * Экран рейтинга.
- * Заглушка с градиентным фоном — готова к наполнению функционалом.
+ *
+ * Получает состояние из [RatingViewModel] (Hilt).
+ * Заглушка — готова к наполнению когда появится RatingRepository.
  */
 @Composable
-fun RatingScreen() {
+fun RatingScreen(
+    viewModel: RatingViewModel = hiltViewModel()
+) {
     GradientBackground {
         GradientTopBar(title = "Рейтинг")
 

@@ -127,7 +127,7 @@ fun MainScreen(
 
             // ── История ──────────────────────────────────────────────────────
             composable(Route.History.route) {
-                HistoryScreen()
+                HistoryScreen(userId = user.id)
             }
 
             // ── Рейтинг ──────────────────────────────────────────────────────

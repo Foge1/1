@@ -4,16 +4,24 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.loaderapp.core.common.UiState
 import com.loaderapp.domain.model.OrderModel
-import com.loaderapp.domain.model.OrderStatusModel
-import com.loaderapp.domain.repository.OrderRepository
+import com.loaderapp.domain.usecase.order.GetOrderHistoryParams
+import com.loaderapp.domain.usecase.order.GetOrderHistoryUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+/**
+ * ViewModel экрана истории заказов.
+ *
+ * Использует [GetOrderHistoryUseCase] для получения отфильтрованного
+ * и отсортированного списка завершённых/отменённых заказов.
+ */
 @HiltViewModel
 class HistoryViewModel @Inject constructor(
-    private val orderRepository: OrderRepository
+    private val getOrderHistoryUseCase: GetOrderHistoryUseCase
 ) : ViewModel() {
 
     private val _historyState = MutableStateFlow<UiState<List<OrderModel>>>(UiState.Loading)
@@ -21,14 +29,9 @@ class HistoryViewModel @Inject constructor(
 
     fun initialize(userId: Long) {
         viewModelScope.launch {
-            orderRepository.getOrdersByWorker(userId)
-                .map { orders ->
-                    orders
-                        .filter { it.status == OrderStatusModel.COMPLETED || it.status == OrderStatusModel.CANCELLED }
-                        .sortedByDescending { it.completedAt ?: it.createdAt }
-                }
-                .collect { filtered ->
-                    _historyState.value = UiState.Success(filtered)
+            getOrderHistoryUseCase(GetOrderHistoryParams(userId))
+                .collect { orders ->
+                    _historyState.value = UiState.Success(orders)
                 }
         }
     }
