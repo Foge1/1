@@ -30,7 +30,7 @@ fun HistoryScreen(userId: Long, isDispatcher: Boolean = false) {
         is UiState.Success -> {
             val domainOrders = (state as UiState.Success).data
             // Маппим domain → data модель для существующего HistoryScreen
-            val dataOrders = domainOrders.map { OrderMapper.toData(it) }
+            val dataOrders = domainOrders.map { OrderMapper.toEntity(it) }
             HistoryScreen(
                 orders = dataOrders,
                 onMenuClick = {},

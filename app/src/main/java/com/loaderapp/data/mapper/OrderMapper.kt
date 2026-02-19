@@ -94,5 +94,3 @@ private fun OrderStatusModel.toEntity(): OrderStatus {
     }
 }
 
-// Alias для совместимости: domain → data
-fun OrderMapper.toData(model: OrderModel): Order = OrderMapper.toEntity(model)
