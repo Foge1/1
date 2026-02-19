@@ -12,18 +12,12 @@ import androidx.compose.ui.graphics.Brush
 /**
  * Переиспользуемый фон с вертикальным градиентом для всех экранов.
  *
- * Цвета берутся из текущей [MaterialTheme.colorScheme]:
- *  - [androidx.compose.material3.ColorScheme.primaryContainer] (верх, слабый оттенок)
- *  - [androidx.compose.material3.ColorScheme.background]       (низ, чистый фон)
+ * Градиент строится от [MaterialTheme.colorScheme.primaryContainer] (верх)
+ * до [MaterialTheme.colorScheme.background] (низ) и автоматически
+ * адаптируется к светлой и тёмной теме.
  *
- * Такой подход автоматически подхватывает и светлую, и тёмную тему без изменений.
- *
- * Использование:
- * ```
- * GradientBackground {
- *     // содержимое экрана
- * }
- * ```
+ * Для скролл-экранов (Profile и др.) используй [scrollableGradientModifier] —
+ * он растягивает градиент вместе с контентом, устраняя жёсткую границу.
  */
 @Composable
 fun GradientBackground(
@@ -42,5 +36,36 @@ fun GradientBackground(
                 )
             ),
         content = content
+    )
+}
+
+/**
+ * Modifier для скролл-контейнеров, которым нужен бесшовный градиент.
+ *
+ * В отличие от [GradientBackground], градиент здесь привязан не к высоте
+ * экрана, а к реальной высоте контента через [endY] = [Float.POSITIVE_INFINITY].
+ * Это даёт плавный переход без жёсткой границы при скролле вниз.
+ *
+ * Использование:
+ * ```
+ * Column(
+ *     modifier = Modifier
+ *         .fillMaxSize()
+ *         .verticalScroll(rememberScrollState())
+ *         .scrollableGradientBackground(topColor, bottomColor)
+ * ) { ... }
+ * ```
+ */
+@Composable
+fun Modifier.scrollableGradientBackground(): Modifier {
+    val topColor    = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.18f)
+    val bottomColor = MaterialTheme.colorScheme.background
+    return this.background(
+        Brush.verticalGradient(
+            colors = listOf(topColor, bottomColor),
+            // Float.POSITIVE_INFINITY → градиент растягивается на всю длину контента,
+            // не ограничиваясь высотой видимой области
+            endY   = Float.POSITIVE_INFINITY
+        )
     )
 }

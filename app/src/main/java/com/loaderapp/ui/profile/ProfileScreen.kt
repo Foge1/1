@@ -32,9 +32,9 @@ import com.loaderapp.domain.model.UserModel
 import com.loaderapp.domain.model.UserRoleModel
 import com.loaderapp.presentation.profile.ProfileViewModel
 import com.loaderapp.ui.components.ErrorView
-import com.loaderapp.ui.components.GradientBackground
 import com.loaderapp.ui.components.GradientTopBar
 import com.loaderapp.ui.components.LoadingView
+import com.loaderapp.ui.components.scrollableGradientBackground
 import com.loaderapp.ui.theme.GoldStar
 import java.text.SimpleDateFormat
 import java.util.*
@@ -50,31 +50,50 @@ fun ProfileScreen(
 
     LaunchedEffect(userId) { viewModel.initialize(userId) }
 
-    GradientBackground {
-        GradientTopBar(
-            title = "Профиль",
-            actions = {
-                if (userState is UiState.Success) {
-                    IconButton(onClick = { /* edit */ }) {
-                        Icon(Icons.Default.Edit, contentDescription = "Редактировать")
-                    }
+    // Box занимает весь экран, градиент — на скролл-контейнере,
+    // поэтому при скролле он тянется вместе с контентом без жёсткой границы
+    Box(modifier = Modifier.fillMaxSize()) {
+        when (val state = userState) {
+            is UiState.Loading -> {
+                // При загрузке показываем простой фон + спиннер
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .scrollableGradientBackground()
+                ) {
+                    LoadingView(message = "Загрузка профиля...")
                 }
             }
-        )
-
-        when (val state = userState) {
-            is UiState.Loading -> LoadingView(message = "Загрузка профиля...")
-            is UiState.Error   -> ErrorView(message = state.message, onRetry = null)
+            is UiState.Error -> {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .scrollableGradientBackground()
+                ) {
+                    ErrorView(message = state.message, onRetry = null)
+                }
+            }
             is UiState.Success -> ProfileContent(
                 user          = state.data,
                 stats         = stats,
                 onSaveProfile = { name, phone, birthDate ->
                     viewModel.saveProfile(userId, name, phone, birthDate)
-                },
-                modifier      = Modifier.fillMaxSize()
+                }
             )
             is UiState.Idle -> Unit
         }
+
+        // TopBar поверх контента, всегда наверху
+        GradientTopBar(
+            title = "Профиль",
+            actions = {
+                if (userState is UiState.Success) {
+                    IconButton(onClick = { /* edit handled inline */ }) {
+                        Icon(Icons.Default.Edit, contentDescription = "Редактировать")
+                    }
+                }
+            }
+        )
     }
 }
 
@@ -83,18 +102,17 @@ fun ProfileScreen(
 private fun ProfileContent(
     user: UserModel,
     stats: com.loaderapp.presentation.profile.ProfileStats,
-    onSaveProfile: (name: String, phone: String, birthDate: Long?) -> Unit,
-    modifier: Modifier = Modifier
+    onSaveProfile: (name: String, phone: String, birthDate: Long?) -> Unit
 ) {
-    val haptic       = LocalHapticFeedback.current
-    var isEditing    by remember { mutableStateOf(false) }
-    var editName     by remember(user.name)      { mutableStateOf(user.name) }
-    var editPhone    by remember(user.phone)     { mutableStateOf(user.phone) }
+    val haptic        = LocalHapticFeedback.current
+    var isEditing     by remember { mutableStateOf(false) }
+    var editName      by remember(user.name)      { mutableStateOf(user.name) }
+    var editPhone     by remember(user.phone)     { mutableStateOf(user.phone) }
     var editBirthDate by remember(user.birthDate) { mutableStateOf(user.birthDate) }
     var showDatePicker by remember { mutableStateOf(false) }
 
-    val primary   = MaterialTheme.colorScheme.primary
-    val isLoader  = user.role == UserRoleModel.LOADER
+    val primary    = MaterialTheme.colorScheme.primary
+    val isLoader   = user.role == UserRoleModel.LOADER
     val dateFormat = remember { SimpleDateFormat("dd.MM.yyyy", Locale.getDefault()) }
 
     val age = user.birthDate?.let { ts ->
@@ -109,15 +127,17 @@ private fun ProfileContent(
         SimpleDateFormat("MMMM yyyy", Locale("ru")).format(Date(user.createdAt))
     }
 
+    // Скролл-колонка с градиентом — градиент тянется вместе с контентом,
+    // граница не появляется даже при скролле до самого низа
     Column(
-        modifier = modifier
+        modifier = Modifier
             .fillMaxSize()
+            .scrollableGradientBackground()        // бесшовный градиент на всю длину контента
             .verticalScroll(rememberScrollState())
-            // Отступ под GradientTopBar (статусбар + высота TopBar ≈ 64dp)
             .statusBarsPadding()
-            .padding(top = 56.dp)
+            .padding(top = 56.dp)                  // высота GradientTopBar
     ) {
-        // Шапка
+        // Шапка профиля
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -217,7 +237,6 @@ private fun ProfileContent(
                     Spacer(Modifier.width(8.dp))
                     Text(editBirthDate?.let { "ДР: " + dateFormat.format(Date(it)) } ?: "Указать дату рождения", fontWeight = FontWeight.Normal)
                 }
-
                 Button(
                     onClick = {
                         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
@@ -245,9 +264,9 @@ private fun ProfileContent(
 
     if (showDatePicker) {
         BirthDatePickerDialog(
-            initialDate   = editBirthDate,
+            initialDate    = editBirthDate,
             onDateSelected = { editBirthDate = it; showDatePicker = false },
-            onDismiss     = { showDatePicker = false }
+            onDismiss      = { showDatePicker = false }
         )
     }
 }
