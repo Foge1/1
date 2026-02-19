@@ -93,4 +93,3 @@ private fun OrderStatusModel.toEntity(): OrderStatus {
         OrderStatusModel.CANCELLED -> OrderStatus.CANCELLED
     }
 }
-

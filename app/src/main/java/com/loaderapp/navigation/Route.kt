@@ -1,45 +1,51 @@
 package com.loaderapp.navigation
 
 /**
- * Sealed class для всех корневых роутов навигации.
+ * Sealed class для всех роутов навигации в приложении
+ * Каждый экран имеет свой route с параметрами
  */
 sealed class Route(val route: String) {
-
-    /** Сплэш-экран */
+    
+    /**
+     * Splash экран (стартовый)
+     */
     object Splash : Route("splash")
-
-    /** Экран выбора роли */
+    
+    /**
+     * Экран выбора роли (аутентификация)
+     */
     object Auth : Route("auth")
-
+    
     /**
-     * Главный экран с Bottom Navigation.
-     * Содержит userId и isDispatcher — нужны для инициализации вложенных вкладок.
+     * Экран диспетчера
+     * @param userId ID текущего пользователя
      */
-    object Main : Route("main/{${NavArgs.USER_ID}}/{${NavArgs.IS_DISPATCHER}}") {
-        fun createRoute(userId: Long, isDispatcher: Boolean) =
-            "main/$userId/$isDispatcher"
-    }
-
-    /**
-     * Детали заказа (открывается поверх Main).
-     */
-    object OrderDetail : Route("order/{${NavArgs.ORDER_ID}}?${NavArgs.IS_DISPATCHER}={${NavArgs.IS_DISPATCHER}}") {
-        fun createRoute(orderId: Long, isDispatcher: Boolean) =
-            "order/$orderId?${NavArgs.IS_DISPATCHER}=$isDispatcher"
-    }
-
-    // ── Оставлены для обратной совместимости ────────────────────────────────
-    @Deprecated("Используй Route.Main", ReplaceWith("Route.Main"))
-    object Dispatcher : Route("dispatcher/{${NavArgs.USER_ID}}") {
+    object Dispatcher : Route("dispatcher/{userId}") {
         fun createRoute(userId: Long) = "dispatcher/$userId"
     }
-
-    @Deprecated("Используй Route.Main", ReplaceWith("Route.Main"))
-    object Loader : Route("loader/{${NavArgs.USER_ID}}") {
+    
+    /**
+     * Экран грузчика
+     * @param userId ID текущего пользователя
+     */
+    object Loader : Route("loader/{userId}") {
         fun createRoute(userId: Long) = "loader/$userId"
+    }
+    
+    /**
+     * Детали заказа
+     * @param orderId ID заказа
+     * @param isDispatcher true если открывает диспетчер
+     */
+    object OrderDetail : Route("order/{orderId}?isDispatcher={isDispatcher}") {
+        fun createRoute(orderId: Long, isDispatcher: Boolean) = 
+            "order/$orderId?isDispatcher=$isDispatcher"
     }
 }
 
+/**
+ * Аргументы навигации
+ */
 object NavArgs {
     const val USER_ID = "userId"
     const val ORDER_ID = "orderId"
