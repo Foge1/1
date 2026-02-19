@@ -1,0 +1,35 @@
+## Android specific
+*.iml
+.gradle/
+local.properties
+.idea/
+.DS_Store
+build/
+captures/
+.externalNativeBuild/
+.cxx/
+*.apk
+*.aab
+*.ap_
+*.dex
+
+## Keystore files (NEVER commit these!)
+*.jks
+*.keystore
+release/
+
+## Generated files
+gen/
+out/
+bin/
+proguard/
+
+## Gradle cache
+.gradle
+
+## Android Studio
+*.orig
+*.class
+
+## OS
+Thumbs.db
