@@ -1,6 +1,8 @@
 package com.loaderapp.ui.components
 
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerState
@@ -12,11 +14,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.graphics.*
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -79,13 +81,38 @@ fun SwipeableTabs(
 
         Spacer(Modifier.height(8.dp))
 
-        HorizontalPager(
-            state    = pagerState,
-            modifier = Modifier.weight(1f),
-            // pageSpacing нулевой — страницы встык, без артефактов
-            pageSpacing = 0.dp
-        ) { page ->
-            content(page)
+        // Контент страниц + нижний fade-overlay
+        // Box позволяет рисовать полупрозрачный градиент поверх контента:
+        // снизу страницы контент «растворяется» до прозрачного, а нижний
+        // навбар добавляет свою тень через shadowElevation — вместе они
+        // создают ощущение отделённости панели от контента без жёсткой границы.
+        Box(modifier = Modifier.weight(1f)) {
+            HorizontalPager(
+                state    = pagerState,
+                modifier = Modifier.fillMaxSize(),
+                pageSpacing = 0.dp
+            ) { page ->
+                content(page)
+            }
+
+            // Нижний fade — «растворяет» последние карточки перед навбаром
+            // Не перекрывает нажатия: drawBehind-эффект чисто визуальный
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(40.dp)
+                    .align(Alignment.BottomCenter)
+                    .graphicsLayer(compositingStrategy = CompositingStrategy.Offscreen)
+                    .drawWithContent {
+                        drawContent()
+                        drawRect(
+                            brush = Brush.verticalGradient(
+                                colors = listOf(Color.Transparent, Color.Black)
+                            ),
+                            blendMode = BlendMode.DstIn
+                        )
+                    }
+            )
         }
     }
 }
@@ -173,9 +200,13 @@ fun PillTabRow(
 /**
  * Одна вкладка внутри [PillTabRow].
  *
- * Не использует `Surface` / `Card` / `animateColorAsState` — цвета
- * интерполируются через `lerp` на основе [selectionFraction], синхронно
- * со свайпом Pager. Никаких отдельных анимаций → никакого мерцания.
+ * Намеренно НЕ использует TextButton / Surface / Card — они добавляют
+ * собственный ripple-слой Material3, который при нажатии даёт серую тень
+ * поверх прозрачного трека.
+ *
+ * Решение: простой Box с clickable(indication = null) + MutableInteractionSource.
+ * Весь визуал (индикатор-капсула) рисуется через drawBehind родителя [PillTabRow],
+ * поэтому здесь нужны только текст и badge. Никаких ripple-артефактов.
  *
  * @param selectionFraction 0f = полностью неактивна, 1f = полностью активна.
  *                          Промежуточные значения возникают при свайпе.
@@ -192,54 +223,46 @@ private fun PillTab(
     primary: Color = MaterialTheme.colorScheme.primary,
     unselectedColor: Color = MaterialTheme.colorScheme.onSurfaceVariant
 ) {
-    // Цвет текста интерполируется плавно, синхронно с fractionом свайпа
-    val textColor = lerp(unselectedColor, primary, selectionFraction)
+    // Плавная интерполяция цвета текста синхронно со свайпом
+    val textColor  = lerp(unselectedColor, primary, selectionFraction)
     val fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
 
-    Box(
-        modifier = modifier
-            // Кликабельность без ripple-артефактов на прозрачном фоне
-            .then(
-                Modifier.clip(RoundedCornerShape(50))
-            )
-            .then(
-                remember(onClick) {
-                    Modifier.padding(0.dp) // placeholder — реальный клик ниже
-                }
-            ),
-        contentAlignment = Alignment.Center
-    ) {
-        TextButton(
-            onClick  = onClick,
-            modifier = Modifier.fillMaxWidth(),
-            shape    = RoundedCornerShape(50),
-            colors   = ButtonDefaults.textButtonColors(
-                // Фон прозрачный — капсула-индикатор рисуется в drawBehind родителя
-                containerColor = Color.Transparent,
-                contentColor   = textColor
-            ),
-            contentPadding = PaddingValues(vertical = 10.dp, horizontal = 8.dp)
-        ) {
-            Text(
-                text       = label,
-                fontSize   = 14.sp,
-                fontWeight = fontWeight,
-                color      = textColor,
-                maxLines   = 1
-            )
+    // Отдельный InteractionSource позволяет подавить ripple точечно,
+    // не затрагивая другие элементы
+    val interactionSource = remember { MutableInteractionSource() }
 
-            if (badgeCount > 0) {
-                Spacer(Modifier.width(6.dp))
-                Badge(
-                    containerColor = primary,
-                    contentColor   = MaterialTheme.colorScheme.onPrimary
-                ) {
-                    Text(
-                        text       = if (badgeCount > 99) "99+" else "$badgeCount",
-                        fontSize   = 10.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
+    Row(
+        modifier = modifier
+            .clip(RoundedCornerShape(50))
+            // indication = null → никакого ripple / серой тени при нажатии
+            .clickable(
+                interactionSource = interactionSource,
+                indication        = null,
+                onClick           = onClick
+            )
+            .padding(vertical = 10.dp, horizontal = 8.dp),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment     = Alignment.CenterVertically
+    ) {
+        Text(
+            text       = label,
+            fontSize   = 14.sp,
+            fontWeight = fontWeight,
+            color      = textColor,
+            maxLines   = 1
+        )
+
+        if (badgeCount > 0) {
+            Spacer(Modifier.width(6.dp))
+            Badge(
+                containerColor = primary,
+                contentColor   = MaterialTheme.colorScheme.onPrimary
+            ) {
+                Text(
+                    text       = if (badgeCount > 99) "99+" else "$badgeCount",
+                    fontSize   = 10.sp,
+                    fontWeight = FontWeight.Bold
+                )
             }
         }
     }

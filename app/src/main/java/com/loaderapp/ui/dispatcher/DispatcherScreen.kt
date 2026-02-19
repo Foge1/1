@@ -1,8 +1,8 @@
 package com.loaderapp.ui.dispatcher
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import com.loaderapp.ui.components.FadingEdgeLazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -137,10 +137,9 @@ private fun OrdersPage(
     if (orders.isEmpty()) {
         EmptyStateView(icon = emptyIcon, title = emptyTitle, message = emptyMsg)
     } else {
-        LazyColumn(
-            modifier        = Modifier.fillMaxSize(),
-            contentPadding  = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+        FadingEdgeLazyColumn(
+            modifier       = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 12.dp),
         ) {
             items(orders, key = { it.id }) { order ->
                 DispatcherOrderCard(
@@ -148,6 +147,7 @@ private fun OrdersPage(
                     onClick = { onOrderClick(order.id) },
                     onCancel = { onCancelOrder(order) }
                 )
+                Spacer(Modifier.height(12.dp))
             }
         }
     }

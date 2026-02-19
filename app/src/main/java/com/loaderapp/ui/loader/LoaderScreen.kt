@@ -1,7 +1,6 @@
 package com.loaderapp.ui.loader
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -13,7 +12,7 @@ import com.loaderapp.core.common.UiState
 import com.loaderapp.domain.model.OrderModel
 import com.loaderapp.domain.model.OrderStatusModel
 import com.loaderapp.presentation.loader.LoaderViewModel
-import com.loaderapp.ui.components.EmptyStateView
+import com.loaderapp.ui.components.FadingEdgeLazyColumn
 import com.loaderapp.ui.components.ErrorView
 import com.loaderapp.ui.components.GradientBackground
 import com.loaderapp.ui.components.GradientTopBar
@@ -108,10 +107,9 @@ private fun AvailableOrdersPage(
                     message = "Обновите страницу позже"
                 )
             } else {
-                LazyColumn(
+                FadingEdgeLazyColumn(
                     modifier        = Modifier.fillMaxSize(),
-                    contentPadding  = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                    contentPadding  = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 12.dp),
                 ) {
                     items(state.data, key = { it.id }) { order ->
                         OrderCard(
@@ -128,6 +126,7 @@ private fun AvailableOrdersPage(
                                 }
                             }
                         )
+                        Spacer(Modifier.height(12.dp))
                     }
                 }
             }
@@ -158,10 +157,9 @@ private fun MyOrdersPage(
                     message = "Возьмите заказ из вкладки «Доступные»"
                 )
             } else {
-                LazyColumn(
+                FadingEdgeLazyColumn(
                     modifier        = Modifier.fillMaxSize(),
-                    contentPadding  = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                    contentPadding  = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 12.dp),
                 ) {
                     items(state.data, key = { it.id }) { order ->
                         OrderCard(
@@ -184,6 +182,7 @@ private fun MyOrdersPage(
                                 }
                             } else null
                         )
+                        Spacer(Modifier.height(12.dp))
                     }
                 }
             }

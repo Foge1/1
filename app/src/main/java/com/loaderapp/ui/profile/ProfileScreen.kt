@@ -162,18 +162,15 @@ private fun ProfileContent(
     ) {
 
         // ── Шапка профиля ─────────────────────────────────────────────────────
-        Box(
-            modifier = Modifier
+        // Намеренно без дополнительного background — градиент уже задан через
+        // scrollableGradientBackground на Column. Добавлять второй Brush здесь
+        // создаёт наложение двух полупрозрачных слоёв → видимая полоса при скролле.
+        Column(
+            modifier            = Modifier
                 .fillMaxWidth()
-                .background(
-                    Brush.verticalGradient(
-                        listOf(primary.copy(alpha = 0.12f), Color.Transparent)
-                    )
-                )
                 .padding(24.dp),
-            contentAlignment = Alignment.Center
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
 
                 // Аватар-инициалы
                 Box(
@@ -242,8 +239,8 @@ private fun ProfileContent(
 
                 // Звёздочки убраны по требованию — рейтинг отображается
                 // в карточках статистики, дублировать его здесь избыточно
-            }
         }
+
 
         // ── Статистика ────────────────────────────────────────────────────────
         Row(

@@ -12,7 +12,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
@@ -36,12 +38,31 @@ fun AppBottomBar(
     onItemSelected: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val shadowColor = MaterialTheme.colorScheme.background
+
     Surface(
-        modifier      = modifier.fillMaxWidth(),
-        shape         = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp),
-        color         = MaterialTheme.colorScheme.surface,
+        modifier = modifier
+            .fillMaxWidth()
+            // Тень вверх — рисуем градиентную полосу НАД навбаром через drawBehind.
+            // drawBehind рисует до отрисовки самой Surface, поэтому полоса
+            // визуально «уходит» выше навбара, создавая плавный переход к контенту.
+            // Высота 24dp достаточна для мягкого fade без агрессивного затемнения.
+            .drawBehind {
+                drawRect(
+                    brush = Brush.verticalGradient(
+                        colors = listOf(
+                            Color.Transparent,
+                            shadowColor.copy(alpha = 0.55f)
+                        ),
+                        startY = -24.dp.toPx(),
+                        endY   = 0f
+                    )
+                )
+            },
+        shape           = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp),
+        color           = MaterialTheme.colorScheme.surface,
         tonalElevation  = 0.dp,
-        shadowElevation = 16.dp
+        shadowElevation = 12.dp
     ) {
         Row(
             modifier = Modifier
