@@ -102,7 +102,7 @@ private fun OrderDetailContent(
         OrderInfoCard {
             InfoRow(Icons.Default.Payments,    "Ставка",       "${order.pricePerHour.toInt()} ₽/час")
             InfoRow(Icons.Default.Timer,       "Длительность", "${order.estimatedHours} ч")
-            InfoRow(Icons.Default.AttachMoney, "Итого",        "${order.totalPrice.toInt()} ₽")
+            InfoRow(Icons.Default.CurrencyRuble, "Итого",        "${order.totalPrice.toInt()} ₽")
         }
 
         // Грузчики

@@ -18,7 +18,7 @@ class GetOrdersByWorkerUseCase @Inject constructor(
     private val orderRepository: OrderRepository
 ) : FlowUseCase<GetOrdersByWorkerParams, Flow<List<OrderModel>>>() {
     
-    override suspend fun execute(params: GetOrdersByWorkerParams): Flow<List<OrderModel>> {
+    override fun execute(params: GetOrdersByWorkerParams): Flow<List<OrderModel>> {
         return orderRepository.getOrdersByWorker(params.workerId)
     }
 }

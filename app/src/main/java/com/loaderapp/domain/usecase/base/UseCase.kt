@@ -6,76 +6,47 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 /**
- * Базовый абстрактный класс для UseCase
- * Инкапсулирует выполнение бизнес-логики с автоматическим переключением на IO dispatcher
- * 
- * @param Input - тип входных параметров
- * @param Output - тип результата
+ * Base UseCase for suspend operations returning [Result].
+ * Automatically switches to [dispatcher] (default IO) and wraps exceptions.
  */
 abstract class UseCase<in Input, out Output>(
     private val dispatcher: CoroutineDispatcher = Dispatchers.IO
 ) {
-    
-    /**
-     * Выполнить UseCase
-     */
     suspend operator fun invoke(params: Input): Result<@UnsafeVariance Output> {
         return try {
-            withContext(dispatcher) {
-                execute(params)
-            }
+            withContext(dispatcher) { execute(params) }
         } catch (e: Exception) {
-            Result.Error(
-                message = e.message ?: "Неизвестная ошибка",
-                exception = e
-            )
+            Result.Error(message = e.message ?: "Неизвестная ошибка", exception = e)
         }
     }
-    
-    /**
-     * Реализация бизнес-логики
-     * Должна быть переопределена в конкретных UseCase
-     */
+
     @Throws(Exception::class)
     protected abstract suspend fun execute(params: Input): Result<@UnsafeVariance Output>
 }
 
 /**
- * UseCase без параметров
+ * UseCase without parameters.
  */
 abstract class NoParamsUseCase<out Output>(
     dispatcher: CoroutineDispatcher = Dispatchers.IO
 ) : UseCase<Unit, Output>(dispatcher) {
-    
-    suspend operator fun invoke(): Result<@UnsafeVariance Output> {
-        return invoke(Unit)
-    }
+    suspend operator fun invoke(): Result<@UnsafeVariance Output> = invoke(Unit)
 }
 
 /**
- * UseCase для Flow операций (без Result wrapper)
+ * Base UseCase for Flow-based operations.
+ *
+ * [invoke] is **not** suspend: building a Flow is not a suspending operation.
+ * The Flow itself may internally use suspend functions when collected.
  */
 abstract class FlowUseCase<in Input, out Output> {
-    
-    /**
-     * Выполнить UseCase и вернуть Flow
-     */
-    suspend operator fun invoke(params: Input): Output {
-        return execute(params)
-    }
-    
-    /**
-     * Реализация бизнес-логики для Flow
-     */
-    protected abstract suspend fun execute(params: Input): Output
+    operator fun invoke(params: Input): Output = execute(params)
+    protected abstract fun execute(params: Input): Output
 }
 
 /**
- * FlowUseCase без параметров
+ * FlowUseCase without parameters.
  */
 abstract class NoParamsFlowUseCase<out Output> : FlowUseCase<Unit, Output>() {
-    
-    suspend operator fun invoke(): Output {
-        return invoke(Unit)
-    }
+    operator fun invoke(): Output = invoke(Unit)
 }

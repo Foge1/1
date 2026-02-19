@@ -26,7 +26,7 @@ class GetDispatcherStatsUseCase @Inject constructor(
     private val orderRepository: OrderRepository
 ) : FlowUseCase<GetDispatcherStatsParams, Flow<DispatcherStats>>() {
     
-    override suspend fun execute(params: GetDispatcherStatsParams): Flow<DispatcherStats> {
+    override fun execute(params: GetDispatcherStatsParams): Flow<DispatcherStats> {
         return combine(
             orderRepository.getDispatcherCompletedCount(params.dispatcherId),
             orderRepository.getDispatcherActiveCount(params.dispatcherId)

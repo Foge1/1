@@ -96,7 +96,7 @@ fun OrderCard(
             ) {
                 OrderParamChip(Icons.Default.Person,      "${order.requiredWorkers} чел")
                 OrderParamChip(Icons.Default.Schedule,    "${order.estimatedHours} ч")
-                OrderParamChip(Icons.Default.AttachMoney, "${order.pricePerHour}₽/ч")
+                OrderParamChip(Icons.Default.CurrencyRuble, "${order.pricePerHour.toInt()}₽/ч")
                 OrderParamChip(Icons.Default.Star,        "≥${order.minWorkerRating}")
             }
 

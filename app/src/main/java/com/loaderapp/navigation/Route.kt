@@ -18,6 +18,8 @@ sealed class Route(val route: String) {
         fun createRoute(orderId: Long, isDispatcher: Boolean) =
             "order/$orderId?isDispatcher=$isDispatcher"
     }
+
+    object CreateOrder : Route("create_order")
 }
 
 object NavArgs {

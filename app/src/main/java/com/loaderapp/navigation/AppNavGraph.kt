@@ -131,8 +131,8 @@ fun AppNavGraph(
             val orderId      = backStack.arguments?.getLong(NavArgs.ORDER_ID)      ?: return@composable
             val isDispatcher = backStack.arguments?.getBoolean(NavArgs.IS_DISPATCHER) ?: false
             val vm: OrderDetailViewModel = hiltViewModel()
-            LaunchedEffect(orderId) { vm.loadOrder(orderId) }
-
+            // No LaunchedEffect needed: OrderDetailViewModel reads orderId from
+            // SavedStateHandle in init{} and starts loading automatically.
             OrderDetailScreen(
                 viewModel    = vm,
                 isDispatcher = isDispatcher,

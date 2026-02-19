@@ -20,6 +20,7 @@ import com.loaderapp.presentation.loader.LoaderViewModel
 import com.loaderapp.presentation.session.SessionViewModel
 import com.loaderapp.ui.components.AppBottomBar
 import com.loaderapp.ui.components.BottomNavItem
+import com.loaderapp.ui.dispatcher.CreateOrderScreen
 import com.loaderapp.ui.dispatcher.DispatcherScreen
 import com.loaderapp.ui.history.HistoryScreen
 import com.loaderapp.ui.loader.LoaderScreen
@@ -28,27 +29,34 @@ import com.loaderapp.ui.rating.RatingScreen
 import com.loaderapp.ui.settings.SettingsScreen
 
 /**
- * CompositionLocal для передачи высоты навбара в дочерние экраны.
+ * CompositionLocal для передачи высоты Bottom Navigation в дочерние экраны.
  *
- * Экраны читают это значение и добавляют его к bottomContentPadding списков,
- * чтобы последняя карточка не была скрыта навбаром при прокрутке в конец.
- * Fade-эффект скрывает карточки визуально раньше, но физически скролл
- * должен давать доступ ко всему контенту.
+ * Экраны используют это значение для нижнего contentPadding в списках,
+ * чтобы последняя карточка не скрывалась под навбаром при прокрутке.
  */
 val LocalBottomNavHeight = compositionLocalOf { 0.dp }
 
 private data class TabConfig(val route: String, val item: BottomNavItem)
+
+/**
+ * Декларативное множество маршрутов, скрывающих Bottom Navigation.
+ * Добавление нового полноэкранного экрана = одна строка здесь.
+ * Никакой условной логики в коде.
+ */
+private val FULLSCREEN_ROUTES: Set<String> = setOf(
+    Route.CreateOrder.route
+)
 
 @Composable
 private fun tabsForRole(role: UserRoleModel): List<TabConfig> {
     val homeIcon = if (role == UserRoleModel.DISPATCHER) Icons.Default.Dashboard
                    else Icons.Default.LocalShipping
     return listOf(
-        TabConfig(Route.Home.route,     BottomNavItem(homeIcon,              "Заказы")),
+        TabConfig(Route.Home.route,     BottomNavItem(homeIcon,               "Заказы")),
         TabConfig(Route.History.route,  BottomNavItem(Icons.Default.History,  "История")),
         TabConfig(Route.Rating.route,   BottomNavItem(Icons.Default.Star,     "Рейтинг")),
         TabConfig(Route.Profile.route,  BottomNavItem(Icons.Default.Person,   "Профиль")),
-        TabConfig(Route.Settings.route, BottomNavItem(Icons.Default.Settings,  "Настройки"))
+        TabConfig(Route.Settings.route, BottomNavItem(Icons.Default.Settings, "Настройки"))
     )
 }
 
@@ -64,54 +72,59 @@ fun MainScreen(
     val navBackStack  by navController.currentBackStackEntryAsState()
     val currentRoute  = navBackStack?.destination?.route
     val tabs          = tabsForRole(user.role)
+
+    val isFullscreen  = currentRoute in FULLSCREEN_ROUTES
     val selectedIndex = tabs.indexOfFirst { it.route == currentRoute }.coerceAtLeast(0)
 
     Scaffold(
         bottomBar = {
-            AppBottomBar(
-                items         = tabs.map { it.item },
-                selectedIndex = selectedIndex,
-                onItemSelected = { index ->
-                    val route = tabs[index].route
-                    if (route != currentRoute) {
-                        navController.navigate(route) {
-                            popUpTo(navController.graph.findStartDestination().id) {
-                                saveState = true
+            if (!isFullscreen) {
+                AppBottomBar(
+                    items          = tabs.map { it.item },
+                    selectedIndex  = selectedIndex,
+                    onItemSelected = { index ->
+                        val route = tabs[index].route
+                        if (route != currentRoute) {
+                            navController.navigate(route) {
+                                popUpTo(navController.graph.findStartDestination().id) {
+                                    saveState = true
+                                }
+                                launchSingleTop = true
+                                restoreState    = true
                             }
-                            launchSingleTop = true
-                            restoreState    = true
                         }
                     }
-                }
-            )
+                )
+            }
         }
     ) { innerPadding ->
-        // Передаём только bottom из innerPadding — он несёт высоту навбара
-        // с учётом gesture navigation и системных insets.
-        // top = 0: каждый экран сам управляет отступом под свой TopBar
-        // через LocalTopBarHeightPx из AppScaffold.
-        val bottomNavHeight: Dp = innerPadding.calculateBottomPadding()
+        val bottomNavHeight: Dp =
+            if (!isFullscreen) innerPadding.calculateBottomPadding() else 0.dp
 
         CompositionLocalProvider(LocalBottomNavHeight provides bottomNavHeight) {
             NavHost(
-                navController       = navController,
-                startDestination    = Route.Home.route,
-                modifier            = Modifier
+                navController      = navController,
+                startDestination   = Route.Home.route,
+                modifier           = Modifier
                     .fillMaxSize()
                     .padding(top = innerPadding.calculateTopPadding()),
-                enterTransition     = { fadeIn(tween(200)) },
-                exitTransition      = { fadeOut(tween(150)) },
-                popEnterTransition  = { fadeIn(tween(200)) },
-                popExitTransition   = { fadeOut(tween(150)) }
+                enterTransition    = { fadeIn(tween(200)) },
+                exitTransition     = { fadeOut(tween(150)) },
+                popEnterTransition = { fadeIn(tween(200)) },
+                popExitTransition  = { fadeOut(tween(150)) }
             ) {
+
                 composable(Route.Home.route) {
                     when (user.role) {
                         UserRoleModel.DISPATCHER -> {
                             val vm: DispatcherViewModel = hiltViewModel()
                             LaunchedEffect(user.id) { vm.initialize(user.id) }
                             DispatcherScreen(
-                                viewModel    = vm,
-                                onOrderClick = { orderId -> onOrderClick(orderId, true) }
+                                viewModel               = vm,
+                                onOrderClick            = { orderId -> onOrderClick(orderId, true) },
+                                onNavigateToCreateOrder = {
+                                    navController.navigate(Route.CreateOrder.route)
+                                }
                             )
                         }
                         UserRoleModel.LOADER -> {
@@ -124,11 +137,43 @@ fun MainScreen(
                         }
                     }
                 }
-                composable(Route.History.route)  { HistoryScreen(userId = user.id) }
+
+                composable(Route.History.route) {
+                    HistoryScreen(
+                        userId       = user.id,
+                        userRole     = user.role,
+                        onOrderClick = { orderId ->
+                            onOrderClick(orderId, user.role == UserRoleModel.DISPATCHER)
+                        }
+                    )
+                }
+
                 composable(Route.Rating.route)   { RatingScreen() }
                 composable(Route.Profile.route)  { ProfileScreen(userId = user.id) }
                 composable(Route.Settings.route) {
                     SettingsScreen(onSwitchRole = { sessionViewModel.logout() })
+                }
+
+                // ── Создание заказа ──────────────────────────────────────────
+                // CreateOrderScreen имеет собственный CreateOrderViewModel,
+                // получаемый через стандартный hiltViewModel() без хаков.
+                // После успешного сохранения VM эмитит NavigationEvent.NavigateUp,
+                // экран вызывает onBack → popBackStack.
+                // DispatcherViewModel узнаёт о новом заказе автоматически
+                // через Room Flow — без прямой связи между VM.
+                composable(
+                    route           = Route.CreateOrder.route,
+                    enterTransition = {
+                        slideInVertically(tween(320)) { it / 6 } + fadeIn(tween(260))
+                    },
+                    exitTransition  = {
+                        slideOutVertically(tween(260)) { it / 6 } + fadeOut(tween(200))
+                    }
+                ) {
+                    CreateOrderScreen(
+                        dispatcherId = user.id,
+                        onBack       = { navController.popBackStack() }
+                    )
                 }
             }
         }

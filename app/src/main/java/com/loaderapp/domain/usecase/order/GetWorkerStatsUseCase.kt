@@ -29,7 +29,7 @@ class GetWorkerStatsUseCase @Inject constructor(
     private val orderRepository: OrderRepository
 ) : FlowUseCase<GetWorkerStatsParams, Flow<WorkerStats>>() {
     
-    override suspend fun execute(params: GetWorkerStatsParams): Flow<WorkerStats> {
+    override fun execute(params: GetWorkerStatsParams): Flow<WorkerStats> {
         return combine(
             orderRepository.getCompletedOrdersCount(params.workerId),
             orderRepository.getTotalEarnings(params.workerId),

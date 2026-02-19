@@ -30,11 +30,11 @@ import kotlinx.coroutines.FlowPreview
 @Composable
 fun DispatcherScreen(
     viewModel: DispatcherViewModel,
-    onOrderClick: (Long) -> Unit
+    onOrderClick: (Long) -> Unit,
+    onNavigateToCreateOrder: () -> Unit
 ) {
     val ordersState       by viewModel.ordersState.collectAsState()
     val snackbarHostState  = remember { SnackbarHostState() }
-    var showCreateDialog  by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         viewModel.snackbarMessage.collect { snackbarHostState.showSnackbar(it) }
@@ -98,7 +98,7 @@ fun DispatcherScreen(
             contentAlignment = Alignment.BottomEnd
         ) {
             ExtendedFloatingActionButton(
-                onClick        = { showCreateDialog = true },
+                onClick        = onNavigateToCreateOrder,
                 icon           = { Icon(Icons.Default.Add, "Создать заказ") },
                 text           = { Text("Создать заказ") },
                 containerColor = MaterialTheme.colorScheme.primary
@@ -110,13 +110,6 @@ fun DispatcherScreen(
             modifier  = Modifier
                 .align(Alignment.BottomCenter)
                 .padding(bottom = bottomNavHeight + 8.dp)
-        )
-    }
-
-    if (showCreateDialog) {
-        CreateOrderDialog(
-            onDismiss = { showCreateDialog = false },
-            onCreate  = { order -> viewModel.createOrder(order) { showCreateDialog = false } }
         )
     }
 }

@@ -22,7 +22,7 @@ class SearchOrdersUseCase @Inject constructor(
     private val orderRepository: OrderRepository
 ) : FlowUseCase<SearchOrdersParams, Flow<List<OrderModel>>>() {
     
-    override suspend fun execute(params: SearchOrdersParams): Flow<List<OrderModel>> {
+    override fun execute(params: SearchOrdersParams): Flow<List<OrderModel>> {
         return orderRepository.searchOrders(params.query, params.status)
     }
 }

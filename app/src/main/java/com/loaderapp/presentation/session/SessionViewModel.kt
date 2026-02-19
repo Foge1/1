@@ -6,32 +6,41 @@ import com.loaderapp.core.common.Result
 import com.loaderapp.data.preferences.UserPreferences
 import com.loaderapp.domain.model.UserModel
 import com.loaderapp.domain.model.UserRoleModel
-import com.loaderapp.domain.repository.UserRepository
+import com.loaderapp.domain.usecase.user.CreateUserParams
+import com.loaderapp.domain.usecase.user.CreateUserUseCase
+import com.loaderapp.domain.usecase.user.GetUserByIdParams
+import com.loaderapp.domain.usecase.user.GetUserByIdUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-// ---------- навигационное намерение ----------
 sealed class SessionDestination {
-    object Loading    : SessionDestination()
-    object Auth       : SessionDestination()
-    object Main       : SessionDestination()   // единый Main для всех ролей
+    object Loading : SessionDestination()
+    object Auth    : SessionDestination()
+    object Main    : SessionDestination()
 
     val isResolved: Boolean get() = this !is Loading
 }
 
-// ---------- публичное состояние сессии ----------
 data class SessionState(
-    val user: UserModel? = null,
+    val user: UserModel?   = null,
     val isLoading: Boolean = false,
-    val error: String? = null
+    val error: String?     = null
 )
 
+/**
+ * ViewModel managing authentication session lifecycle.
+ *
+ * Uses [CreateUserUseCase] and [GetUserByIdUseCase] — no direct Repository access.
+ * This keeps the ViewModel inside Clean Architecture boundaries and ensures
+ * business rules (name validation, initials generation) are always applied.
+ */
 @HiltViewModel
 class SessionViewModel @Inject constructor(
     private val userPreferences: UserPreferences,
-    private val userRepository: UserRepository
+    private val createUserUseCase: CreateUserUseCase,
+    private val getUserByIdUseCase: GetUserByIdUseCase
 ) : ViewModel() {
 
     private val _destination = MutableStateFlow<SessionDestination>(SessionDestination.Loading)
@@ -40,7 +49,6 @@ class SessionViewModel @Inject constructor(
     private val _sessionState = MutableStateFlow(SessionState())
     val sessionState: StateFlow<SessionState> = _sessionState.asStateFlow()
 
-    /** Удобный shortcut — текущий пользователь */
     val currentUser: StateFlow<UserModel?> = sessionState
         .map { it.user }
         .stateIn(viewModelScope, SharingStarted.Eagerly, null)
@@ -49,7 +57,6 @@ class SessionViewModel @Inject constructor(
         resolveSession()
     }
 
-    // ── Восстановление сессии при старте ─────────────────────────────────────
     private fun resolveSession() {
         viewModelScope.launch {
             val userId = userPreferences.getCurrentUserId()
@@ -57,7 +64,7 @@ class SessionViewModel @Inject constructor(
                 _destination.value = SessionDestination.Auth
                 return@launch
             }
-            when (val result = userRepository.getUserById(userId)) {
+            when (val result = getUserByIdUseCase(GetUserByIdParams(userId))) {
                 is Result.Success -> {
                     _sessionState.value = SessionState(user = result.data)
                     _destination.value  = SessionDestination.Main
@@ -70,7 +77,6 @@ class SessionViewModel @Inject constructor(
         }
     }
 
-    // ── Вход: создаём пользователя и сохраняем сессию ────────────────────────
     fun login(name: String, role: UserRoleModel) {
         viewModelScope.launch {
             _sessionState.value = SessionState(isLoading = true)
@@ -82,34 +88,28 @@ class SessionViewModel @Inject constructor(
                 role           = role,
                 rating         = 5.0,
                 birthDate      = null,
-                avatarInitials = buildInitials(name),
+                avatarInitials = "",   // CreateUserUseCase will generate this
                 createdAt      = System.currentTimeMillis()
             )
 
-            when (val result = userRepository.createUser(domainUser)) {
+            when (val createResult = createUserUseCase(CreateUserParams(domainUser))) {
                 is Result.Success -> {
-                    val userId  = result.data
+                    val userId = createResult.data
                     userPreferences.setCurrentUserId(userId)
-
-                    // Перечитываем свежего пользователя из репозитория
-                    when (val userResult = userRepository.getUserById(userId)) {
+                    when (val userResult = getUserByIdUseCase(GetUserByIdParams(userId))) {
                         is Result.Success -> {
                             _sessionState.value = SessionState(user = userResult.data)
                             _destination.value  = SessionDestination.Main
                         }
-                        else -> {
-                            _sessionState.value = SessionState(error = "Ошибка загрузки профиля")
-                        }
+                        else -> _sessionState.value = SessionState(error = "Ошибка загрузки профиля")
                     }
                 }
-                else -> {
-                    _sessionState.value = SessionState(error = "Ошибка создания пользователя")
-                }
+                is Result.Error -> _sessionState.value = SessionState(error = createResult.message)
+                else -> Unit
             }
         }
     }
 
-    // ── Выход / смена роли ───────────────────────────────────────────────────
     fun logout() {
         viewModelScope.launch {
             userPreferences.clearCurrentUser()
@@ -118,15 +118,7 @@ class SessionViewModel @Inject constructor(
         }
     }
 
-    // ── Тема ─────────────────────────────────────────────────────────────────
     fun setDarkTheme(enabled: Boolean) {
         viewModelScope.launch { userPreferences.setDarkTheme(enabled) }
     }
-
-    // ── Helpers ───────────────────────────────────────────────────────────────
-    private fun buildInitials(name: String): String =
-        name.trim().split(" ")
-            .filter { it.isNotEmpty() }
-            .take(2)
-            .joinToString("") { it.first().uppercaseChar().toString() }
 }

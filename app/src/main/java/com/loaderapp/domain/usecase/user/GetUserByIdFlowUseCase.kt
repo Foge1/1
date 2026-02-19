@@ -19,6 +19,6 @@ class GetUserByIdFlowUseCase @Inject constructor(
     private val userRepository: UserRepository
 ) : FlowUseCase<GetUserByIdFlowParams, Flow<UserModel?>>() {
 
-    override suspend fun execute(params: GetUserByIdFlowParams): Flow<UserModel?> =
+    override fun execute(params: GetUserByIdFlowParams): Flow<UserModel?> =
         userRepository.getUserByIdFlow(params.userId)
 }

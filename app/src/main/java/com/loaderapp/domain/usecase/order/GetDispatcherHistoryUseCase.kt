@@ -9,24 +9,22 @@ import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 
 /**
- * Параметры для получения истории заказов грузчика.
- * Поле называется [userId] — семантически верно для любой роли,
- * имплементация фильтрует по грузчику.
+ * Параметры для получения истории заказов диспетчера
  */
-data class GetOrderHistoryParams(val userId: Long)
+data class GetDispatcherHistoryParams(val dispatcherId: Long)
 
 /**
- * UseCase: Получить историю заказов грузчика.
+ * UseCase: Получить историю заказов диспетчера.
  *
- * Возвращает завершённые и отменённые заказы,
+ * Возвращает завершённые и отменённые заказы диспетчера,
  * отсортированные по дате завершения (новые первыми).
  */
-class GetOrderHistoryUseCase @Inject constructor(
+class GetDispatcherHistoryUseCase @Inject constructor(
     private val orderRepository: OrderRepository
-) : FlowUseCase<GetOrderHistoryParams, Flow<List<OrderModel>>>() {
+) : FlowUseCase<GetDispatcherHistoryParams, Flow<List<OrderModel>>>() {
 
-    override fun execute(params: GetOrderHistoryParams): Flow<List<OrderModel>> =
-        orderRepository.getOrdersByWorker(params.userId)
+    override fun execute(params: GetDispatcherHistoryParams): Flow<List<OrderModel>> =
+        orderRepository.getOrdersByDispatcher(params.dispatcherId)
             .map { orders ->
                 orders
                     .filter { it.status == OrderStatusModel.COMPLETED || it.status == OrderStatusModel.CANCELLED }
