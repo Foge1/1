@@ -25,3 +25,7 @@ val ShimmerDark = Color(0xFF2A3438)
 // Splash градиент
 val SplashStart = Color(0xFF006978)
 val SplashEnd = Color(0xFF004F5A)
+
+// Градиент фона экранов (от верха к низу)
+val BackgroundGradientStart = Color(0xFF0F2227)
+val BackgroundGradientEnd   = Color(0xFF0F1416)

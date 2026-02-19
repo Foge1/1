@@ -26,6 +26,7 @@ import com.loaderapp.domain.usecase.order.DispatcherStats
 import com.loaderapp.presentation.dispatcher.DispatcherViewModel
 import com.loaderapp.ui.components.DispatcherOrderCard
 import com.loaderapp.ui.components.EmptyStateView
+import com.loaderapp.ui.components.GradientBackground
 import com.loaderapp.ui.components.GradientTopBar
 import com.loaderapp.ui.components.ErrorView
 import com.loaderapp.ui.components.LoadingView
@@ -67,32 +68,35 @@ fun DispatcherScreen(
         }
     }
     
-    Scaffold(
-        topBar = {
-            DispatcherTopBar()
-        },
-        floatingActionButton = {
-            ExtendedFloatingActionButton(
-                onClick = { showCreateDialog = true },
-                icon = { Icon(Icons.Default.Add, "Создать заказ") },
-                text = { Text("Новый заказ") },
-                containerColor = MaterialTheme.colorScheme.primary
-            )
-        },
-        snackbarHost = { SnackbarHost(snackbarHostState) }
-    ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-        ) {
-            OrdersList(
-                state = ordersState,
-                onOrderClick = onOrderClick,
-                onCancelOrder = { order ->
-                    viewModel.cancelOrder(order)
-                }
-            )
+    GradientBackground {
+        Scaffold(
+            containerColor = androidx.compose.ui.graphics.Color.Transparent,
+            topBar = {
+                DispatcherTopBar()
+            },
+            floatingActionButton = {
+                ExtendedFloatingActionButton(
+                    onClick = { showCreateDialog = true },
+                    icon = { Icon(Icons.Default.Add, "Создать заказ") },
+                    text = { Text("Новый заказ") },
+                    containerColor = MaterialTheme.colorScheme.primary
+                )
+            },
+            snackbarHost = { SnackbarHost(snackbarHostState) }
+        ) { paddingValues ->
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+            ) {
+                OrdersList(
+                    state = ordersState,
+                    onOrderClick = onOrderClick,
+                    onCancelOrder = { order ->
+                        viewModel.cancelOrder(order)
+                    }
+                )
+            }
         }
     }
     

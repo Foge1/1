@@ -32,6 +32,7 @@ import com.loaderapp.domain.model.UserModel
 import com.loaderapp.domain.model.UserRoleModel
 import com.loaderapp.presentation.profile.ProfileViewModel
 import com.loaderapp.ui.components.ErrorView
+import com.loaderapp.ui.components.GradientBackground
 import com.loaderapp.ui.components.GradientTopBar
 import com.loaderapp.ui.components.LoadingView
 import com.loaderapp.ui.theme.GoldStar
@@ -49,30 +50,28 @@ fun ProfileScreen(
 
     LaunchedEffect(userId) { viewModel.initialize(userId) }
 
-    Scaffold(
-        topBar = {
-            GradientTopBar(
-                title = "Профиль",
-                actions = {
-                    if (userState is UiState.Success) {
-                        IconButton(onClick = { /* edit */ }) {
-                            Icon(Icons.Default.Edit, contentDescription = "Редактировать")
-                        }
+    GradientBackground {
+        GradientTopBar(
+            title = "Профиль",
+            actions = {
+                if (userState is UiState.Success) {
+                    IconButton(onClick = { /* edit */ }) {
+                        Icon(Icons.Default.Edit, contentDescription = "Редактировать")
                     }
                 }
-            )
-        }
-    ) { padding ->
+            }
+        )
+
         when (val state = userState) {
             is UiState.Loading -> LoadingView(message = "Загрузка профиля...")
             is UiState.Error   -> ErrorView(message = state.message, onRetry = null)
             is UiState.Success -> ProfileContent(
-                user        = state.data,
-                stats       = stats,
+                user          = state.data,
+                stats         = stats,
                 onSaveProfile = { name, phone, birthDate ->
                     viewModel.saveProfile(userId, name, phone, birthDate)
                 },
-                modifier    = Modifier.padding(padding)
+                modifier      = Modifier.fillMaxSize()
             )
             is UiState.Idle -> Unit
         }
@@ -114,6 +113,9 @@ private fun ProfileContent(
         modifier = modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
+            // Отступ под GradientTopBar (статусбар + высота TopBar ≈ 64dp)
+            .statusBarsPadding()
+            .padding(top = 56.dp)
     ) {
         // Шапка
         Box(

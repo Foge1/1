@@ -42,7 +42,7 @@ private data class TabConfig(
  */
 @Composable
 private fun tabsForRole(role: UserRoleModel): List<TabConfig> {
-    val homeLabel = if (role == UserRoleModel.DISPATCHER) "Заказы" else "Биржа"
+    val homeLabel = if (role == UserRoleModel.DISPATCHER) "Заказы" else "Заказы"
     val homeIcon  = if (role == UserRoleModel.DISPATCHER) Icons.Default.Dashboard
                     else Icons.Default.LocalShipping
 
