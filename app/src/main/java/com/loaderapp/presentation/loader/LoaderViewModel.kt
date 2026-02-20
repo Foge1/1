@@ -2,6 +2,8 @@ package com.loaderapp.presentation.loader
 
 import androidx.lifecycle.viewModelScope
 import com.loaderapp.core.common.UiState
+import com.loaderapp.core.common.onError
+import com.loaderapp.core.common.onSuccess
 import com.loaderapp.domain.model.OrderModel
 import com.loaderapp.domain.model.OrderStatusModel
 import com.loaderapp.domain.usecase.order.*
