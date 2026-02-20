@@ -2,6 +2,7 @@ package com.loaderapp.domain.usecase.order
 
 import com.loaderapp.core.common.Result
 import com.loaderapp.domain.model.OrderModel
+import com.loaderapp.domain.model.OrderRules
 import com.loaderapp.domain.repository.OrderRepository
 import com.loaderapp.domain.usecase.base.UseCase
 import javax.inject.Inject
@@ -16,7 +17,7 @@ data class CreateOrderParams(val order: OrderModel)
  * 
  * Бизнес-правила:
  * - requiredWorkers >= 1
- * - estimatedHours >= 1
+ * - estimatedHours >= [OrderRules.MIN_ESTIMATED_HOURS]
  * - pricePerHour > 0
  */
 class CreateOrderUseCase @Inject constructor(
@@ -31,8 +32,8 @@ class CreateOrderUseCase @Inject constructor(
             return Result.Error("Требуется минимум 1 грузчик")
         }
         
-        if (order.estimatedHours < 1) {
-            return Result.Error("Минимальная длительность заказа - 1 час")
+        if (order.estimatedHours < OrderRules.MIN_ESTIMATED_HOURS) {
+            return Result.Error("Минимальная длительность заказа - ${OrderRules.MIN_ESTIMATED_HOURS} часа")
         }
         
         if (order.pricePerHour <= 0) {

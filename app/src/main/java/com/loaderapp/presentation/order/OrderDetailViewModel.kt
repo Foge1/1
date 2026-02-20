@@ -4,8 +4,8 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import com.loaderapp.core.common.UiState
 import com.loaderapp.domain.model.OrderModel
-import com.loaderapp.domain.usecase.order.GetOrderByIdParams
-import com.loaderapp.domain.usecase.order.GetOrderByIdUseCase
+import com.loaderapp.domain.usecase.order.GetOrderByIdFlowParams
+import com.loaderapp.domain.usecase.order.GetOrderByIdFlowUseCase
 import com.loaderapp.domain.usecase.order.GetWorkerCountParams
 import com.loaderapp.domain.usecase.order.GetWorkerCountUseCase
 import com.loaderapp.navigation.NavArgs
@@ -29,7 +29,7 @@ import javax.inject.Inject
 @HiltViewModel
 class OrderDetailViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
-    private val getOrderByIdUseCase: GetOrderByIdUseCase,
+    private val getOrderByIdFlowUseCase: GetOrderByIdFlowUseCase,
     private val getWorkerCountUseCase: GetWorkerCountUseCase
 ) : BaseViewModel() {
 
@@ -44,15 +44,17 @@ class OrderDetailViewModel @Inject constructor(
     val workerCount: StateFlow<Int> = _workerCount.asStateFlow()
 
     init {
-        loadOrder()
+        observeOrder()
         observeWorkerCount()
     }
 
-    private fun loadOrder() {
-        launchSafe {
-            val result = getOrderByIdUseCase(GetOrderByIdParams(orderId))
-            handleResult(result, _orderState)
-        }
+    private fun observeOrder() {
+        getOrderByIdFlowUseCase(GetOrderByIdFlowParams(orderId))
+            .onEach { order ->
+                _orderState.value = order?.let { UiState.Success(it) } ?: UiState.Error("Заказ не найден")
+            }
+            .catch { e -> _orderState.value = UiState.Error("Ошибка загрузки заказа: ${e.message}") }
+            .launchIn(viewModelScope)
     }
 
     private fun observeWorkerCount() {

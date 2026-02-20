@@ -24,35 +24,16 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.loaderapp.domain.model.OrderModel
-import com.loaderapp.domain.model.OrderStatusModel
+import com.loaderapp.domain.model.OrderRules
 import com.loaderapp.presentation.dispatcher.CreateOrderViewModel
 import com.loaderapp.presentation.dispatcher.NavigationEvent
+import com.loaderapp.presentation.dispatcher.OrderDayOption
 import com.loaderapp.ui.components.GradientTopBar
 import com.loaderapp.ui.theme.GoldStar
 import java.text.SimpleDateFormat
-import java.util.*
+import java.util.Date
+import java.util.Locale
 
-/**
- * Полноэкранный экран создания заказа для диспетчера.
- *
- * ## Архитектурные решения
- *
- * **Собственная ViewModel** ([CreateOrderViewModel]): экран изолирован от
- * [DispatcherViewModel]. После сохранения заказа в Room, [DispatcherViewModel]
- * получает обновление автоматически через реактивный Flow — без прямой связи.
- *
- * **Навигация через [NavigationEvent]**: ViewModel эмитит `NavigateUp` по
- * [Channel], UI подписывается через [LaunchedEffect]. Channel гарантирует
- * доставку события ровно одному подписчику и не теряет его при перекомпозиции.
- *
- * **Сборка [OrderModel]**: происходит здесь, в единственном месте приложения.
- * ViewModel и навигация ничего не знают о полях формы.
- *
- * @param dispatcherId  ID текущего диспетчера, встраивается в создаваемый заказ
- * @param onBack        Навигация назад (кнопка «назад» и успешное создание)
- * @param viewModel     Hilt ViewModel экрана; по умолчанию создаётся автоматически
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CreateOrderScreen(
@@ -61,8 +42,8 @@ fun CreateOrderScreen(
     viewModel: CreateOrderViewModel = hiltViewModel()
 ) {
     val haptic = LocalHapticFeedback.current
+    val uiState by viewModel.uiState.collectAsState()
 
-    // Подписка на one-shot навигационные события из ViewModel
     LaunchedEffect(viewModel) {
         viewModel.navigationEvent.collect { event ->
             when (event) {
@@ -71,78 +52,40 @@ fun CreateOrderScreen(
         }
     }
 
-    // ── Состояние формы ───────────────────────────────────────────────────────
     var address by remember { mutableStateOf("") }
     var cargo by remember { mutableStateOf("") }
     var price by remember { mutableStateOf("") }
-    var estimatedHours by remember { mutableIntStateOf(2) }
     var comment by remember { mutableStateOf("") }
     var requiredWorkers by remember { mutableIntStateOf(1) }
     var minWorkerRating by remember { mutableFloatStateOf(0f) }
 
-    // ── Состояние валидации ───────────────────────────────────────────────────
     var errorFields by remember { mutableStateOf(emptySet<String>()) }
     var showValidationBanner by remember { mutableStateOf(false) }
 
-    // ── Дата / время ─────────────────────────────────────────────────────────
-    val now = remember { Calendar.getInstance() }
-    var selectedDate by remember { mutableLongStateOf(now.timeInMillis) }
-    var selectedHour by remember { mutableIntStateOf(now.get(Calendar.HOUR_OF_DAY)) }
-    var selectedMinute by remember { mutableIntStateOf(now.get(Calendar.MINUTE)) }
     var showDatePicker by remember { mutableStateOf(false) }
     var showTimePicker by remember { mutableStateOf(false) }
 
     val dateFormatter = remember { SimpleDateFormat("dd MMMM yyyy", Locale("ru")) }
     val primary = MaterialTheme.colorScheme.primary
 
-    // ── Валидация ─────────────────────────────────────────────────────────────
     fun validate(): Boolean {
         val errors = buildSet {
             if (address.isBlank()) add("address")
             if (cargo.isBlank()) add("cargo")
-            val p = price.toDoubleOrNull()
-            if (p == null || p <= 0.0) add("price")
+            val parsedPrice = price.toDoubleOrNull()
+            if (parsedPrice == null || parsedPrice <= 0.0) add("price")
         }
         errorFields = errors
         showValidationBanner = errors.isNotEmpty()
         return errors.isEmpty()
     }
 
-    // ── Сборка OrderModel — единственное место в приложении ──────────────────
-    fun buildOrder(): OrderModel {
-        val cal = Calendar.getInstance().apply {
-            timeInMillis = selectedDate
-            set(Calendar.HOUR_OF_DAY, selectedHour)
-            set(Calendar.MINUTE, selectedMinute)
-            set(Calendar.SECOND, 0)
-            set(Calendar.MILLISECOND, 0)
-        }
-        return OrderModel(
-            id               = 0L,                             // присвоит БД
-            address          = address.trim(),
-            dateTime         = cal.timeInMillis,
-            cargoDescription = cargo.trim(),
-            pricePerHour     = price.toDouble(),
-            estimatedHours   = estimatedHours,
-            requiredWorkers  = requiredWorkers,
-            minWorkerRating  = minWorkerRating.coerceIn(0f, 5f),
-            status           = OrderStatusModel.AVAILABLE,
-            createdAt        = System.currentTimeMillis(),
-            completedAt      = null,
-            workerId         = null,
-            dispatcherId     = dispatcherId,
-            workerRating     = null,
-            comment          = comment.trim()
-        )
-    }
-
-    // ── UI ───────────────────────────────────────────────────────────────────
     Scaffold(
         topBar = {
             GradientTopBar(
-                title              = "Новый заказ",
-                navigationIcon     = Icons.Default.ArrowBack,
-                onNavigationClick  = onBack
+                title = "Новый заказ",
+                navigationIcon = Icons.Default.ArrowBack,
+                onNavigationClick = onBack
             )
         }
     ) { padding ->
@@ -155,113 +98,127 @@ fun CreateOrderScreen(
                 .imePadding(),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-
-            // Адрес
             AppField(
-                icon           = Icons.Default.LocationOn,
-                label          = "Адрес *",
-                value          = address,
-                onValueChange  = { address = it; errorFields = errorFields - "address" },
-                placeholder    = "Например: ул. Ленина, 15",
-                isError        = "address" in errorFields,
+                icon = Icons.Default.LocationOn,
+                label = "Адрес *",
+                value = address,
+                onValueChange = { address = it; errorFields = errorFields - "address" },
+                placeholder = "Например: ул. Ленина, 15",
+                isError = "address" in errorFields,
                 keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences)
             )
 
-            // Дата и время
             SectionLabel("Дата и время")
+            DayOptionSelector(
+                selected = uiState.selectedDayOption,
+                onSelect = { option ->
+                    viewModel.onDayOptionSelected(option)
+                    if (option == OrderDayOption.OTHER_DATE) showDatePicker = true
+                }
+            )
+
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 AppPickerButton(
-                    icon      = Icons.Default.DateRange,
-                    label     = dateFormatter.format(Date(selectedDate)),
-                    modifier  = Modifier.weight(1f),
-                    onClick   = { showDatePicker = true }
+                    icon = Icons.Default.DateRange,
+                    label = dateFormatter.format(Date(uiState.selectedDateMillis)),
+                    modifier = Modifier.weight(1f),
+                    onClick = { showDatePicker = true },
+                    enabled = uiState.selectedDayOption == OrderDayOption.OTHER_DATE
                 )
                 AppPickerButton(
-                    icon     = Icons.Default.AccessTime,
-                    label    = "%02d:%02d".format(selectedHour, selectedMinute),
+                    icon = Icons.Default.AccessTime,
+                    label = "%02d:%02d".format(uiState.selectedHour, uiState.selectedMinute),
                     modifier = Modifier.weight(0.7f),
-                    onClick  = { showTimePicker = true }
+                    onClick = { showTimePicker = true }
                 )
             }
 
-            // Описание груза
             AppField(
-                icon            = Icons.Default.Inventory,
-                label           = "Описание груза *",
-                value           = cargo,
-                onValueChange   = { cargo = it; errorFields = errorFields - "cargo" },
-                placeholder     = "Что нужно перевезти",
-                isError         = "cargo" in errorFields,
-                maxLines        = 3,
+                icon = Icons.Default.Inventory,
+                label = "Описание груза *",
+                value = cargo,
+                onValueChange = { cargo = it; errorFields = errorFields - "cargo" },
+                placeholder = "Что нужно перевезти",
+                isError = "cargo" in errorFields,
+                maxLines = 3,
                 keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences)
             )
 
-            // Стоимость
             SectionLabel("Стоимость")
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 AppField(
-                    icon            = Icons.Default.CurrencyRuble,
-                    label           = "₽/час *",
-                    value           = price,
-                    onValueChange   = { price = it; errorFields = errorFields - "price" },
-                    placeholder     = "0",
-                    isError         = "price" in errorFields,
-                    modifier        = Modifier.weight(1f),
+                    icon = Icons.Default.CurrencyRuble,
+                    label = "₽/час *",
+                    value = price,
+                    onValueChange = { price = it; errorFields = errorFields - "price" },
+                    placeholder = "0",
+                    isError = "price" in errorFields,
+                    modifier = Modifier.weight(1f),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                    leadingText     = "₽"
+                    leadingText = "₽"
                 )
                 HoursStepper(
-                    value      = estimatedHours,
-                    onDecrement = { if (estimatedHours > 1) estimatedHours-- },
-                    onIncrement = { if (estimatedHours < 24) estimatedHours++ },
-                    modifier   = Modifier.weight(0.65f)
+                    value = uiState.estimatedHours,
+                    minValue = OrderRules.MIN_ESTIMATED_HOURS,
+                    maxValue = OrderRules.MAX_ESTIMATED_HOURS,
+                    onDecrement = viewModel::decrementHours,
+                    onIncrement = viewModel::incrementHours,
+                    modifier = Modifier.weight(0.65f)
                 )
             }
+            Text(
+                text = "Минимум ${OrderRules.MIN_ESTIMATED_HOURS} часа",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = (-10).dp, start = 4.dp)
+            )
 
-            // Итог
             val priceVal = price.toDoubleOrNull() ?: 0.0
-            if (priceVal > 0.0 && estimatedHours > 0) {
-                TotalRow(pricePerHour = priceVal, hours = estimatedHours, primary = primary)
+            if (priceVal > 0.0) {
+                TotalRow(pricePerHour = priceVal, hours = uiState.estimatedHours, primary = primary)
             }
 
-            // Количество грузчиков
             SectionLabel("Количество грузчиков")
             WorkerCountStepper(
-                value      = requiredWorkers,
+                value = requiredWorkers,
                 onDecrement = { if (requiredWorkers > 1) requiredWorkers-- },
                 onIncrement = { if (requiredWorkers < 50) requiredWorkers++ }
             )
 
-            // Минимальный рейтинг
             SectionLabel("Минимальный рейтинг грузчика")
             RatingSlider(
-                value       = minWorkerRating,
+                value = minWorkerRating,
                 onValueChange = { minWorkerRating = it },
-                primary     = primary
+                primary = primary
             )
 
-            // Комментарий
             AppField(
-                icon            = Icons.Default.Comment,
-                label           = "Комментарий диспетчера",
-                value           = comment,
-                onValueChange   = { comment = it },
-                placeholder     = "Дополнительная информация для грузчика",
-                maxLines        = 3,
+                icon = Icons.Default.Comment,
+                label = "Комментарий диспетчера",
+                value = comment,
+                onValueChange = { comment = it },
+                placeholder = "Дополнительная информация для грузчика",
+                maxLines = 3,
                 keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences)
             )
 
-            // Ошибка валидации
             if (showValidationBanner) {
                 ValidationBanner()
             }
 
-            // Кнопка создания
             Button(
                 onClick = {
                     if (validate()) {
                         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                        viewModel.createOrder(buildOrder())
+                        viewModel.createOrder(
+                            dispatcherId = dispatcherId,
+                            address = address,
+                            cargoDescription = cargo,
+                            pricePerHour = price.toDouble(),
+                            requiredWorkers = requiredWorkers,
+                            minWorkerRating = minWorkerRating,
+                            comment = comment
+                        )
                     }
                 },
                 modifier = Modifier
@@ -278,14 +235,13 @@ fun CreateOrderScreen(
         }
     }
 
-    // Диалог выбора даты
     if (showDatePicker) {
-        val dpState = rememberDatePickerState(initialSelectedDateMillis = selectedDate)
+        val dpState = rememberDatePickerState(initialSelectedDateMillis = uiState.selectedDateMillis)
         DatePickerDialog(
             onDismissRequest = { showDatePicker = false },
             confirmButton = {
                 TextButton(onClick = {
-                    dpState.selectedDateMillis?.let { selectedDate = it }
+                    dpState.selectedDateMillis?.let(viewModel::onDateSelected)
                     showDatePicker = false
                 }) { Text("ОК") }
             },
@@ -295,19 +251,17 @@ fun CreateOrderScreen(
         ) { DatePicker(state = dpState) }
     }
 
-    // Диалог выбора времени
     if (showTimePicker) {
         val tpState = rememberTimePickerState(
-            initialHour   = selectedHour,
-            initialMinute = selectedMinute,
-            is24Hour      = true
+            initialHour = uiState.selectedHour,
+            initialMinute = uiState.selectedMinute,
+            is24Hour = true
         )
         AlertDialog(
             onDismissRequest = { showTimePicker = false },
             confirmButton = {
                 TextButton(onClick = {
-                    selectedHour   = tpState.hour
-                    selectedMinute = tpState.minute
+                    viewModel.onTimeSelected(tpState.hour, tpState.minute)
                     showTimePicker = false
                 }) { Text("ОК") }
             },
@@ -322,8 +276,36 @@ fun CreateOrderScreen(
 // ── Приватные UI-компоненты экрана ────────────────────────────────────────────
 
 @Composable
+private fun DayOptionSelector(
+    selected: OrderDayOption,
+    onSelect: (OrderDayOption) -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        DayOption.values().forEach { option ->
+            FilterChip(
+                selected = selected == option.value,
+                onClick = { onSelect(option.value) },
+                label = { Text(option.label) },
+                modifier = Modifier.weight(1f)
+            )
+        }
+    }
+}
+
+private enum class DayOption(val value: OrderDayOption, val label: String) {
+    TODAY(OrderDayOption.TODAY, "Сегодня"),
+    TOMORROW(OrderDayOption.TOMORROW, "Завтра"),
+    OTHER_DATE(OrderDayOption.OTHER_DATE, "Другая дата")
+}
+
+@Composable
 private fun HoursStepper(
     value: Int,
+    minValue: Int,
+    maxValue: Int,
     onDecrement: () -> Unit,
     onIncrement: () -> Unit,
     modifier: Modifier = Modifier
@@ -354,12 +336,12 @@ private fun HoursStepper(
         ) {
             IconButton(
                 onClick  = onDecrement,
-                enabled  = value > 1,
+                enabled  = value > minValue,
                 modifier = Modifier.size(28.dp)
             ) {
                 Icon(
                     Icons.Default.Remove, null,
-                    tint     = if (value > 1) primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                    tint     = if (value > minValue) primary else MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(16.dp)
                 )
             }
@@ -371,12 +353,12 @@ private fun HoursStepper(
             )
             IconButton(
                 onClick  = onIncrement,
-                enabled  = value < 24,
+                enabled  = value < maxValue,
                 modifier = Modifier.size(28.dp)
             ) {
                 Icon(
                     Icons.Default.Add, null,
-                    tint     = if (value < 24) primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                    tint     = if (value < maxValue) primary else MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(16.dp)
                 )
             }
@@ -623,7 +605,8 @@ fun AppPickerButton(
     icon: ImageVector,
     label: String,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true
 ) {
     val primary = MaterialTheme.colorScheme.primary
     Row(
@@ -631,13 +614,13 @@ fun AppPickerButton(
             .clip(RoundedCornerShape(12.dp))
             .border(1.5.dp, primary.copy(alpha = 0.5f), RoundedCornerShape(12.dp))
             .background(primary.copy(alpha = 0.06f))
-            .clickable(onClick = onClick)
+            .clickable(enabled = enabled, onClick = onClick)
             .padding(horizontal = 12.dp, vertical = 12.dp),
         verticalAlignment     = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        Icon(icon, null, tint = primary, modifier = Modifier.size(18.dp))
-        Text(label, fontSize = 14.sp, fontWeight = FontWeight.Medium, color = primary)
+        Icon(icon, null, tint = if (enabled) primary else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
+        Text(label, fontSize = 14.sp, fontWeight = FontWeight.Medium, color = if (enabled) primary else MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 

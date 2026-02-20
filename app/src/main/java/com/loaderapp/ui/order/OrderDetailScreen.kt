@@ -27,8 +27,8 @@ import java.util.*
 @Composable
 fun OrderDetailScreen(
     viewModel: OrderDetailViewModel,
-    isDispatcher: Boolean,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onOpenChat: (Long) -> Unit
 ) {
     val orderState  by viewModel.orderState.collectAsState()
     val workerCount by viewModel.workerCount.collectAsState()
@@ -63,7 +63,7 @@ fun OrderDetailScreen(
                 OrderDetailContent(
                     order = state.data,
                     workerCount = workerCount,
-                    isDispatcher = isDispatcher,
+                    onOpenChat = onOpenChat,
                     modifier = Modifier.padding(padding)
                 )
 
@@ -76,10 +76,11 @@ fun OrderDetailScreen(
 private fun OrderDetailContent(
     order: OrderModel,
     workerCount: Int,
-    isDispatcher: Boolean,
+    onOpenChat: (Long) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val dateFormat = remember { SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.getDefault()) }
+    val canOpenChat = order.status == OrderStatusModel.TAKEN || order.status == OrderStatusModel.IN_PROGRESS
 
     Column(
         modifier = modifier
@@ -143,6 +144,17 @@ private fun OrderDetailContent(
                         value = "%.1f ⭐".format(order.workerRating)
                     )
                 }
+            }
+        }
+
+        if (canOpenChat) {
+            Button(
+                onClick = { onOpenChat(order.id) },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Icon(Icons.Default.Chat, contentDescription = null)
+                Spacer(Modifier.width(8.dp))
+                Text("Чат")
             }
         }
     }
