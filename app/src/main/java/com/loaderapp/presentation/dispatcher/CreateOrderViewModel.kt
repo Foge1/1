@@ -1,51 +1,164 @@
 package com.loaderapp.presentation.dispatcher
 
-import com.loaderapp.domain.model.OrderModel
-import com.loaderapp.domain.usecase.order.CreateOrderParams
-import com.loaderapp.domain.usecase.order.CreateOrderUseCase
 import com.loaderapp.core.common.onError
 import com.loaderapp.core.common.onSuccess
+import com.loaderapp.domain.model.OrderModel
+import com.loaderapp.domain.model.OrderRules
+import com.loaderapp.domain.model.OrderStatusModel
+import com.loaderapp.domain.usecase.order.CreateOrderParams
+import com.loaderapp.domain.usecase.order.CreateOrderUseCase
 import com.loaderapp.presentation.base.BaseViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
+import java.util.Calendar
 import javax.inject.Inject
 
-/**
- * ViewModel экрана создания заказа.
- *
- * Намеренно изолирован от [DispatcherViewModel]: экран создания заказа —
- * самостоятельная единица с единственной ответственностью. Результат
- * (созданный заказ) немедленно отражается в [DispatcherViewModel] через
- * Room Flow-подписку, без прямой связи между VM.
- *
- * ## Навигация после успеха
- * Использует [Channel] вместо [SharedFlow] для навигационных событий.
- * Channel гарантирует доставку ровно одному подписчику и не теряет
- * событие при пересоздании UI — это стандарт для one-shot событий
- * в продакшн Compose-приложениях.
- */
 @HiltViewModel
 class CreateOrderViewModel @Inject constructor(
     private val createOrderUseCase: CreateOrderUseCase
 ) : BaseViewModel() {
 
-    // Channel для one-shot навигационных событий
     private val _navigationEvent = Channel<NavigationEvent>(Channel.BUFFERED)
     val navigationEvent = _navigationEvent.receiveAsFlow()
 
-    fun createOrder(order: OrderModel) {
+    private val now = Calendar.getInstance()
+    private val _uiState = MutableStateFlow(
+        CreateOrderUiState(
+            selectedDateMillis = now.timeInMillis,
+            selectedHour = now.get(Calendar.HOUR_OF_DAY),
+            selectedMinute = now.get(Calendar.MINUTE),
+            estimatedHours = OrderRules.MIN_ESTIMATED_HOURS
+        )
+    )
+    val uiState: StateFlow<CreateOrderUiState> = _uiState.asStateFlow()
+
+    fun onDayOptionSelected(option: OrderDayOption) {
+        val current = _uiState.value
+        val resolvedDate = when (option) {
+            OrderDayOption.TODAY -> nowAtDayOffset(0)
+            OrderDayOption.TOMORROW -> nowAtDayOffset(1)
+            OrderDayOption.OTHER_DATE -> current.selectedDateMillis
+        }
+        _uiState.value = current.copy(selectedDayOption = option, selectedDateMillis = resolvedDate)
+    }
+
+    fun onDateSelected(dateMillis: Long) {
+        _uiState.value = _uiState.value.copy(
+            selectedDateMillis = dateMillis,
+            selectedDayOption = resolveDayOption(dateMillis)
+        )
+    }
+
+    fun onTimeSelected(hour: Int, minute: Int) {
+        _uiState.value = _uiState.value.copy(selectedHour = hour, selectedMinute = minute)
+    }
+
+    fun incrementHours() {
+        val state = _uiState.value
+        if (state.estimatedHours < OrderRules.MAX_ESTIMATED_HOURS) {
+            _uiState.value = state.copy(estimatedHours = state.estimatedHours + 1)
+        }
+    }
+
+    fun decrementHours() {
+        val state = _uiState.value
+        if (state.estimatedHours > OrderRules.MIN_ESTIMATED_HOURS) {
+            _uiState.value = state.copy(estimatedHours = state.estimatedHours - 1)
+        }
+    }
+
+    fun createOrder(
+        dispatcherId: Long,
+        address: String,
+        cargoDescription: String,
+        pricePerHour: Double,
+        requiredWorkers: Int,
+        minWorkerRating: Float,
+        comment: String
+    ) {
+        val state = _uiState.value
+        val order = OrderModel(
+            id = 0,
+            address = address.trim(),
+            dateTime = buildDateTimeMillis(state.selectedDateMillis, state.selectedHour, state.selectedMinute),
+            cargoDescription = cargoDescription.trim(),
+            pricePerHour = pricePerHour,
+            estimatedHours = state.estimatedHours.coerceIn(OrderRules.MIN_ESTIMATED_HOURS, OrderRules.MAX_ESTIMATED_HOURS),
+            requiredWorkers = requiredWorkers,
+            minWorkerRating = minWorkerRating.coerceIn(0f, 5f),
+            status = OrderStatusModel.AVAILABLE,
+            createdAt = System.currentTimeMillis(),
+            completedAt = null,
+            workerId = null,
+            dispatcherId = dispatcherId,
+            workerRating = null,
+            comment = comment.trim()
+        )
+
         launchSafe {
             createOrderUseCase(CreateOrderParams(order))
-                .onSuccess { _ ->
+                .onSuccess {
                     showSnackbar("Заказ создан успешно")
                     _navigationEvent.send(NavigationEvent.NavigateUp)
                 }
                 .onError { msg, _ -> showSnackbar(msg) }
         }
     }
+
+    private fun resolveDayOption(dateMillis: Long): OrderDayOption {
+        val today = normalizeToStartOfDay(nowAtDayOffset(0))
+        val tomorrow = normalizeToStartOfDay(nowAtDayOffset(1))
+        val selected = normalizeToStartOfDay(dateMillis)
+        return when (selected) {
+            today -> OrderDayOption.TODAY
+            tomorrow -> OrderDayOption.TOMORROW
+            else -> OrderDayOption.OTHER_DATE
+        }
+    }
+
+    private fun nowAtDayOffset(offset: Int): Long {
+        return Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, offset) }.timeInMillis
+    }
+
+    private fun normalizeToStartOfDay(timeMillis: Long): Long {
+        return Calendar.getInstance().apply {
+            timeInMillis = timeMillis
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }.timeInMillis
+    }
+
+    private fun buildDateTimeMillis(dateMillis: Long, hour: Int, minute: Int): Long {
+        return Calendar.getInstance().apply {
+            timeInMillis = dateMillis
+            set(Calendar.HOUR_OF_DAY, hour)
+            set(Calendar.MINUTE, minute)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }.timeInMillis
+    }
+}
+
+data class CreateOrderUiState(
+    val selectedDayOption: OrderDayOption = OrderDayOption.TODAY,
+    val selectedDateMillis: Long,
+    val selectedHour: Int,
+    val selectedMinute: Int,
+    val estimatedHours: Int
+)
+
+enum class OrderDayOption {
+    TODAY,
+    TOMORROW,
+    OTHER_DATE
 }
 
 sealed class NavigationEvent {
-    object NavigateUp : NavigationEvent()
+    data object NavigateUp : NavigationEvent()
 }
