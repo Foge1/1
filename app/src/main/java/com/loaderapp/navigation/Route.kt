@@ -20,6 +20,10 @@ sealed class Route(val route: String) {
     }
 
     object CreateOrder : Route("create_order")
+
+    object Chat : Route("chat/{orderId}") {
+        fun createRoute(orderId: Long) = "chat/$orderId"
+    }
 }
 
 object NavArgs {

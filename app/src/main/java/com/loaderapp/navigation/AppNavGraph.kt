@@ -13,6 +13,7 @@ import com.loaderapp.presentation.session.SessionViewModel
 import com.loaderapp.ui.main.MainScreen
 import com.loaderapp.ui.auth.RoleSelectionScreen
 import com.loaderapp.ui.order.OrderDetailScreen
+import com.loaderapp.ui.chat.ChatScreen
 import com.loaderapp.ui.splash.SplashScreen
 
 @Composable
@@ -127,16 +128,27 @@ fun AppNavGraph(
                 fadeOut(tween(200)) +
                 slideOutVertically(tween(280, easing = FastOutSlowInEasing)) { it / 5 }
             }
-        ) { backStack ->
-            val orderId      = backStack.arguments?.getLong(NavArgs.ORDER_ID)      ?: return@composable
-            val isDispatcher = backStack.arguments?.getBoolean(NavArgs.IS_DISPATCHER) ?: false
+        ) { _ ->
             val vm: OrderDetailViewModel = hiltViewModel()
             // No LaunchedEffect needed: OrderDetailViewModel reads orderId from
             // SavedStateHandle in init{} and starts loading automatically.
             OrderDetailScreen(
                 viewModel    = vm,
-                isDispatcher = isDispatcher,
-                onBack       = { navController.popBackStack() }
+                onBack       = { navController.popBackStack() },
+                onOpenChat   = { chatOrderId -> navController.navigate(Route.Chat.createRoute(chatOrderId)) }
+            )
+        }
+
+        composable(
+            route = Route.Chat.route,
+            arguments = listOf(navArgument(NavArgs.ORDER_ID) { type = NavType.LongType })
+        ) {
+            val user = sessionState.user ?: return@composable
+            ChatScreen(
+                userId = user.id,
+                userName = user.name,
+                userRole = user.role,
+                onBack = { navController.popBackStack() }
             )
         }
     }
