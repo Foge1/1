@@ -162,7 +162,7 @@ private fun OrdersPage(
 
 
 private fun List<OrderModel>.filterByTab(tab: OrdersTab): List<OrderModel> =
-    filter { order -> tab.matches(order.toFeatureStatus()) }
+    filter { order -> com.loaderapp.features.orders.ui.matches(tab, order.toFeatureStatus()) }
 
 private fun OrderModel.toFeatureStatus() = when (status) {
     OrderStatusModel.AVAILABLE -> com.loaderapp.features.orders.domain.OrderStatus.AVAILABLE
