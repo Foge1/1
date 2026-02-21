@@ -101,12 +101,14 @@ class OrdersRepositoryImpl @Inject constructor() : OrdersRepository {
                 }
             }
         }
-        if (oldStatus != null && updatedStatus != null) {
+        val stableOldStatus = oldStatus
+        val stableUpdatedStatus = updatedStatus
+        if (stableOldStatus != null && stableUpdatedStatus != null) {
             logDebug(
                 action = action,
                 orderId = id,
-                oldStatus = oldStatus,
-                newStatus = updatedStatus
+                oldStatus = stableOldStatus,
+                newStatus = stableUpdatedStatus
             )
         }
     }
