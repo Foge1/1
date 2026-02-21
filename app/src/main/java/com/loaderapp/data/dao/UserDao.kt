@@ -19,6 +19,9 @@ interface UserDao {
     
     @Query("SELECT * FROM users WHERE id = :userId")
     fun getUserByIdFlow(userId: Long): Flow<User?>
+
+    @Query("SELECT * FROM users WHERE name = :name AND role = :role LIMIT 1")
+    suspend fun getUserByNameAndRole(name: String, role: UserRole): User?
     
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertUser(user: User): Long
