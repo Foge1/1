@@ -2,29 +2,30 @@ package com.loaderapp.presentation.dispatcher
 
 import androidx.lifecycle.viewModelScope
 import com.loaderapp.core.common.UiState
-import com.loaderapp.core.common.onError
-import com.loaderapp.core.common.onSuccess
 import com.loaderapp.domain.model.OrderModel
-import com.loaderapp.domain.usecase.order.*
+import com.loaderapp.domain.model.OrderStatusModel
+import com.loaderapp.domain.usecase.order.DispatcherStats
+import com.loaderapp.features.orders.data.OrdersRepository
+import com.loaderapp.features.orders.domain.Order
+import com.loaderapp.features.orders.domain.OrderStatus
 import com.loaderapp.presentation.base.BaseViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.FlowPreview
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.*
 import javax.inject.Inject
+import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.update
 
-@OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
+@OptIn(FlowPreview::class)
 @HiltViewModel
 class DispatcherViewModel @Inject constructor(
-    private val getOrdersByDispatcherUseCase: GetOrdersByDispatcherUseCase,
-    private val searchOrdersByDispatcherUseCase: SearchOrdersByDispatcherUseCase,
-    private val createOrderUseCase: CreateOrderUseCase,
-    private val cancelOrderUseCase: CancelOrderUseCase,
-    private val getDispatcherStatsUseCase: GetDispatcherStatsUseCase
+    private val ordersRepository: OrdersRepository
 ) : BaseViewModel() {
-
-    private val _dispatcherId = MutableStateFlow<Long?>(null)
 
     private val _ordersState = MutableStateFlow<UiState<List<OrderModel>>>(UiState.Loading)
     val ordersState: StateFlow<UiState<List<OrderModel>>> = _ordersState.asStateFlow()
@@ -43,59 +44,46 @@ class DispatcherViewModel @Inject constructor(
         observeStats()
     }
 
-    /**
-     * Idempotent: [MutableStateFlow] discards duplicate values, so repeated
-     * calls with the same [dispatcherId] do not restart any Flow pipelines.
-     */
-    fun initialize(dispatcherId: Long) {
-        _dispatcherId.value = dispatcherId
-    }
-
-    // ── Observations ─────────────────────────────────────────────────────────
+    fun initialize(dispatcherId: Long) = Unit
 
     private fun observeOrders() {
-        combine(_dispatcherId.filterNotNull(), _searchQuery.debounce(300)) { id, query -> id to query }
-            .flatMapLatest { (id, query) ->
-                if (query.isBlank()) {
-                    getOrdersByDispatcherUseCase(GetOrdersByDispatcherParams(id))
-                } else {
-                    // Delegate search to the repository/DAO — no in-memory filtering
-                    searchOrdersByDispatcherUseCase(SearchOrdersByDispatcherParams(id, query))
-                }
+        combine(ordersRepository.observeOrders(), _searchQuery.debounce(300)) { orders, query ->
+            if (query.isBlank()) orders else orders.filter { order ->
+                order.address.contains(query, ignoreCase = true) ||
+                    order.title.contains(query, ignoreCase = true) ||
+                    order.comment?.contains(query, ignoreCase = true) == true
             }
-            .onEach { orders -> _ordersState.setSuccess(orders) }
-            .catch  { e -> _ordersState.setError("Ошибка загрузки заказов: ${e.message}") }
+        }
+            .onEach { orders -> _ordersState.value = UiState.Success(orders.map { it.toOrderModel() }) }
             .launchIn(viewModelScope)
     }
 
     private fun observeStats() {
-        _dispatcherId
-            .filterNotNull()
-            .flatMapLatest { id -> getDispatcherStatsUseCase(GetDispatcherStatsParams(id)) }
-            .onEach { stats -> _statsState.setSuccess(stats) }
-            .catch  { e -> _statsState.setError("Ошибка загрузки статистики: ${e.message}") }
+        ordersRepository.observeOrders()
+            .onEach { orders ->
+                _statsState.value = UiState.Success(
+                    DispatcherStats(
+                        completedOrders = orders.count { it.status == OrderStatus.COMPLETED },
+                        activeOrders = orders.count {
+                            it.status == OrderStatus.AVAILABLE || it.status == OrderStatus.IN_PROGRESS
+                        }
+                    )
+                )
+            }
             .launchIn(viewModelScope)
     }
 
-    // ── Actions ───────────────────────────────────────────────────────────────
-
-    /**
-     * Creates an order. On success, a snackbar is shown and the orders list
-     * updates automatically via the Room Flow. No callback needed.
-     */
     fun createOrder(order: OrderModel) {
         launchSafe {
-            createOrderUseCase(CreateOrderParams(order))
-                .onSuccess { _ -> showSnackbar("Заказ создан успешно") }
-                .onError   { msg, _ -> showSnackbar(msg) }
+            ordersRepository.createOrder(order.toFeatureOrder())
+            showSnackbar("Заказ создан успешно")
         }
     }
 
     fun cancelOrder(order: OrderModel) {
         launchSafe {
-            cancelOrderUseCase(CancelOrderParams(order.id))
-                .onSuccess { _ -> showSnackbar("Заказ отменён") }
-                .onError   { msg, _ -> showSnackbar(msg) }
+            ordersRepository.cancelOrder(order.id)
+            showSnackbar("Заказ отменён")
         }
     }
 
@@ -106,3 +94,45 @@ class DispatcherViewModel @Inject constructor(
         if (!active) _searchQuery.value = ""
     }
 }
+
+private fun Order.toOrderModel(): OrderModel {
+    val status = when (status) {
+        OrderStatus.AVAILABLE -> OrderStatusModel.AVAILABLE
+        OrderStatus.IN_PROGRESS -> OrderStatusModel.IN_PROGRESS
+        OrderStatus.COMPLETED -> OrderStatusModel.COMPLETED
+        OrderStatus.CANCELED, OrderStatus.EXPIRED -> OrderStatusModel.CANCELLED
+    }
+
+    return OrderModel(
+        id = id,
+        address = address,
+        dateTime = dateTime,
+        cargoDescription = title,
+        pricePerHour = pricePerHour,
+        estimatedHours = (durationMin / 60).coerceAtLeast(1),
+        requiredWorkers = workersTotal,
+        minWorkerRating = 0f,
+        status = status,
+        createdAt = dateTime,
+        completedAt = null,
+        workerId = if (workersCurrent > 0) 1L else null,
+        dispatcherId = 0L,
+        workerRating = null,
+        comment = comment.orEmpty()
+    )
+}
+
+private fun OrderModel.toFeatureOrder(): Order = Order(
+    id = id,
+    title = cargoDescription.ifBlank { "Заказ" },
+    address = address,
+    pricePerHour = pricePerHour,
+    dateTime = dateTime,
+    durationMin = estimatedHours * 60,
+    workersCurrent = if (workerId == null) 0 else 1,
+    workersTotal = requiredWorkers,
+    tags = listOf(cargoDescription),
+    meta = emptyMap(),
+    comment = comment,
+    status = OrderStatus.AVAILABLE
+)

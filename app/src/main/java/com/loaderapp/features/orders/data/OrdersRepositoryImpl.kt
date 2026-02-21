@@ -3,74 +3,58 @@ package com.loaderapp.features.orders.data
 import com.loaderapp.features.orders.domain.Order
 import com.loaderapp.features.orders.domain.OrderStateMachine
 import com.loaderapp.features.orders.domain.OrderStatus
-import kotlinx.coroutines.delay
+import javax.inject.Inject
+import javax.inject.Singleton
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import java.util.concurrent.atomic.AtomicInteger
-import javax.inject.Inject
-import javax.inject.Singleton
-import kotlin.random.Random
+import kotlinx.coroutines.flow.update
 
 @Singleton
-class FakeOrdersRepository @Inject constructor() : OrdersRepository {
-    private val orders = MutableStateFlow(seedOrders())
-    private val operationCounter = AtomicInteger(0)
+class OrdersRepositoryImpl @Inject constructor() : OrdersRepository {
+    private val ordersFlow = MutableStateFlow(seedOrders())
 
-    override fun observeOrders(): Flow<List<Order>> = orders.asStateFlow()
+    override fun observeOrders(): Flow<List<Order>> = ordersFlow.asStateFlow()
 
     override suspend fun createOrder(order: Order) {
-        simulateLatencyAndMaybeFail()
-        val generatedId = if (order.id > 0) order.id else (orders.value.maxOfOrNull { it.id } ?: 0L) + 1L
-        val newOrder = order.copy(
-            id = generatedId,
-            status = OrderStatus.AVAILABLE
-        )
-        orders.value = orders.value + newOrder
+        val nextId = (ordersFlow.value.maxOfOrNull { it.id } ?: 0L) + 1L
+        val createdOrder = order.copy(id = nextId, status = OrderStatus.AVAILABLE)
+        ordersFlow.update { current -> current + createdOrder }
     }
 
     override suspend fun acceptOrder(id: Long) {
-        simulateLatencyAndMaybeFail()
         mutateOrder(id) { OrderStateMachine.transition(it, OrderStatus.IN_PROGRESS) }
     }
 
     override suspend fun cancelOrder(id: Long, reason: String?) {
-        simulateLatencyAndMaybeFail()
         mutateOrder(id) { OrderStateMachine.transition(it, OrderStatus.CANCELED) }
     }
 
     override suspend fun completeOrder(id: Long) {
-        simulateLatencyAndMaybeFail()
         mutateOrder(id) { OrderStateMachine.transition(it, OrderStatus.COMPLETED) }
     }
 
     override suspend fun refresh() {
-        delay(250)
         val threshold = System.currentTimeMillis() + ONE_HOUR_MS
-        orders.value = orders.value.map { order ->
-            if (order.status == OrderStatus.AVAILABLE && order.dateTime < threshold) {
-                order.copy(status = OrderStatus.EXPIRED)
-            } else {
-                order
+        ordersFlow.update { current ->
+            current.map { order ->
+                if (order.status == OrderStatus.AVAILABLE && order.dateTime < threshold) {
+                    order.copy(status = OrderStatus.EXPIRED)
+                } else {
+                    order
+                }
             }
         }
     }
 
-    private suspend fun simulateLatencyAndMaybeFail() {
-        delay(Random.nextLong(250, 650))
-        val op = operationCounter.incrementAndGet()
-        if (op % 4 == 0 || Random.nextInt(0, 10) == 0) {
-            error("Не удалось выполнить действие. Попробуйте ещё раз.")
-        }
-    }
-
     private fun mutateOrder(id: Long, mutate: (Order) -> Order) {
-        val current = orders.value
-        val index = current.indexOfFirst { it.id == id }
-        require(index >= 0) { "Order not found: $id" }
-        val updated = current.toMutableList()
-        updated[index] = mutate(updated[index])
-        orders.value = updated
+        ordersFlow.update { current ->
+            val index = current.indexOfFirst { it.id == id }
+            require(index >= 0) { "Order not found: $id" }
+            current.mapIndexed { orderIndex, order ->
+                if (orderIndex == index) mutate(order) else order
+            }
+        }
     }
 
     private fun seedOrders(): List<Order> {

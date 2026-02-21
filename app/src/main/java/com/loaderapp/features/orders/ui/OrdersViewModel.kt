@@ -3,8 +3,6 @@ package com.loaderapp.features.orders.ui
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.loaderapp.features.orders.data.OrdersRepository
-import com.loaderapp.features.orders.domain.Order
-import com.loaderapp.features.orders.domain.OrderStateMachine
 import com.loaderapp.features.orders.domain.OrderStatus
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -28,8 +26,6 @@ class OrdersViewModel @Inject constructor(
     private val _snackbarMessage = MutableSharedFlow<String>()
     val snackbarMessage: SharedFlow<String> = _snackbarMessage.asSharedFlow()
 
-    private var latestOrders: List<Order> = emptyList()
-
     init {
         observeOrders()
         refresh()
@@ -38,7 +34,6 @@ class OrdersViewModel @Inject constructor(
     private fun observeOrders() {
         viewModelScope.launch {
             ordersRepository.observeOrders().collect { orders ->
-                latestOrders = orders
                 _uiState.update {
                     it.copy(
                         loading = false,
@@ -77,42 +72,14 @@ class OrdersViewModel @Inject constructor(
     fun completeOrder(id: Long) = submitAction(id) { ordersRepository.completeOrder(id) }
 
     private fun submitAction(orderId: Long, action: suspend () -> Unit) {
-        val before = latestOrders
-        val optimistic = buildOptimisticState(before, orderId)
-        _uiState.update {
-            it.copy(
-                pendingActions = it.pendingActions + orderId,
-                availableOrders = optimistic.filterBy(OrderStatus.AVAILABLE),
-                myOrders = optimistic.filter { order ->
-                    order.status == OrderStatus.IN_PROGRESS || order.status == OrderStatus.COMPLETED
-                }.map { order -> order.toUiModel() },
-                inProgressOrders = optimistic.filterBy(OrderStatus.IN_PROGRESS),
-                historyOrders = optimistic.filter {
-                    it.status == OrderStatus.COMPLETED ||
-                        it.status == OrderStatus.CANCELED ||
-                        it.status == OrderStatus.EXPIRED
-                }.map { order -> order.toUiModel() }
-            )
-        }
-
+        _uiState.update { it.copy(pendingActions = it.pendingActions + orderId) }
         viewModelScope.launch {
             runCatching { action() }
                 .onFailure { e ->
-                    latestOrders = before
                     _uiState.update {
                         it.copy(
                             errorMessage = e.message,
-                            pendingActions = it.pendingActions - orderId,
-                            availableOrders = before.filterBy(OrderStatus.AVAILABLE),
-                            myOrders = before.filter { order ->
-                                order.status == OrderStatus.IN_PROGRESS || order.status == OrderStatus.COMPLETED
-                            }.map { order -> order.toUiModel() },
-                            inProgressOrders = before.filterBy(OrderStatus.IN_PROGRESS),
-                            historyOrders = before.filter {
-                                it.status == OrderStatus.COMPLETED ||
-                                    it.status == OrderStatus.CANCELED ||
-                                    it.status == OrderStatus.EXPIRED
-                            }.map { order -> order.toUiModel() }
+                            pendingActions = it.pendingActions - orderId
                         )
                     }
                     _snackbarMessage.emit(e.message ?: "Неизвестная ошибка")
@@ -122,19 +89,7 @@ class OrdersViewModel @Inject constructor(
                 }
         }
     }
-
-    private fun buildOptimisticState(orders: List<Order>, id: Long): List<Order> {
-        return orders.map { order ->
-            if (order.id != id) return@map order
-            when {
-                OrderStateMachine.actionsFor(order).canAccept -> order.copy(status = OrderStatus.IN_PROGRESS)
-                OrderStateMachine.actionsFor(order).canComplete -> order.copy(status = OrderStatus.COMPLETED)
-                OrderStateMachine.actionsFor(order).canCancel -> order.copy(status = OrderStatus.CANCELED)
-                else -> order
-            }
-        }
-    }
 }
 
-private fun List<Order>.filterBy(status: OrderStatus): List<OrderUiModel> =
+private fun List<com.loaderapp.features.orders.domain.Order>.filterBy(status: OrderStatus): List<OrderUiModel> =
     filter { it.status == status }.map { it.toUiModel() }
