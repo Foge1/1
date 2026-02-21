@@ -80,7 +80,7 @@ class DispatcherViewModel @Inject constructor(
         }
     }
 
-    fun cancelOrder(order: OrderModel) {
+    fun onCancelClicked(order: OrderModel) {
         launchSafe {
             ordersRepository.cancelOrder(order.id)
             showSnackbar("Заказ отменён")

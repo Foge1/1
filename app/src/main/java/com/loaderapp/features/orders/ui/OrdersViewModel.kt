@@ -55,13 +55,13 @@ class OrdersViewModel @Inject constructor(
         }
     }
 
-    fun acceptOrder(id: Long) = submitAction(id) { ordersRepository.acceptOrder(id) }
+    fun onAcceptClicked(id: Long) = submitAction(id) { ordersRepository.acceptOrder(id) }
 
-    fun cancelOrder(id: Long, reason: String? = null) = submitAction(id) {
+    fun onCancelClicked(id: Long, reason: String? = null) = submitAction(id) {
         ordersRepository.cancelOrder(id, reason)
     }
 
-    fun completeOrder(id: Long) = submitAction(id) { ordersRepository.completeOrder(id) }
+    fun onCompleteClicked(id: Long) = submitAction(id) { ordersRepository.completeOrder(id) }
 
     private fun submitAction(orderId: Long, action: suspend () -> Unit) {
         _uiState.update { it.copy(pendingActions = it.pendingActions + orderId) }

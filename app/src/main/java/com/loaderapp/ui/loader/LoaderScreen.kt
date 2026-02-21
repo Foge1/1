@@ -89,7 +89,7 @@ fun LoaderScreen(
                         onOrderClick = onOrderClick,
                         action = { order ->
                             ActionButton("Взять заказ", pending = state.pendingActions.contains(order.order.id)) {
-                                viewModel.acceptOrder(order.order.id)
+                                viewModel.onAcceptClicked(order.order.id)
                             }
                         }
                     )
@@ -106,7 +106,7 @@ fun LoaderScreen(
                                 "Отменить",
                                 pending = state.pendingActions.contains(order.order.id),
                                 primary = false
-                            ) { viewModel.cancelOrder(order.order.id) }
+                            ) { viewModel.onCancelClicked(order.order.id) }
                         }
                     )
                     2 -> OrdersPage(

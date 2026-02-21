@@ -22,7 +22,12 @@ class OrdersRepositoryImpl @Inject constructor() : OrdersRepository {
         val nextId = (ordersFlow.value.maxOfOrNull { it.id } ?: 0L) + 1L
         val createdOrder = order.copy(id = nextId, status = OrderStatus.AVAILABLE)
         ordersFlow.update { current -> current + createdOrder }
-        logDebug("createOrder", createdOrder.id, createdOrder.status)
+        logDebug(
+            action = "createOrder",
+            orderId = createdOrder.id,
+            oldStatus = null,
+            newStatus = createdOrder.status
+        )
     }
 
     override suspend fun acceptOrder(id: Long) {
@@ -53,12 +58,21 @@ class OrdersRepositoryImpl @Inject constructor() : OrdersRepository {
     }
 
     override suspend fun refresh() {
-        val threshold = System.currentTimeMillis() + ONE_HOUR_MS
+        val now = System.currentTimeMillis()
         ordersFlow.update { current ->
             current.map { order ->
-                if (order.status == OrderStatus.AVAILABLE && order.dateTime < threshold) {
+                if (order.status == OrderStatus.AVAILABLE && order.dateTime < now) {
                     when (val result = OrderStateMachine.transition(order, OrderStatus.EXPIRED)) {
-                        is OrderTransitionResult.Success -> result.order
+                        is OrderTransitionResult.Success -> {
+                            logDebug(
+                                action = "refresh",
+                                orderId = order.id,
+                                oldStatus = order.status,
+                                newStatus = result.order.status
+                            )
+                            result.order
+                        }
+
                         is OrderTransitionResult.Failure -> order
                     }
                 } else {
@@ -66,12 +80,10 @@ class OrdersRepositoryImpl @Inject constructor() : OrdersRepository {
                 }
             }
         }
-        ordersFlow.value.forEach { order ->
-            logDebug("refresh", order.id, order.status)
-        }
     }
 
     private fun mutateOrder(action: String, id: Long, mutate: (Order) -> Order) {
+        var oldStatus: OrderStatus? = null
         var updatedStatus: OrderStatus? = null
         ordersFlow.update { current ->
             val index = current.indexOfFirst { it.id == id }
@@ -80,6 +92,7 @@ class OrdersRepositoryImpl @Inject constructor() : OrdersRepository {
             }
             current.mapIndexed { orderIndex, order ->
                 if (orderIndex == index) {
+                    oldStatus = order.status
                     val updated = mutate(order)
                     updatedStatus = updated.status
                     updated
@@ -88,15 +101,21 @@ class OrdersRepositoryImpl @Inject constructor() : OrdersRepository {
                 }
             }
         }
-        updatedStatus?.let { status -> logDebug(action, id, status) }
+        if (oldStatus != null && updatedStatus != null) {
+            logDebug(
+                action = action,
+                orderId = id,
+                oldStatus = oldStatus,
+                newStatus = updatedStatus
+            )
+        }
     }
 
-    private fun logDebug(action: String, orderId: Long, status: OrderStatus) {
-        Log.d(LOG_TAG, "$action: id=$orderId, status=$status")
+    private fun logDebug(action: String, orderId: Long, oldStatus: OrderStatus?, newStatus: OrderStatus) {
+        Log.d(LOG_TAG, "$action: id=$orderId, ${oldStatus ?: "NONE"}->$newStatus")
     }
 
     private companion object {
-        const val ONE_HOUR_MS = 60 * 60 * 1000L
         const val LOG_TAG = "OrdersRepo"
     }
 }
