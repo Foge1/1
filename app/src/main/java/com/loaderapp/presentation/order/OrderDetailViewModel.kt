@@ -4,32 +4,26 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import com.loaderapp.core.common.UiState
 import com.loaderapp.domain.model.OrderModel
-import com.loaderapp.domain.usecase.order.GetOrderByIdFlowParams
-import com.loaderapp.domain.usecase.order.GetOrderByIdFlowUseCase
 import com.loaderapp.domain.usecase.order.GetWorkerCountParams
 import com.loaderapp.domain.usecase.order.GetWorkerCountUseCase
+import com.loaderapp.features.orders.data.OrdersRepository
+import com.loaderapp.features.orders.ui.toLegacyOrderModel
 import com.loaderapp.navigation.NavArgs
 import com.loaderapp.presentation.base.BaseViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.*
 import javax.inject.Inject
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onEach
 
-/**
- * ViewModel for the order detail screen.
- *
- * ## Architecture
- * - Injects [GetOrderByIdUseCase] and [GetWorkerCountUseCase] — not [OrderRepository] directly.
- *   ViewModels must never reference Repository interfaces; that breaks Clean Architecture.
- * - Reads [orderId] from [SavedStateHandle] in [init] — no [loadOrder] method exposed to UI.
- *   This is the canonical pattern: the ViewModel is self-sufficient from construction,
- *   no [LaunchedEffect] wiring required in the composable.
- */
-@OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class OrderDetailViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
-    private val getOrderByIdFlowUseCase: GetOrderByIdFlowUseCase,
+    private val ordersRepository: OrdersRepository,
     private val getWorkerCountUseCase: GetWorkerCountUseCase
 ) : BaseViewModel() {
 
@@ -49,9 +43,13 @@ class OrderDetailViewModel @Inject constructor(
     }
 
     private fun observeOrder() {
-        getOrderByIdFlowUseCase(GetOrderByIdFlowParams(orderId))
+        ordersRepository.observeOrders()
+            .map { orders -> orders.firstOrNull { it.id == orderId } }
             .onEach { order ->
-                _orderState.value = order?.let { UiState.Success(it) } ?: UiState.Error("Заказ не найден")
+                _orderState.value = order
+                    ?.toLegacyOrderModel()
+                    ?.let { UiState.Success(it) }
+                    ?: UiState.Error("Заказ не найден")
             }
             .catch { e -> _orderState.value = UiState.Error("Ошибка загрузки заказа: ${e.message}") }
             .launchIn(viewModelScope)
@@ -60,7 +58,7 @@ class OrderDetailViewModel @Inject constructor(
     private fun observeWorkerCount() {
         getWorkerCountUseCase(GetWorkerCountParams(orderId))
             .onEach { count -> _workerCount.value = count }
-            .catch  { /* worker count failure is non-critical */ }
+            .catch  { }
             .launchIn(viewModelScope)
     }
 }
