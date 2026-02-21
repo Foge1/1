@@ -123,7 +123,11 @@ fun MainScreen(
                                 viewModel               = vm,
                                 onOrderClick            = { orderId -> onOrderClick(orderId, true) },
                                 onNavigateToCreateOrder = {
-                                    navController.navigate(Route.CreateOrder.route)
+                                    if (navController.currentDestination?.route != Route.CreateOrder.route) {
+                                        navController.navigate(Route.CreateOrder.route) {
+                                            launchSingleTop = true
+                                        }
+                                    }
                                 }
                             )
                         }
