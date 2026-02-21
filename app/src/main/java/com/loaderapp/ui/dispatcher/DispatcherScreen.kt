@@ -77,7 +77,7 @@ fun DispatcherScreen(
                             emptyTitle      = "Нет доступных заказов",
                             emptyMsg        = "Создайте первый заказ, нажав на кнопку +",
                             onOrderClick    = onOrderClick,
-                            onCancelOrder   = { viewModel.cancelOrder(it) }
+                            onCancelOrder   = { viewModel.onCancelClicked(it) }
                         )
                         1 -> OrdersPage(
                             orders          = activeOrders,
@@ -86,7 +86,7 @@ fun DispatcherScreen(
                             emptyTitle      = "Нет заказов в работе",
                             emptyMsg        = "Активные заказы появятся здесь",
                             onOrderClick    = onOrderClick,
-                            onCancelOrder   = { viewModel.cancelOrder(it) }
+                            onCancelOrder   = { viewModel.onCancelClicked(it) }
                         )
                         2 -> OrdersPage(
                             orders          = historyOrders,
@@ -95,7 +95,7 @@ fun DispatcherScreen(
                             emptyTitle      = "История пуста",
                             emptyMsg        = "Завершённые и отменённые заказы появятся здесь",
                             onOrderClick    = onOrderClick,
-                            onCancelOrder   = { viewModel.cancelOrder(it) }
+                            onCancelOrder   = { viewModel.onCancelClicked(it) }
                         )
                     }
                 }
