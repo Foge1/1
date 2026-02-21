@@ -3,6 +3,7 @@ package com.loaderapp.ui.components
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -121,6 +122,7 @@ private fun AddressDateBlock(order: OrderModel, innerSpacing: androidx.compose.u
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun MetaInfoRow(order: OrderModel, innerSpacing: androidx.compose.ui.unit.Dp) {
     FlowRow(
