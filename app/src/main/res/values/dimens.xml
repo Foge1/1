@@ -15,4 +15,6 @@
     <dimen name="order_status_vertical_padding">4dp</dimen>
     <dimen name="order_detail_screen_padding">16dp</dimen>
     <dimen name="order_detail_block_spacing">12dp</dimen>
+    <dimen name="order_action_button_height">52dp</dimen>
+    <dimen name="order_action_button_radius">14dp</dimen>
 </resources>

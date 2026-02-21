@@ -3,14 +3,16 @@ package com.loaderapp.ui.components
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Groups
-import androidx.compose.material.icons.filled.Timer
+import androidx.compose.material.icons.rounded.Groups
+import androidx.compose.material.icons.rounded.Timer
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -30,18 +32,18 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.dimensionResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.tooling.preview.Preview
 import com.loaderapp.R
 import com.loaderapp.domain.model.OrderModel
 import com.loaderapp.domain.model.OrderStatusModel
 import com.loaderapp.ui.theme.LoaderAppTheme
-import com.loaderapp.ui.theme.orderBodyStyle
 import com.loaderapp.ui.theme.orderLabelStyle
 import com.loaderapp.ui.theme.orderTitleLargeStyle
-import com.loaderapp.ui.theme.orderTitleMediumStyle
 import com.loaderapp.ui.theme.statusAvailable
 import com.loaderapp.ui.theme.statusCompleted
 import com.loaderapp.ui.theme.statusInProgress
@@ -69,7 +71,7 @@ fun OrderCard(
             .alpha(if (enabled) 1f else 0.5f)
             .clickable(enabled = enabled, onClick = onClick),
         shape = RoundedCornerShape(cardRadius),
-        elevation = CardDefaults.cardElevation(defaultElevation = cardRadius / 8),
+        elevation = CardDefaults.cardElevation(defaultElevation = dimensionResource(id = R.dimen.order_spacing_8)),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Column(
@@ -94,7 +96,8 @@ private fun HeaderRow(order: OrderModel) {
         OrderStatusChip(status = order.status)
         Text(
             text = "${order.pricePerHour.toInt()} ₽/ч",
-            style = orderTitleMediumStyle(),
+            style = MaterialTheme.typography.headlineSmall,
+            fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.primary
         )
     }
@@ -106,7 +109,8 @@ private fun AddressDateBlock(order: OrderModel, innerSpacing: androidx.compose.u
         Text(
             text = order.address,
             style = orderTitleLargeStyle(),
-            maxLines = 2,
+            fontWeight = FontWeight.SemiBold,
+            maxLines = 1,
             overflow = TextOverflow.Ellipsis
         )
         Text(
@@ -119,51 +123,53 @@ private fun AddressDateBlock(order: OrderModel, innerSpacing: androidx.compose.u
 
 @Composable
 private fun MetaInfoRow(order: OrderModel, innerSpacing: androidx.compose.ui.unit.Dp) {
-    Row(
+    FlowRow(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(innerSpacing),
-        verticalAlignment = Alignment.CenterVertically
+        verticalArrangement = Arrangement.spacedBy(innerSpacing / 2)
     ) {
-        MetaItem(
-            icon = Icons.Default.Timer,
+        ParameterChip(
+            icon = Icons.Rounded.Timer,
             value = "Минимум ${order.estimatedHours} часов",
-            innerSpacing = innerSpacing,
-            modifier = Modifier.weight(1f)
+            innerSpacing = innerSpacing
         )
-        MetaItem(
-            icon = Icons.Default.Groups,
+        ParameterChip(
+            icon = Icons.Rounded.Groups,
             value = "${order.requiredWorkers} грузчиков",
-            innerSpacing = innerSpacing,
-            modifier = Modifier.weight(1f)
+            innerSpacing = innerSpacing
         )
     }
 }
 
 @Composable
-private fun MetaItem(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
+private fun ParameterChip(
+    icon: ImageVector,
     value: String,
-    innerSpacing: androidx.compose.ui.unit.Dp,
-    modifier: Modifier = Modifier
+    innerSpacing: androidx.compose.ui.unit.Dp
 ) {
-    Row(
-        modifier = modifier,
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(innerSpacing / 2)
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
+        shape = RoundedCornerShape(999.dp)
     ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            modifier = Modifier.size(dimensionResource(id = R.dimen.order_icon_size)),
-            tint = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        Text(
-            text = value,
-            style = orderBodyStyle(),
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis
-        )
+        Row(
+            modifier = Modifier.padding(horizontal = innerSpacing, vertical = innerSpacing / 2),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(innerSpacing / 2)
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                modifier = Modifier.size(dimensionResource(id = R.dimen.order_icon_size)),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Text(
+                text = value,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
     }
 }
 
@@ -189,9 +195,12 @@ private fun ActionButton(
     Button(
         onClick = onClick,
         enabled = enabled && order.status == OrderStatusModel.AVAILABLE,
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(dimensionResource(id = R.dimen.order_action_button_height)),
+        shape = RoundedCornerShape(dimensionResource(id = R.dimen.order_action_button_radius))
     ) {
-        Text(title)
+        Text(title, fontWeight = FontWeight.Bold)
     }
 }
 
@@ -212,10 +221,13 @@ fun DispatcherOrderCard(
             if (order.status == OrderStatusModel.AVAILABLE || order.status == OrderStatusModel.TAKEN) {
                 OutlinedButton(
                     onClick = { showCancelDialog = true },
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(dimensionResource(id = R.dimen.order_action_button_height)),
+                    shape = RoundedCornerShape(dimensionResource(id = R.dimen.order_action_button_radius)),
                     colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)
                 ) {
-                    Text("Отменить заказ")
+                    Text("Отменить заказ", fontWeight = FontWeight.Bold)
                 }
             }
         }
@@ -257,6 +269,7 @@ fun OrderStatusChip(status: OrderStatusModel) {
                 vertical = dimensionResource(id = R.dimen.order_status_vertical_padding)
             ),
             style = orderLabelStyle(),
+            fontWeight = FontWeight.SemiBold,
             color = color
         )
     }
@@ -268,15 +281,11 @@ fun formatOrderDateTime(timestamp: Long): String {
     val target = Calendar.getInstance().apply { timeInMillis = timestamp }
 
     return when {
-        isSameDay(now, target) -> "Сегодня ${SimpleDateFormat("HH:mm", locale).format(Date(timestamp))}"
+        isSameDay(now, target) -> "Сегодня в ${SimpleDateFormat("HH:mm", locale).format(Date(timestamp))}"
         isSameDay(
             (now.clone() as Calendar).apply { add(Calendar.DAY_OF_YEAR, 1) },
             target
-        ) -> "Завтра ${SimpleDateFormat("HH:mm", locale).format(Date(timestamp))}"
-        isSameDay(
-            (now.clone() as Calendar).apply { add(Calendar.DAY_OF_YEAR, 2) },
-            target
-        ) -> SimpleDateFormat("dd MMM HH:mm", locale).format(Date(timestamp))
+        ) -> "Завтра в ${SimpleDateFormat("HH:mm", locale).format(Date(timestamp))}"
         else -> SimpleDateFormat("dd.MM.yyyy HH:mm", locale).format(Date(timestamp))
     }
 }
