@@ -1,6 +1,5 @@
 package com.loaderapp.ui.components
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -10,19 +9,17 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CalendarToday
-import androidx.compose.material.icons.filled.CurrencyRuble
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Button
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -46,6 +43,7 @@ import com.loaderapp.ui.theme.dateTextStyle
 import com.loaderapp.ui.theme.metaTextStyle
 import com.loaderapp.ui.theme.rateTextStyle
 import java.text.SimpleDateFormat
+import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
@@ -66,7 +64,7 @@ fun OrderCard(
             .fillMaxWidth()
             .clickable(onClick = onClick),
         shape = RoundedCornerShape(cardRadius),
-        elevation = CardDefaults.cardElevation(defaultElevation = cardRadius / 10),
+        elevation = CardDefaults.cardElevation(defaultElevation = cardRadius / 8),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Column(
@@ -74,7 +72,7 @@ fun OrderCard(
             verticalArrangement = Arrangement.spacedBy(sectionSpacing)
         ) {
             HeaderRow(order = order)
-            TimePriceBlock(order = order, innerSpacing = innerSpacing)
+            AddressDateBlock(order = order, innerSpacing = innerSpacing)
             MetaInfoRow(order = order, innerSpacing = innerSpacing)
             ActionButton(order = order, onClick = onClick, actionContent = actionContent)
         }
@@ -85,59 +83,32 @@ fun OrderCard(
 private fun HeaderRow(order: OrderModel) {
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(dimensionResource(id = R.dimen.order_card_inner_spacing)),
-        verticalAlignment = Alignment.CenterVertically
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.Top
     ) {
-        Text(
-            text = order.address,
-            style = addressTextStyle(),
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.weight(1f)
-        )
         OrderStatusChip(status = order.status)
+        Text(
+            text = "${order.pricePerHour.toInt()} ₽/ч",
+            style = rateTextStyle(),
+            color = MaterialTheme.colorScheme.onSurface
+        )
     }
 }
 
 @Composable
-private fun TimePriceBlock(order: OrderModel, innerSpacing: androidx.compose.ui.unit.Dp) {
-    Column(verticalArrangement = Arrangement.spacedBy(innerSpacing)) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(innerSpacing),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Icon(
-                imageVector = Icons.Default.CalendarToday,
-                contentDescription = null,
-                modifier = Modifier.size(dimensionResource(id = R.dimen.order_icon_size)),
-                tint = MaterialTheme.colorScheme.primary
-            )
-            Text(text = formatOrderDateTime(order.dateTime), style = dateTextStyle())
-        }
-
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(innerSpacing),
-            modifier = Modifier
-                .background(
-                    color = MaterialTheme.colorScheme.primaryContainer,
-                    shape = RoundedCornerShape(dimensionResource(id = R.dimen.order_card_inner_spacing))
-                )
-                .padding(innerSpacing)
-        ) {
-            Icon(
-                imageVector = Icons.Default.CurrencyRuble,
-                contentDescription = null,
-                modifier = Modifier.size(dimensionResource(id = R.dimen.order_icon_size)),
-                tint = MaterialTheme.colorScheme.primary
-            )
-            Text(
-                text = "${order.pricePerHour.toInt()} ₽/ч",
-                style = rateTextStyle(),
-                color = MaterialTheme.colorScheme.onPrimaryContainer
-            )
-        }
+private fun AddressDateBlock(order: OrderModel, innerSpacing: androidx.compose.ui.unit.Dp) {
+    Column(verticalArrangement = Arrangement.spacedBy(innerSpacing / 2)) {
+        Text(
+            text = order.address,
+            style = addressTextStyle(),
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis
+        )
+        Text(
+            text = formatOrderDateTime(order.dateTime),
+            style = dateTextStyle(),
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
     }
 }
 
@@ -148,15 +119,36 @@ private fun MetaInfoRow(order: OrderModel, innerSpacing: androidx.compose.ui.uni
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        MetaItem(icon = Icons.Default.Person, value = "${order.requiredWorkers} грузч.", innerSpacing = innerSpacing)
-        MetaItem(icon = Icons.Default.Schedule, value = "${order.estimatedHours} ч", innerSpacing = innerSpacing)
-        MetaItem(icon = Icons.Default.Star, value = "от ${order.minWorkerRating}", innerSpacing = innerSpacing)
+        MetaItem(
+            icon = Icons.Default.Person,
+            value = "Нужно грузчиков: ${order.requiredWorkers}",
+            innerSpacing = innerSpacing,
+            modifier = Modifier.weight(1f)
+        )
+        MetaItem(
+            icon = Icons.Default.Schedule,
+            value = "Время работы: ${order.estimatedHours} ч",
+            innerSpacing = innerSpacing,
+            modifier = Modifier.weight(1f)
+        )
+        MetaItem(
+            icon = Icons.Default.Star,
+            value = "Требуемый рейтинг: ${order.minWorkerRating}",
+            innerSpacing = innerSpacing,
+            modifier = Modifier.weight(1f)
+        )
     }
 }
 
 @Composable
-private fun MetaItem(icon: androidx.compose.ui.graphics.vector.ImageVector, value: String, innerSpacing: androidx.compose.ui.unit.Dp) {
+private fun MetaItem(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    value: String,
+    innerSpacing: androidx.compose.ui.unit.Dp,
+    modifier: Modifier = Modifier
+) {
     Row(
+        modifier = modifier,
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(innerSpacing / 2)
     ) {
@@ -166,7 +158,13 @@ private fun MetaItem(icon: androidx.compose.ui.graphics.vector.ImageVector, valu
             modifier = Modifier.size(dimensionResource(id = R.dimen.order_icon_size)),
             tint = MaterialTheme.colorScheme.onSurfaceVariant
         )
-        Text(value, style = metaTextStyle(), color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(
+            text = value,
+            style = metaTextStyle(),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis
+        )
     }
 }
 
@@ -262,8 +260,29 @@ fun OrderStatusChip(status: OrderStatusModel) {
     }
 }
 
-fun formatOrderDateTime(timestamp: Long): String =
-    SimpleDateFormat("dd MMM, HH:mm", Locale("ru")).format(Date(timestamp))
+fun formatOrderDateTime(timestamp: Long): String {
+    val locale = Locale("ru")
+    val now = Calendar.getInstance()
+    val target = Calendar.getInstance().apply { timeInMillis = timestamp }
+
+    return when {
+        isSameDay(now, target) -> "Сегодня в ${SimpleDateFormat("HH:mm", locale).format(Date(timestamp))}"
+        isSameDay(
+            (now.clone() as Calendar).apply { add(Calendar.DAY_OF_YEAR, 1) },
+            target
+        ) -> "Завтра в ${SimpleDateFormat("HH:mm", locale).format(Date(timestamp))}"
+        isSameDay(
+            (now.clone() as Calendar).apply { add(Calendar.DAY_OF_YEAR, 2) },
+            target
+        ) -> SimpleDateFormat("dd MMM 'в' HH:mm", locale).format(Date(timestamp))
+        else -> SimpleDateFormat("dd.MM.yyyy HH:mm", locale).format(Date(timestamp))
+    }
+}
+
+private fun isSameDay(first: Calendar, second: Calendar): Boolean =
+    first.get(Calendar.ERA) == second.get(Calendar.ERA) &&
+        first.get(Calendar.YEAR) == second.get(Calendar.YEAR) &&
+        first.get(Calendar.DAY_OF_YEAR) == second.get(Calendar.DAY_OF_YEAR)
 
 @Preview(showBackground = true)
 @Composable
