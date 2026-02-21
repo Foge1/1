@@ -1,7 +1,6 @@
 package com.loaderapp.features.orders.data
 
 import android.util.Log
-import com.loaderapp.BuildConfig
 import com.loaderapp.features.orders.domain.Order
 import com.loaderapp.features.orders.domain.OrderStateMachine
 import com.loaderapp.features.orders.domain.OrderStatus
@@ -67,10 +66,8 @@ class OrdersRepositoryImpl @Inject constructor() : OrdersRepository {
                 }
             }
         }
-        if (BuildConfig.DEBUG) {
-            ordersFlow.value.forEach { order ->
-                logDebug("refresh", order.id, order.status)
-            }
+        ordersFlow.value.forEach { order ->
+            logDebug("refresh", order.id, order.status)
         }
     }
 
@@ -95,12 +92,11 @@ class OrdersRepositoryImpl @Inject constructor() : OrdersRepository {
     }
 
     private fun logDebug(action: String, orderId: Long, status: OrderStatus) {
-        if (!BuildConfig.DEBUG) return
-        Log.d(TAG, "$action: id=$orderId, status=$status")
+        Log.d(LOG_TAG, "$action: id=$orderId, status=$status")
     }
 
     private companion object {
         const val ONE_HOUR_MS = 60 * 60 * 1000L
-        const val TAG = "OrdersRepository"
+        const val LOG_TAG = "OrdersRepo"
     }
 }
