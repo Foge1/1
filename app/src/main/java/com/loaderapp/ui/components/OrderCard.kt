@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.CalendarToday
 import androidx.compose.material.icons.rounded.Groups
 import androidx.compose.material.icons.rounded.Schedule
 import androidx.compose.material.icons.rounded.Timelapse
@@ -78,14 +79,13 @@ fun OrderCard(
         ) {
             OrderCardHeader(order = order)
             OrderCardTitle(order = order)
-            OrderMetaChips(order = order)
-            if (order.comment.isNotBlank()) {
-                OrderComment(comment = order.comment)
-            }
+            OrderDateTimeRow(order = order)
+            OrderMetaRow(order = order)
+            OrderCommentBlock(comment = order.comment)
             if (actionContent != null) {
                 if (enabled) actionContent()
             } else {
-                OrderCardActionButton(
+                OrderCTA(
                     order = order,
                     onClick = onClick,
                     enabled = canTakeOrder
@@ -113,16 +113,45 @@ fun OrderCardHeader(order: OrderModel) {
 
 @Composable
 fun OrderCardTitle(order: OrderModel) {
-    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Text(
-            text = order.address,
-            style = orderTitleTextStyle(),
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis
+    Text(
+        text = order.address,
+        style = orderTitleTextStyle(),
+        maxLines = 2,
+        overflow = TextOverflow.Ellipsis
+    )
+}
+
+@Composable
+fun OrderDateTimeRow(order: OrderModel) {
+    val locale = Locale("ru")
+    val dateText = SimpleDateFormat("dd MMMM", locale).format(Date(order.dateTime))
+    val timeText = SimpleDateFormat("HH:mm", locale).format(Date(order.dateTime))
+
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        DateTimeItem(icon = Icons.Rounded.CalendarToday, text = dateText)
+        DateTimeItem(icon = Icons.Rounded.Schedule, text = timeText)
+    }
+}
+
+@Composable
+private fun DateTimeItem(icon: ImageVector, text: String) {
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            modifier = Modifier.size(14.dp),
+            tint = MaterialTheme.colorScheme.onSurfaceVariant
         )
         Text(
-            text = formatOrderDateTime(order.dateTime),
-            style = orderDateTextStyle(),
+            text = text,
+            style = orderMetaTextStyle(),
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
@@ -130,12 +159,12 @@ fun OrderCardTitle(order: OrderModel) {
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun OrderMetaChips(order: OrderModel, workerCount: Int? = null) {
+fun OrderMetaRow(order: OrderModel, workerCount: Int? = null) {
     FlowRow(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        OrderMetaChip(icon = Icons.Rounded.Schedule, text = "${order.cargoDescription}")
+        OrderMetaChip(icon = Icons.Rounded.Schedule, text = order.cargoDescription)
         OrderMetaChip(icon = Icons.Rounded.Timelapse, text = "Мин ${order.estimatedHours}ч")
         val currentWorkers = workerCount ?: order.workerId?.let { 1 } ?: 0
         OrderMetaChip(icon = Icons.Rounded.Groups, text = "$currentWorkers/${order.requiredWorkers}")
@@ -171,19 +200,28 @@ private fun OrderMetaChip(icon: ImageVector, text: String) {
 }
 
 @Composable
-fun OrderComment(comment: String) {
-    Text(
-        text = comment,
-        style = MaterialTheme.typography.bodyMedium.copy(
-            fontSize = 14.sp,
-            lineHeight = 20.sp
-        ),
-        color = MaterialTheme.colorScheme.onSurface
-    )
+fun OrderCommentBlock(comment: String) {
+    if (comment.isBlank()) return
+
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Text(
+            text = comment,
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+            style = MaterialTheme.typography.bodySmall.copy(
+                fontSize = 13.sp,
+                lineHeight = 18.sp,
+                fontWeight = FontWeight.Normal
+            ),
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
 }
 
 @Composable
-private fun OrderCardActionButton(order: OrderModel, onClick: () -> Unit, enabled: Boolean) {
+fun OrderCTA(order: OrderModel, onClick: () -> Unit, enabled: Boolean) {
     val (title, colors) = when (order.status) {
         OrderStatusModel.AVAILABLE -> "Взять заказ" to ButtonDefaults.buttonColors()
         OrderStatusModel.TAKEN, OrderStatusModel.IN_PROGRESS ->
@@ -284,18 +322,15 @@ fun OrderStatusChip(status: OrderStatusModel) {
 
 @Composable
 private fun orderPriceTextStyle(): TextStyle = MaterialTheme.typography.titleLarge.copy(
-    fontSize = 20.sp,
+    fontSize = 24.sp,
     fontWeight = FontWeight.Bold
 )
 
 @Composable
 private fun orderTitleTextStyle(): TextStyle = MaterialTheme.typography.titleMedium.copy(
-    fontSize = 17.sp,
-    fontWeight = FontWeight.SemiBold
+    fontSize = 18.sp,
+    fontWeight = FontWeight.Bold
 )
-
-@Composable
-private fun orderDateTextStyle(): TextStyle = MaterialTheme.typography.labelMedium.copy(fontSize = 13.sp)
 
 @Composable
 private fun orderMetaTextStyle(): TextStyle = MaterialTheme.typography.labelMedium.copy(
