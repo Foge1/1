@@ -167,7 +167,7 @@ fun CreateOrderScreen(
                 )
             }
             Text(
-                text = "Минимум ${OrderRules.MIN_ESTIMATED_HOURS} часа",
+                text = "Минимальный заказ — от ${OrderRules.MIN_ESTIMATED_HOURS} часов",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = (-10).dp, start = 4.dp)
@@ -280,16 +280,18 @@ private fun DayOptionSelector(
     selected: OrderDayOption,
     onSelect: (OrderDayOption) -> Unit
 ) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    SingleChoiceSegmentedButtonRow(
+        modifier = Modifier.fillMaxWidth()
     ) {
-        DayOption.values().forEach { option ->
-            FilterChip(
+        DayOption.entries.forEachIndexed { index, option ->
+            SegmentedButton(
                 selected = selected == option.value,
                 onClick = { onSelect(option.value) },
-                label = { Text(option.label) },
-                modifier = Modifier.weight(1f)
+                shape = SegmentedButtonDefaults.itemShape(
+                    index = index,
+                    count = DayOption.entries.size
+                ),
+                label = { Text(option.label) }
             )
         }
     }
