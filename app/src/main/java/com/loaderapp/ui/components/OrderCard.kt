@@ -3,16 +3,19 @@ package com.loaderapp.ui.components
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.weight
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Cancel
 import androidx.compose.material.icons.rounded.Groups
+import androidx.compose.material.icons.rounded.Chat
 import androidx.compose.material.icons.rounded.Schedule
 import androidx.compose.material.icons.rounded.Timelapse
 import androidx.compose.material3.AlertDialog
@@ -66,10 +69,9 @@ fun OrderCard(
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .alpha(if (enabled) 1f else 0.6f)
             .clickable(enabled = enabled, onClick = onClick),
         shape = RoundedCornerShape(20.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Column(
@@ -85,10 +87,11 @@ fun OrderCard(
             if (actionContent != null) {
                 if (enabled) actionContent()
             } else {
-                OrderCardActionButton(
+                OrderCTAButton(
                     order = order,
                     onClick = onClick,
-                    enabled = canTakeOrder
+                    enabled = canTakeOrder,
+                    variant = OrderCTAButtonVariant.Worker
                 )
             }
         }
@@ -128,14 +131,17 @@ fun OrderCardTitle(order: OrderModel) {
     }
 }
 
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun OrderMetaChips(order: OrderModel, workerCount: Int? = null) {
-    FlowRow(
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        OrderMetaChip(icon = Icons.Rounded.Schedule, text = "${order.cargoDescription}")
+        OrderMetaChip(
+            icon = Icons.Rounded.Schedule,
+            text = "${order.cargoDescription}",
+            modifier = Modifier.weight(1f)
+        )
         OrderMetaChip(icon = Icons.Rounded.Timelapse, text = "Мин ${order.estimatedHours}ч")
         val currentWorkers = workerCount ?: order.workerId?.let { 1 } ?: 0
         OrderMetaChip(icon = Icons.Rounded.Groups, text = "$currentWorkers/${order.requiredWorkers}")
@@ -143,13 +149,18 @@ fun OrderMetaChips(order: OrderModel, workerCount: Int? = null) {
 }
 
 @Composable
-private fun OrderMetaChip(icon: ImageVector, text: String) {
+private fun RowScope.OrderMetaChip(icon: ImageVector, text: String, modifier: Modifier = Modifier) {
     Surface(
+        modifier = modifier
+            .height(32.dp)
+            .widthIn(min = 0.dp),
         color = MaterialTheme.colorScheme.surfaceVariant,
         shape = RoundedCornerShape(12.dp)
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp),
             horizontalArrangement = Arrangement.spacedBy(6.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -176,37 +187,90 @@ fun OrderComment(comment: String) {
         text = comment,
         style = MaterialTheme.typography.bodyMedium.copy(
             fontSize = 14.sp,
-            lineHeight = 20.sp
+            lineHeight = 20.sp,
+            fontWeight = FontWeight.Normal
         ),
-        color = MaterialTheme.colorScheme.onSurface
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        maxLines = 2,
+        overflow = TextOverflow.Ellipsis
     )
 }
 
 @Composable
-private fun OrderCardActionButton(order: OrderModel, onClick: () -> Unit, enabled: Boolean) {
-    val (title, colors) = when (order.status) {
-        OrderStatusModel.AVAILABLE -> "Взять заказ" to ButtonDefaults.buttonColors()
-        OrderStatusModel.TAKEN, OrderStatusModel.IN_PROGRESS ->
-            "Чат" to ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+fun OrderCTAButton(
+    order: OrderModel,
+    onClick: () -> Unit,
+    enabled: Boolean,
+    variant: OrderCTAButtonVariant,
+    modifier: Modifier = Modifier
+) {
+    val (title, colors, icon) = when {
+        variant == OrderCTAButtonVariant.Dispatcher -> Triple(
+            "Отменить",
+            ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
+            Icons.Rounded.Cancel
+        )
+        order.status == OrderStatusModel.AVAILABLE -> Triple(
+            "Взять заказ",
+            ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary
+            ),
+            null
+        )
+        order.status == OrderStatusModel.TAKEN || order.status == OrderStatusModel.IN_PROGRESS ->
+            Triple(
+                "Чат",
+                ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                ),
+                Icons.Rounded.Chat
             )
-
-        OrderStatusModel.COMPLETED, OrderStatusModel.CANCELLED ->
-            "Завершён" to ButtonDefaults.buttonColors()
+        else -> Triple(
+            "Завершён",
+            ButtonDefaults.buttonColors(),
+            null
+        )
     }
 
-    Button(
-        onClick = onClick,
-        enabled = enabled,
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(52.dp),
-        shape = RoundedCornerShape(16.dp),
-        colors = colors
-    ) {
-        Text(text = title, style = orderActionTextStyle())
+    val buttonModifier = modifier
+        .fillMaxWidth()
+        .height(52.dp)
+        .then(if (enabled) Modifier else Modifier.alpha(0.5f))
+
+    if (variant == OrderCTAButtonVariant.Dispatcher) {
+        OutlinedButton(
+            onClick = onClick,
+            enabled = enabled,
+            modifier = buttonModifier,
+            shape = RoundedCornerShape(16.dp),
+            colors = colors
+        ) {
+            if (icon != null) {
+                Icon(imageVector = icon, contentDescription = null, modifier = Modifier.size(16.dp))
+            }
+            Text(text = title, style = orderActionTextStyle())
+        }
+    } else {
+        Button(
+            onClick = onClick,
+            enabled = enabled,
+            modifier = buttonModifier,
+            shape = RoundedCornerShape(16.dp),
+            colors = colors
+        ) {
+            if (icon != null) {
+                Icon(imageVector = icon, contentDescription = null, modifier = Modifier.size(18.dp))
+            }
+            Text(text = title, style = orderActionTextStyle(), modifier = Modifier.padding(start = if (icon == null) 0.dp else 8.dp))
+        }
     }
+}
+
+enum class OrderCTAButtonVariant {
+    Worker,
+    Dispatcher
 }
 
 @Composable
@@ -224,16 +288,12 @@ fun DispatcherOrderCard(
         modifier = modifier,
         actionContent = {
             if (order.status == OrderStatusModel.AVAILABLE || order.status == OrderStatusModel.TAKEN) {
-                OutlinedButton(
+                OrderCTAButton(
+                    order = order,
                     onClick = { showCancelDialog = true },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(52.dp),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)
-                ) {
-                    Text("Отменить", style = orderActionTextStyle())
-                }
+                    enabled = true,
+                    variant = OrderCTAButtonVariant.Dispatcher
+                )
             }
         }
     )
@@ -267,7 +327,7 @@ fun OrderStatusChip(status: OrderStatusModel) {
     Surface(
         color = containerColor,
         shape = RoundedCornerShape(50),
-        modifier = Modifier.height(28.dp)
+        modifier = Modifier.height(26.dp)
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 12.dp),
@@ -275,7 +335,10 @@ fun OrderStatusChip(status: OrderStatusModel) {
         ) {
             Text(
                 text = text,
-                style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
+                style = MaterialTheme.typography.labelMedium.copy(
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Medium
+                ),
                 color = textColor
             )
         }

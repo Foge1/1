@@ -4,16 +4,12 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowBack
-import androidx.compose.material.icons.rounded.Chat
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -36,6 +32,8 @@ import com.loaderapp.ui.components.ErrorView
 import com.loaderapp.ui.components.LoadingView
 import com.loaderapp.ui.components.OrderCardHeader
 import com.loaderapp.ui.components.OrderCardTitle
+import com.loaderapp.ui.components.OrderCTAButton
+import com.loaderapp.ui.components.OrderCTAButtonVariant
 import com.loaderapp.ui.components.OrderComment
 import com.loaderapp.ui.components.OrderMetaChips
 
@@ -117,7 +115,7 @@ private fun OrderDetailsCard(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
@@ -129,21 +127,12 @@ private fun OrderDetailsCard(
             if (order.comment.isNotBlank()) {
                 OrderComment(comment = order.comment)
             }
-            Button(
+            OrderCTAButton(
+                order = order,
                 onClick = { onOpenChat(order.id) },
                 enabled = canOpenChat,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(52.dp),
-                shape = RoundedCornerShape(16.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer
-                )
-            ) {
-                Icon(imageVector = Icons.Rounded.Chat, contentDescription = null)
-                Text(text = "Чат", modifier = Modifier.padding(start = 8.dp))
-            }
+                variant = OrderCTAButtonVariant.Worker
+            )
         }
     }
 }
