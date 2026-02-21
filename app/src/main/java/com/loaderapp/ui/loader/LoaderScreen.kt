@@ -13,7 +13,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.SearchOff
-import androidx.compose.material.icons.filled.Work
 import androidx.compose.material.icons.filled.WorkOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -33,6 +32,7 @@ import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.unit.dp
 import com.loaderapp.R
 import com.loaderapp.features.orders.ui.OrderUiModel
+import com.loaderapp.features.orders.ui.OrdersTab
 import com.loaderapp.features.orders.ui.OrdersViewModel
 import com.loaderapp.features.orders.ui.toLegacyOrderModel
 import com.loaderapp.ui.components.AppScaffold
@@ -58,10 +58,9 @@ fun LoaderScreen(
     }
 
     val tabs = listOf(
-        TabItem(label = "Доступные", badgeCount = state.availableOrders.size),
-        TabItem(label = "Мои заказы", badgeCount = state.myOrders.size),
-        TabItem(label = "В работе", badgeCount = state.inProgressOrders.size),
-        TabItem(label = "История", badgeCount = state.historyOrders.size)
+        TabItem(label = OrdersTab.Available.title, badgeCount = state.availableOrders.size),
+        TabItem(label = OrdersTab.InProgress.title, badgeCount = state.inProgressOrders.size),
+        TabItem(label = OrdersTab.History.title, badgeCount = state.historyOrders.size)
     )
 
     AppScaffold(title = "Заказы") {
@@ -95,24 +94,6 @@ fun LoaderScreen(
                         }
                     )
                     1 -> OrdersPage(
-                        orders = state.myOrders,
-                        bottomNavHeight = bottomNavHeight,
-                        emptyTitle = "Нет моих заказов",
-                        emptyMessage = "Принятые и завершенные заказы будут здесь",
-                        emptyIcon = Icons.Default.Work,
-                        pendingActions = state.pendingActions,
-                        onOrderClick = onOrderClick,
-                        action = { order ->
-                            if (order.canComplete) {
-                                ActionButton(
-                                    "Завершить",
-                                    pending = state.pendingActions.contains(order.order.id),
-                                    primary = false
-                                ) { viewModel.completeOrder(order.order.id) }
-                            }
-                        }
-                    )
-                    2 -> OrdersPage(
                         orders = state.inProgressOrders,
                         bottomNavHeight = bottomNavHeight,
                         emptyTitle = "Нет заказов в работе",
@@ -128,7 +109,7 @@ fun LoaderScreen(
                             ) { viewModel.cancelOrder(order.order.id) }
                         }
                     )
-                    else -> OrdersPage(
+                    2 -> OrdersPage(
                         orders = state.historyOrders,
                         bottomNavHeight = bottomNavHeight,
                         emptyTitle = "История пуста",

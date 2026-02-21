@@ -3,7 +3,6 @@ package com.loaderapp.features.orders.ui
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.loaderapp.features.orders.data.OrdersRepository
-import com.loaderapp.features.orders.domain.OrderStatus
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -39,16 +38,9 @@ class OrdersViewModel @Inject constructor(
                         loading = false,
                         refreshing = false,
                         errorMessage = null,
-                        availableOrders = orders.filterBy(OrderStatus.AVAILABLE),
-                        myOrders = orders.filter { order ->
-                            order.status == OrderStatus.IN_PROGRESS || order.status == OrderStatus.COMPLETED
-                        }.map { order -> order.toUiModel() },
-                        inProgressOrders = orders.filterBy(OrderStatus.IN_PROGRESS),
-                        historyOrders = orders.filter {
-                            it.status == OrderStatus.COMPLETED ||
-                                it.status == OrderStatus.CANCELED ||
-                                it.status == OrderStatus.EXPIRED
-                        }.map { order -> order.toUiModel() }
+                        availableOrders = OrdersTab.Available.filter(orders).map { order -> order.toUiModel() },
+                        inProgressOrders = OrdersTab.InProgress.filter(orders).map { order -> order.toUiModel() },
+                        historyOrders = OrdersTab.History.filter(orders).map { order -> order.toUiModel() }
                     )
                 }
             }
@@ -91,5 +83,3 @@ class OrdersViewModel @Inject constructor(
     }
 }
 
-private fun List<com.loaderapp.features.orders.domain.Order>.filterBy(status: OrderStatus): List<OrderUiModel> =
-    filter { it.status == status }.map { it.toUiModel() }
