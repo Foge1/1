@@ -1,6 +1,14 @@
 package com.loaderapp.features.orders.domain
 
 object OrderStateMachine {
+    private val allowedTransitions = mapOf(
+        OrderStatus.AVAILABLE to setOf(OrderStatus.IN_PROGRESS, OrderStatus.CANCELED, OrderStatus.EXPIRED),
+        OrderStatus.IN_PROGRESS to setOf(OrderStatus.COMPLETED, OrderStatus.CANCELED),
+        OrderStatus.COMPLETED to emptySet(),
+        OrderStatus.CANCELED to emptySet(),
+        OrderStatus.EXPIRED to emptySet()
+    )
+
     data class OrderActions(
         val canAccept: Boolean,
         val canCancel: Boolean,
@@ -18,19 +26,20 @@ object OrderStateMachine {
     }
 
     fun canTransition(from: OrderStatus, to: OrderStatus): Boolean {
-        return when (from) {
-            OrderStatus.AVAILABLE -> to in setOf(OrderStatus.IN_PROGRESS, OrderStatus.CANCELED, OrderStatus.EXPIRED)
-            OrderStatus.IN_PROGRESS -> to in setOf(OrderStatus.COMPLETED, OrderStatus.CANCELED)
-            OrderStatus.COMPLETED,
-            OrderStatus.CANCELED,
-            OrderStatus.EXPIRED -> false
-        }
+        return to in (allowedTransitions[from] ?: emptySet())
     }
 
-    fun transition(order: Order, to: OrderStatus): Order {
-        require(canTransition(order.status, to)) {
-            "Invalid transition ${order.status} -> $to for order=${order.id}"
+    fun transition(order: Order, newStatus: OrderStatus): OrderTransitionResult {
+        val allowed = allowedTransitions[order.status] ?: emptySet()
+
+        if (newStatus !in allowed) {
+            return OrderTransitionResult.Failure(
+                "Invalid transition ${order.status} → $newStatus"
+            )
         }
-        return order.copy(status = to)
+
+        return OrderTransitionResult.Success(
+            order.copy(status = newStatus)
+        )
     }
 }

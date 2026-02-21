@@ -3,6 +3,7 @@ package com.loaderapp.features.orders.data
 import com.loaderapp.features.orders.domain.Order
 import com.loaderapp.features.orders.domain.OrderStateMachine
 import com.loaderapp.features.orders.domain.OrderStatus
+import com.loaderapp.features.orders.domain.OrderTransitionResult
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -43,21 +44,30 @@ class FakeOrdersRepository @Inject constructor() : OrdersRepository {
     override suspend fun acceptOrder(id: Long) {
         simulateLatency()
         mutateOrder(id) { order ->
-            OrderStateMachine.transition(order, OrderStatus.IN_PROGRESS)
+            when (val result = OrderStateMachine.transition(order, OrderStatus.IN_PROGRESS)) {
+                is OrderTransitionResult.Success -> result.order
+                is OrderTransitionResult.Failure -> order
+            }
         }
     }
 
     override suspend fun cancelOrder(id: Long, reason: String?) {
         simulateLatency()
         mutateOrder(id) { order ->
-            OrderStateMachine.transition(order, OrderStatus.CANCELED)
+            when (val result = OrderStateMachine.transition(order, OrderStatus.CANCELED)) {
+                is OrderTransitionResult.Success -> result.order
+                is OrderTransitionResult.Failure -> order
+            }
         }
     }
 
     override suspend fun completeOrder(id: Long) {
         simulateLatency()
         mutateOrder(id) { order ->
-            OrderStateMachine.transition(order, OrderStatus.COMPLETED)
+            when (val result = OrderStateMachine.transition(order, OrderStatus.COMPLETED)) {
+                is OrderTransitionResult.Success -> result.order
+                is OrderTransitionResult.Failure -> order
+            }
         }
     }
 
@@ -67,7 +77,10 @@ class FakeOrdersRepository @Inject constructor() : OrdersRepository {
         orders.update { current ->
             current.map { order ->
                 if (order.status == OrderStatus.AVAILABLE && order.dateTime < now) {
-                    OrderStateMachine.transition(order, OrderStatus.EXPIRED)
+                    when (val result = OrderStateMachine.transition(order, OrderStatus.EXPIRED)) {
+                        is OrderTransitionResult.Success -> result.order
+                        is OrderTransitionResult.Failure -> order
+                    }
                 } else {
                     order
                 }
