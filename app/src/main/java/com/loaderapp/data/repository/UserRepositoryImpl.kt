@@ -50,6 +50,19 @@ class UserRepositoryImpl @Inject constructor(
         return localDataSource.getUserByIdFlow(userId)
             .map { it?.let { UserMapper.toDomain(it) } }
     }
+
+    override suspend fun getUserByNameAndRole(name: String, role: UserRoleModel): Result<UserModel?> {
+        return try {
+            val entityRole = when (role) {
+                UserRoleModel.DISPATCHER -> UserRole.DISPATCHER
+                UserRoleModel.LOADER -> UserRole.LOADER
+            }
+            val user = localDataSource.getUserByNameAndRole(name, entityRole)
+            Result.Success(user?.let(UserMapper::toDomain))
+        } catch (e: Exception) {
+            Result.Error("Ошибка поиска пользователя: ${e.message}", e)
+        }
+    }
     
     override suspend fun createUser(user: UserModel): Result<Long> {
         return try {

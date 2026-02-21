@@ -20,6 +20,9 @@ class UserLocalDataSource @Inject constructor(
     
     suspend fun getUserById(userId: Long): User? = 
         userDao.getUserById(userId)
+
+    suspend fun getUserByNameAndRole(name: String, role: UserRole): User? =
+        userDao.getUserByNameAndRole(name, role)
     
     fun getUserByIdFlow(userId: Long): Flow<User?> = 
         userDao.getUserByIdFlow(userId)
