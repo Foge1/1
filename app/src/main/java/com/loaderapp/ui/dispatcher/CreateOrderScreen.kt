@@ -145,33 +145,35 @@ fun CreateOrderScreen(
             )
 
             SectionLabel("Стоимость")
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                AppField(
-                    icon = Icons.Default.CurrencyRuble,
-                    label = "₽/час *",
-                    value = price,
-                    onValueChange = { price = it; errorFields = errorFields - "price" },
-                    placeholder = "0",
-                    isError = "price" in errorFields,
-                    modifier = Modifier.weight(1f),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                    leadingText = "₽"
-                )
-                HoursStepper(
-                    value = uiState.estimatedHours,
-                    minValue = OrderRules.MIN_ESTIMATED_HOURS,
-                    maxValue = OrderRules.MAX_ESTIMATED_HOURS,
-                    onDecrement = viewModel::decrementHours,
-                    onIncrement = viewModel::incrementHours,
-                    modifier = Modifier.weight(0.65f)
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    AppField(
+                        icon = Icons.Default.CurrencyRuble,
+                        label = "₽/час *",
+                        value = price,
+                        onValueChange = { price = it; errorFields = errorFields - "price" },
+                        placeholder = "0",
+                        isError = "price" in errorFields,
+                        modifier = Modifier.weight(1f),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                        leadingText = "₽"
+                    )
+                    HoursStepper(
+                        value = uiState.estimatedHours,
+                        minValue = OrderRules.MIN_ESTIMATED_HOURS,
+                        maxValue = OrderRules.MAX_ESTIMATED_HOURS,
+                        onDecrement = viewModel::decrementHours,
+                        onIncrement = viewModel::incrementHours,
+                        modifier = Modifier.weight(0.65f)
+                    )
+                }
+                Text(
+                    text = "Минимальный заказ — от ${OrderRules.MIN_ESTIMATED_HOURS} часов",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(start = 4.dp)
                 )
             }
-            Text(
-                text = "Минимальный заказ — от ${OrderRules.MIN_ESTIMATED_HOURS} часов",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(top = (-10).dp, start = 4.dp)
-            )
 
             val priceVal = price.toDoubleOrNull() ?: 0.0
             if (priceVal > 0.0) {
