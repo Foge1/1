@@ -1,5 +1,6 @@
 package com.loaderapp.ui.main
 
+import android.util.Log
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.*
 import androidx.compose.foundation.layout.*
@@ -15,6 +16,7 @@ import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.*
 import com.loaderapp.domain.model.UserRoleModel
 import com.loaderapp.navigation.Route
+import com.loaderapp.presentation.dispatcher.CreateOrderViewModel
 import com.loaderapp.presentation.dispatcher.DispatcherViewModel
 import com.loaderapp.presentation.loader.LoaderViewModel
 import com.loaderapp.presentation.session.SessionViewModel
@@ -123,7 +125,9 @@ fun MainScreen(
                                 viewModel               = vm,
                                 onOrderClick            = { orderId -> onOrderClick(orderId, true) },
                                 onNavigateToCreateOrder = {
+                                    Log.d("CreateOrderNav", "FAB click: currentRoute=${navController.currentDestination?.route}, userId=${user.id}, role=${user.role}")
                                     if (navController.currentDestination?.route != Route.CreateOrder.route) {
+                                        Log.d("CreateOrderNav", "Navigating to ${Route.CreateOrder.route}")
                                         navController.navigate(Route.CreateOrder.route) {
                                             launchSingleTop = true
                                         }
@@ -173,9 +177,12 @@ fun MainScreen(
                     exitTransition  = {
                         slideOutVertically(tween(260)) { it / 6 } + fadeOut(tween(200))
                     }
-                ) {
+                ) { backStackEntry ->
+                    Log.d("CreateOrderNav", "CreateOrder composable opened: route=${backStackEntry.destination.route}, userId=${user.id}")
+                    val createOrderViewModel: CreateOrderViewModel = hiltViewModel(backStackEntry)
                     CreateOrderScreen(
                         dispatcherId = user.id,
+                        viewModel = createOrderViewModel,
                         onBack       = { navController.popBackStack() }
                     )
                 }

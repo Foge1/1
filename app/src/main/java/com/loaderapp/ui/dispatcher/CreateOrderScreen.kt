@@ -1,5 +1,6 @@
 package com.loaderapp.ui.dispatcher
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -23,7 +24,6 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.hilt.navigation.compose.hiltViewModel
 import com.loaderapp.domain.model.OrderRules
 import com.loaderapp.presentation.dispatcher.CreateOrderViewModel
 import com.loaderapp.presentation.dispatcher.NavigationEvent
@@ -39,8 +39,9 @@ import java.util.Locale
 fun CreateOrderScreen(
     dispatcherId: Long,
     onBack: () -> Unit,
-    viewModel: CreateOrderViewModel = hiltViewModel()
+    viewModel: CreateOrderViewModel
 ) {
+    Log.d("CreateOrderNav", "CreateOrderScreen composed: dispatcherId=$dispatcherId")
     val haptic = LocalHapticFeedback.current
     val uiState by viewModel.uiState.collectAsState()
 

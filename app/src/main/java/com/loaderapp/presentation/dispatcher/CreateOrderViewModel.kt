@@ -1,5 +1,7 @@
 package com.loaderapp.presentation.dispatcher
 
+import android.util.Log
+
 import com.loaderapp.core.common.onError
 import com.loaderapp.core.common.onSuccess
 import com.loaderapp.domain.model.OrderModel
@@ -21,6 +23,10 @@ import javax.inject.Inject
 class CreateOrderViewModel @Inject constructor(
     private val createOrderUseCase: CreateOrderUseCase
 ) : BaseViewModel() {
+
+    init {
+        Log.d("CreateOrderNav", "CreateOrderViewModel init")
+    }
 
     private val _navigationEvent = Channel<NavigationEvent>(Channel.BUFFERED)
     val navigationEvent = _navigationEvent.receiveAsFlow()
