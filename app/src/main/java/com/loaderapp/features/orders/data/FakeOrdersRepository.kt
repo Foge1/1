@@ -19,6 +19,16 @@ class FakeOrdersRepository @Inject constructor() : OrdersRepository {
 
     override fun observeOrders(): Flow<List<Order>> = orders.asStateFlow()
 
+    override suspend fun createOrder(order: Order) {
+        simulateLatencyAndMaybeFail()
+        val generatedId = if (order.id > 0) order.id else (orders.value.maxOfOrNull { it.id } ?: 0L) + 1L
+        val newOrder = order.copy(
+            id = generatedId,
+            status = OrderStatus.AVAILABLE
+        )
+        orders.value = orders.value + newOrder
+    }
+
     override suspend fun acceptOrder(id: Long) {
         simulateLatencyAndMaybeFail()
         mutateOrder(id) { OrderStateMachine.transition(it, OrderStatus.IN_PROGRESS) }
