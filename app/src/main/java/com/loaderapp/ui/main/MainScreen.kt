@@ -16,7 +16,7 @@ import androidx.navigation.compose.*
 import com.loaderapp.domain.model.UserRoleModel
 import com.loaderapp.navigation.Route
 import com.loaderapp.presentation.dispatcher.DispatcherViewModel
-import com.loaderapp.presentation.loader.LoaderViewModel
+import com.loaderapp.features.orders.ui.OrdersViewModel
 import com.loaderapp.presentation.session.SessionViewModel
 import com.loaderapp.ui.components.AppBottomBar
 import com.loaderapp.ui.components.BottomNavItem
@@ -132,8 +132,7 @@ fun MainScreen(
                             )
                         }
                         UserRoleModel.LOADER -> {
-                            val vm: LoaderViewModel = hiltViewModel()
-                            LaunchedEffect(user.id) { vm.initialize(user.id) }
+                            val vm: OrdersViewModel = hiltViewModel()
                             LoaderScreen(
                                 viewModel    = vm,
                                 onOrderClick = { orderId -> onOrderClick(orderId, false) }
