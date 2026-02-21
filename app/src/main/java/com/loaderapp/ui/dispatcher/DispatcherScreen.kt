@@ -13,6 +13,7 @@ import androidx.compose.ui.unit.dp
 import com.loaderapp.core.common.UiState
 import com.loaderapp.domain.model.OrderModel
 import com.loaderapp.domain.model.OrderStatusModel
+import com.loaderapp.features.orders.ui.OrdersTab
 import com.loaderapp.presentation.dispatcher.DispatcherViewModel
 import com.loaderapp.ui.components.AppScaffold
 import com.loaderapp.ui.components.DispatcherOrderCard
@@ -40,15 +41,15 @@ fun DispatcherScreen(
         viewModel.snackbarMessage.collect { snackbarHostState.showSnackbar(it) }
     }
 
-    val allOrders    = (ordersState as? UiState.Success)?.data ?: emptyList()
-    val freeOrders   = allOrders.filter { it.status == OrderStatusModel.AVAILABLE }
-    val activeOrders = allOrders.filter {
-        it.status == OrderStatusModel.TAKEN || it.status == OrderStatusModel.IN_PROGRESS
-    }
+    val allOrders = (ordersState as? UiState.Success)?.data ?: emptyList()
+    val freeOrders = allOrders.filterByTab(OrdersTab.Available)
+    val activeOrders = allOrders.filterByTab(OrdersTab.InProgress)
+    val historyOrders = allOrders.filterByTab(OrdersTab.History)
 
     val tabs = listOf(
-        TabItem(label = "Свободные", badgeCount = freeOrders.size),
-        TabItem(label = "В работе",  badgeCount = activeOrders.size)
+        TabItem(label = OrdersTab.Available.title, badgeCount = freeOrders.size),
+        TabItem(label = OrdersTab.InProgress.title, badgeCount = activeOrders.size),
+        TabItem(label = OrdersTab.History.title, badgeCount = historyOrders.size)
     )
 
     AppScaffold(title = "Диспетчер") {
@@ -72,8 +73,8 @@ fun DispatcherScreen(
                             orders          = freeOrders,
                             bottomNavHeight = bottomNavHeight,
                             emptyIcon       = Icons.Default.Assignment,
-                            emptyTitle      = "Нет свободных заказов",
-                            emptyMsg        = "Создайте первый заказ нажав на кнопку +",
+                            emptyTitle      = "Нет доступных заказов",
+                            emptyMsg        = "Создайте первый заказ, нажав на кнопку +",
                             onOrderClick    = onOrderClick,
                             onCancelOrder   = { viewModel.cancelOrder(it) }
                         )
@@ -81,8 +82,17 @@ fun DispatcherScreen(
                             orders          = activeOrders,
                             bottomNavHeight = bottomNavHeight,
                             emptyIcon       = Icons.Default.WorkOff,
-                            emptyTitle      = "Нет активных заказов",
-                            emptyMsg        = "Взятые грузчиками заказы появятся здесь",
+                            emptyTitle      = "Нет заказов в работе",
+                            emptyMsg        = "Активные заказы появятся здесь",
+                            onOrderClick    = onOrderClick,
+                            onCancelOrder   = { viewModel.cancelOrder(it) }
+                        )
+                        2 -> OrdersPage(
+                            orders          = historyOrders,
+                            bottomNavHeight = bottomNavHeight,
+                            emptyIcon       = Icons.Default.History,
+                            emptyTitle      = "История пуста",
+                            emptyMsg        = "Завершённые и отменённые заказы появятся здесь",
                             onOrderClick    = onOrderClick,
                             onCancelOrder   = { viewModel.cancelOrder(it) }
                         )
@@ -148,4 +158,25 @@ private fun OrdersPage(
             }
         }
     }
+}
+
+
+private fun List<OrderModel>.filterByTab(tab: OrdersTab): List<OrderModel> =
+    filter { order ->
+        when (tab) {
+            OrdersTab.Available -> order.toFeatureStatus() == com.loaderapp.features.orders.domain.OrderStatus.AVAILABLE
+            OrdersTab.InProgress -> order.toFeatureStatus() == com.loaderapp.features.orders.domain.OrderStatus.IN_PROGRESS
+            OrdersTab.History -> order.toFeatureStatus() in setOf(
+                com.loaderapp.features.orders.domain.OrderStatus.COMPLETED,
+                com.loaderapp.features.orders.domain.OrderStatus.CANCELED,
+                com.loaderapp.features.orders.domain.OrderStatus.EXPIRED
+            )
+        }
+    }
+
+private fun OrderModel.toFeatureStatus() = when (status) {
+    OrderStatusModel.AVAILABLE -> com.loaderapp.features.orders.domain.OrderStatus.AVAILABLE
+    OrderStatusModel.TAKEN, OrderStatusModel.IN_PROGRESS -> com.loaderapp.features.orders.domain.OrderStatus.IN_PROGRESS
+    OrderStatusModel.COMPLETED -> com.loaderapp.features.orders.domain.OrderStatus.COMPLETED
+    OrderStatusModel.CANCELLED -> com.loaderapp.features.orders.domain.OrderStatus.CANCELED
 }
