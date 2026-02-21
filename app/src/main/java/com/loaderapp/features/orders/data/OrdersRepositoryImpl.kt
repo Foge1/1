@@ -59,9 +59,10 @@ class OrdersRepositoryImpl @Inject constructor() : OrdersRepository {
 
     override suspend fun refresh() {
         val now = System.currentTimeMillis()
+        val expirationThreshold = now - ORDER_EXPIRATION_GRACE_MS
         ordersFlow.update { current ->
             current.map { order ->
-                if (order.status == OrderStatus.AVAILABLE && order.dateTime < now) {
+                if (order.status == OrderStatus.AVAILABLE && order.dateTime < expirationThreshold) {
                     when (val result = OrderStateMachine.transition(order, OrderStatus.EXPIRED)) {
                         is OrderTransitionResult.Success -> {
                             logDebug(
@@ -119,5 +120,6 @@ class OrdersRepositoryImpl @Inject constructor() : OrdersRepository {
 
     private companion object {
         const val LOG_TAG = "OrdersRepo"
+        const val ORDER_EXPIRATION_GRACE_MS = 60_000L
     }
 }

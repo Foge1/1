@@ -1,5 +1,6 @@
 package com.loaderapp.presentation.order
 
+import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import com.loaderapp.core.common.UiState
@@ -27,9 +28,9 @@ class OrderDetailViewModel @Inject constructor(
     private val getWorkerCountUseCase: GetWorkerCountUseCase
 ) : BaseViewModel() {
 
-    private val orderId: Long = checkNotNull(savedStateHandle[NavArgs.ORDER_ID]) {
-        "OrderDetailViewModel requires '${NavArgs.ORDER_ID}' in SavedStateHandle"
-    }
+    private val orderId: Long = savedStateHandle.get<Any?>(NavArgs.ORDER_ID)
+        ?.let(::parseOrderId)
+        ?: error("OrderDetailViewModel requires valid '${NavArgs.ORDER_ID}' in SavedStateHandle")
 
     private val _orderState = MutableStateFlow<UiState<OrderModel>>(UiState.Loading)
     val orderState: StateFlow<UiState<OrderModel>> = _orderState.asStateFlow()
@@ -38,6 +39,7 @@ class OrderDetailViewModel @Inject constructor(
     val workerCount: StateFlow<Int> = _workerCount.asStateFlow()
 
     init {
+        Log.d(LOG_TAG, "load orderId=$orderId")
         observeOrder()
         observeWorkerCount()
     }
@@ -46,6 +48,7 @@ class OrderDetailViewModel @Inject constructor(
         ordersRepository.observeOrders()
             .map { orders -> orders.firstOrNull { it.id == orderId } }
             .onEach { order ->
+                Log.d(LOG_TAG, "load orderId=$orderId, found=${order != null}")
                 _orderState.value = order
                     ?.toLegacyOrderModel()
                     ?.let { UiState.Success(it) }
@@ -61,4 +64,15 @@ class OrderDetailViewModel @Inject constructor(
             .catch  { }
             .launchIn(viewModelScope)
     }
+    private fun parseOrderId(raw: Any): Long? = when (raw) {
+        is Long -> raw
+        is Int -> raw.toLong()
+        is String -> raw.toLongOrNull()
+        else -> null
+    }
+
+    private companion object {
+        const val LOG_TAG = "OrderDetailVM"
+    }
+
 }

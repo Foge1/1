@@ -1,5 +1,6 @@
 package com.loaderapp.navigation
 
+import android.util.Log
 import androidx.compose.animation.core.*
 import androidx.compose.animation.*
 import androidx.compose.runtime.*
@@ -103,6 +104,7 @@ fun AppNavGraph(
             MainScreen(
                 sessionViewModel = sessionViewModel,
                 onOrderClick     = { orderId, isDispatcher ->
+                    Log.d(LOG_TAG, "open details orderId=$orderId")
                     navController.navigate(
                         Route.OrderDetail.createRoute(orderId, isDispatcher)
                     )
@@ -135,7 +137,10 @@ fun AppNavGraph(
             OrderDetailScreen(
                 viewModel    = vm,
                 onBack       = { navController.popBackStack() },
-                onOpenChat   = { chatOrderId -> navController.navigate(Route.Chat.createRoute(chatOrderId)) }
+                onOpenChat   = { chatOrderId ->
+                    Log.d(LOG_TAG, "open chat orderId=$chatOrderId")
+                    navController.navigate(Route.Chat.createRoute(chatOrderId))
+                }
             )
         }
 
@@ -153,3 +158,5 @@ fun AppNavGraph(
         }
     }
 }
+
+private const val LOG_TAG = "AppNavGraph"

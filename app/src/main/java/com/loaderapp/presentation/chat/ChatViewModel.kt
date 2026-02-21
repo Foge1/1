@@ -1,5 +1,6 @@
 package com.loaderapp.presentation.chat
 
+import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import com.loaderapp.core.common.Result
@@ -29,7 +30,9 @@ class ChatViewModel @Inject constructor(
     private val sendOrderChatMessageUseCase: SendOrderChatMessageUseCase
 ) : BaseViewModel() {
 
-    private val orderId: Long = checkNotNull(savedStateHandle[NavArgs.ORDER_ID])
+    private val orderId: Long = savedStateHandle.get<Any?>(NavArgs.ORDER_ID)
+        ?.let(::parseOrderId)
+        ?: error("ChatViewModel requires valid '${NavArgs.ORDER_ID}' in SavedStateHandle")
 
     private val _uiState = MutableStateFlow(ChatUiState())
     val uiState: StateFlow<ChatUiState> = _uiState.asStateFlow()
@@ -39,6 +42,7 @@ class ChatViewModel @Inject constructor(
     private var currentUserRole: UserRoleModel = UserRoleModel.LOADER
 
     fun initialize(userId: Long, userName: String, userRole: UserRoleModel) {
+        Log.d(LOG_TAG, "load orderId=$orderId")
         if (currentUserId == userId && _uiState.value.isInitialized) return
         currentUserId = userId
         currentUserName = userName
@@ -48,6 +52,7 @@ class ChatViewModel @Inject constructor(
         launchSafe {
             when (val access = canAccessOrderChatUseCase(CanAccessOrderChatParams(orderId, userId))) {
                 is Result.Success -> {
+                    Log.d(LOG_TAG, "load orderId=$orderId, found=true")
                     if (!access.data) {
                         _uiState.value = _uiState.value.copy(
                             isLoading = false,
@@ -65,6 +70,7 @@ class ChatViewModel @Inject constructor(
                         .launchIn(viewModelScope)
                 }
                 is Result.Error -> {
+                    Log.d(LOG_TAG, "load orderId=$orderId, found=false")
                     _uiState.value = _uiState.value.copy(isLoading = false, canChat = false, error = access.message)
                 }
                 is Result.Loading -> Unit
@@ -98,6 +104,17 @@ class ChatViewModel @Inject constructor(
             }
         }
     }
+    private fun parseOrderId(raw: Any): Long? = when (raw) {
+        is Long -> raw
+        is Int -> raw.toLong()
+        is String -> raw.toLongOrNull()
+        else -> null
+    }
+
+    private companion object {
+        const val LOG_TAG = "ChatVM"
+    }
+
 }
 
 data class ChatUiState(

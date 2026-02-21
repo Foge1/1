@@ -26,7 +26,9 @@ fun OrderModel.toFeatureStatus(): OrderStatus = when (status) {
     OrderStatusModel.CANCELLED -> OrderStatus.CANCELED
 }
 
-fun Order.toLegacyOrderModel(): OrderModel {
+fun Order.toLegacyOrderModel(): OrderModel = toOrderModel()
+
+fun Order.toOrderModel(): OrderModel {
     val durationHours = (durationMin / 60).coerceAtLeast(1)
 
     return OrderModel(
@@ -37,12 +39,12 @@ fun Order.toLegacyOrderModel(): OrderModel {
         pricePerHour = pricePerHour,
         estimatedHours = durationHours,
         requiredWorkers = workersTotal,
-        minWorkerRating = 0f,
+        minWorkerRating = meta[MIN_WORKER_RATING_KEY]?.toFloatOrNull() ?: 0f,
         status = status.toLegacyStatusModel(),
         createdAt = dateTime,
         completedAt = null,
         workerId = if (workersCurrent > 0) 1L else null,
-        dispatcherId = 0L,
+        dispatcherId = meta[DISPATCHER_ID_KEY]?.toLongOrNull() ?: 0L,
         workerRating = null,
         comment = comment.orEmpty()
     )
@@ -59,3 +61,6 @@ private fun OrderStatus.toLegacyStatusModel(): OrderStatusModel = when (this) {
     OrderStatus.CANCELED,
     OrderStatus.EXPIRED -> OrderStatusModel.CANCELLED
 }
+
+private const val MIN_WORKER_RATING_KEY = "minWorkerRating"
+private const val DISPATCHER_ID_KEY = "dispatcherId"
