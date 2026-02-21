@@ -15,15 +15,13 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.Comment
-import androidx.compose.material.icons.filled.Group
+import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material.icons.filled.Schedule
-import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -47,10 +45,10 @@ import com.loaderapp.ui.components.ErrorView
 import com.loaderapp.ui.components.LoadingView
 import com.loaderapp.ui.components.OrderStatusChip
 import com.loaderapp.ui.components.formatOrderDateTime
-import com.loaderapp.ui.theme.addressTextStyle
-import com.loaderapp.ui.theme.dateTextStyle
-import com.loaderapp.ui.theme.metaTextStyle
-import com.loaderapp.ui.theme.rateTextStyle
+import com.loaderapp.ui.theme.orderBodyStyle
+import com.loaderapp.ui.theme.orderLabelStyle
+import com.loaderapp.ui.theme.orderTitleLargeStyle
+import com.loaderapp.ui.theme.orderTitleMediumStyle
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -108,84 +106,95 @@ private fun OrderDetailContent(
         modifier = modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(dimensionResource(id = R.dimen.order_detail_screen_padding)),
-        verticalArrangement = Arrangement.spacedBy(dimensionResource(id = R.dimen.order_detail_block_spacing))
+            .padding(dimensionResource(id = R.dimen.order_detail_screen_padding))
     ) {
-        UnifiedDetailsContainer(order = order, workerCount = workerCount)
-
-        if (canOpenChat) {
-            Button(onClick = { onOpenChat(order.id) }, modifier = Modifier.fillMaxWidth()) {
-                Icon(Icons.Default.Chat, contentDescription = null)
-                Spacer(Modifier.size(dimensionResource(id = R.dimen.order_card_inner_spacing)))
-                Text("Чат")
-            }
-        }
+        UnifiedDetailsContainer(order = order, workerCount = workerCount, canOpenChat = canOpenChat, onOpenChat = onOpenChat)
     }
 }
 
 @Composable
-private fun UnifiedDetailsContainer(order: OrderModel, workerCount: Int) {
+private fun UnifiedDetailsContainer(
+    order: OrderModel,
+    workerCount: Int,
+    canOpenChat: Boolean,
+    onOpenChat: (Long) -> Unit
+) {
     val cornerRadius = dimensionResource(id = R.dimen.order_card_corner_radius)
-    val blockSpacing = dimensionResource(id = R.dimen.order_detail_block_spacing)
 
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(cornerRadius),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = blockSpacing / 2)
+        elevation = CardDefaults.cardElevation(defaultElevation = dimensionResource(id = R.dimen.order_spacing_4))
     ) {
         Column(
             modifier = Modifier.padding(dimensionResource(id = R.dimen.order_card_padding)),
-            verticalArrangement = Arrangement.spacedBy(dimensionResource(id = R.dimen.order_card_inner_spacing))
+            verticalArrangement = Arrangement.spacedBy(dimensionResource(id = R.dimen.order_spacing_24))
         ) {
-            SectionTitle("Заголовок заказа")
-            OrderStatusChip(status = order.status)
-            Text(order.address, style = addressTextStyle())
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.Schedule, contentDescription = null, modifier = Modifier.size(dimensionResource(id = R.dimen.order_icon_size)))
-                Spacer(Modifier.size(dimensionResource(id = R.dimen.order_card_inner_spacing) / 2))
-                Text(formatOrderDateTime(order.dateTime), style = dateTextStyle(), color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-            Text("${order.pricePerHour.toInt()} ₽/ч", style = rateTextStyle())
-
-            SectionDivider()
-
-            SectionTitle("Параметры работы")
-            DetailRow(Icons.Default.Inventory2, "Груз", order.cargoDescription)
-            DetailRow(Icons.Default.Timer, "Время работы", "${order.estimatedHours} ч")
-            DetailRow(Icons.Default.Group, "Нужно грузчиков", "$workerCount / ${order.requiredWorkers}")
-
-            SectionDivider()
-
-            SectionTitle("Требования")
-            DetailRow(Icons.Default.Star, "Требуемый рейтинг", "${order.minWorkerRating}")
-
+            HeaderSection(order = order)
+            WorkParamsSection(order = order, workerCount = workerCount)
             if (order.comment.isNotBlank()) {
-                SectionDivider()
-                SectionTitle("Комментарий")
-                DetailRow(Icons.Default.Comment, "Комментарий от диспетчера", order.comment)
+                CommentSection(comment = order.comment)
+            }
+            if (canOpenChat) {
+                Button(onClick = { onOpenChat(order.id) }, modifier = Modifier.fillMaxWidth()) {
+                    Icon(Icons.Default.Chat, contentDescription = null, modifier = Modifier.size(dimensionResource(id = R.dimen.order_icon_size)))
+                    Spacer(Modifier.size(dimensionResource(id = R.dimen.order_spacing_8)))
+                    Text("Чат")
+                }
             }
         }
     }
 }
 
 @Composable
-private fun SectionDivider() {
-    Divider(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = dimensionResource(id = R.dimen.order_card_inner_spacing) / 4),
-        color = MaterialTheme.colorScheme.outline.copy(alpha = 0.25f)
-    )
+private fun HeaderSection(order: OrderModel) {
+    Column(verticalArrangement = Arrangement.spacedBy(dimensionResource(id = R.dimen.order_spacing_12))) {
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.Top) {
+            OrderStatusChip(status = order.status)
+            Text("${order.pricePerHour.toInt()} ₽/ч", style = orderTitleMediumStyle(), color = MaterialTheme.colorScheme.primary)
+        }
+        Text(order.address, style = orderTitleLargeStyle())
+        Row(horizontalArrangement = Arrangement.spacedBy(dimensionResource(id = R.dimen.order_spacing_8)), verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                imageVector = Icons.Default.Schedule,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(dimensionResource(id = R.dimen.order_icon_size))
+            )
+            Text(
+                formatOrderDateTime(order.dateTime),
+                style = orderLabelStyle(),
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
 }
 
 @Composable
-private fun SectionTitle(text: String) {
-    Text(
-        text = text,
-        style = MaterialTheme.typography.titleMedium,
-        color = MaterialTheme.colorScheme.onSurface
-    )
+private fun WorkParamsSection(order: OrderModel, workerCount: Int) {
+    Column(verticalArrangement = Arrangement.spacedBy(dimensionResource(id = R.dimen.order_spacing_12))) {
+        Text("Параметры работы", style = MaterialTheme.typography.titleMedium)
+        DetailRow(Icons.Default.Inventory2, "Груз", order.cargoDescription)
+        DetailRow(Icons.Default.Timer, "Минимум", "${order.estimatedHours} часов")
+        DetailRow(Icons.Default.Groups, "Состав", "$workerCount / ${order.requiredWorkers} грузчиков")
+    }
+}
+
+@Composable
+private fun CommentSection(comment: String) {
+    Column(verticalArrangement = Arrangement.spacedBy(dimensionResource(id = R.dimen.order_spacing_8))) {
+        Text("Комментарий", style = MaterialTheme.typography.titleMedium)
+        Row(horizontalArrangement = Arrangement.spacedBy(dimensionResource(id = R.dimen.order_spacing_8)), verticalAlignment = Alignment.Top) {
+            Icon(
+                imageVector = Icons.Default.Comment,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(dimensionResource(id = R.dimen.order_icon_size))
+            )
+            Text(comment, style = orderBodyStyle(), color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
 }
 
 @Composable
@@ -193,17 +202,17 @@ private fun DetailRow(icon: ImageVector, label: String, value: String) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.Top,
-        horizontalArrangement = Arrangement.spacedBy(dimensionResource(id = R.dimen.order_card_inner_spacing))
+        horizontalArrangement = Arrangement.spacedBy(dimensionResource(id = R.dimen.order_spacing_8))
     ) {
         Icon(
             imageVector = icon,
             contentDescription = null,
-            tint = MaterialTheme.colorScheme.primary,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.size(dimensionResource(id = R.dimen.order_icon_size))
         )
-        Column(verticalArrangement = Arrangement.spacedBy(dimensionResource(id = R.dimen.order_card_inner_spacing) / 4)) {
-            Text(text = label, style = metaTextStyle(), color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Text(text = value, style = dateTextStyle())
+        Column(verticalArrangement = Arrangement.spacedBy(dimensionResource(id = R.dimen.order_spacing_4))) {
+            Text(text = label, style = orderLabelStyle(), color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(text = value, style = orderBodyStyle())
         }
     }
 }

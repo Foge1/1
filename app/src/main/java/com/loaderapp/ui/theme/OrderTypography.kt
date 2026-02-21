@@ -3,41 +3,15 @@ package com.loaderapp.ui.theme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.sp
-
-val orderAddressTextStyle = TextStyle(
-    fontSize = 18.sp,
-    lineHeight = 24.sp,
-    fontWeight = FontWeight.SemiBold
-)
-
-val orderRateTextStyle = TextStyle(
-    fontSize = 20.sp,
-    lineHeight = 26.sp,
-    fontWeight = FontWeight.Bold
-)
-
-val orderDateTextStyle = TextStyle(
-    fontSize = 14.sp,
-    lineHeight = 20.sp,
-    fontWeight = FontWeight.Medium
-)
-
-val orderMetaTextStyle = TextStyle(
-    fontSize = 13.sp,
-    lineHeight = 18.sp,
-    fontWeight = FontWeight.Normal
-)
 
 @Composable
-fun addressTextStyle(): TextStyle = MaterialTheme.typography.bodyLarge.merge(orderAddressTextStyle)
+fun orderTitleLargeStyle(): TextStyle = MaterialTheme.typography.titleLarge
 
 @Composable
-fun rateTextStyle(): TextStyle = MaterialTheme.typography.bodyLarge.merge(orderRateTextStyle)
+fun orderTitleMediumStyle(): TextStyle = MaterialTheme.typography.titleMedium
 
 @Composable
-fun dateTextStyle(): TextStyle = MaterialTheme.typography.bodyMedium.merge(orderDateTextStyle)
+fun orderBodyStyle(): TextStyle = MaterialTheme.typography.bodyMedium
 
 @Composable
-fun metaTextStyle(): TextStyle = MaterialTheme.typography.bodySmall.merge(orderMetaTextStyle)
+fun orderLabelStyle(): TextStyle = MaterialTheme.typography.labelMedium

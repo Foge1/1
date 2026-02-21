@@ -9,9 +9,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Schedule
-import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Groups
+import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -30,6 +29,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.text.style.TextOverflow
@@ -38,10 +38,13 @@ import com.loaderapp.R
 import com.loaderapp.domain.model.OrderModel
 import com.loaderapp.domain.model.OrderStatusModel
 import com.loaderapp.ui.theme.LoaderAppTheme
-import com.loaderapp.ui.theme.addressTextStyle
-import com.loaderapp.ui.theme.dateTextStyle
-import com.loaderapp.ui.theme.metaTextStyle
-import com.loaderapp.ui.theme.rateTextStyle
+import com.loaderapp.ui.theme.orderBodyStyle
+import com.loaderapp.ui.theme.orderLabelStyle
+import com.loaderapp.ui.theme.orderTitleLargeStyle
+import com.loaderapp.ui.theme.orderTitleMediumStyle
+import com.loaderapp.ui.theme.statusAvailable
+import com.loaderapp.ui.theme.statusCompleted
+import com.loaderapp.ui.theme.statusInProgress
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
@@ -52,7 +55,8 @@ fun OrderCard(
     order: OrderModel,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    actionContent: (@Composable () -> Unit)? = null
+    actionContent: (@Composable () -> Unit)? = null,
+    enabled: Boolean = true
 ) {
     val sectionSpacing = dimensionResource(id = R.dimen.order_card_section_spacing)
     val innerSpacing = dimensionResource(id = R.dimen.order_card_inner_spacing)
@@ -62,7 +66,8 @@ fun OrderCard(
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick),
+            .alpha(if (enabled) 1f else 0.5f)
+            .clickable(enabled = enabled, onClick = onClick),
         shape = RoundedCornerShape(cardRadius),
         elevation = CardDefaults.cardElevation(defaultElevation = cardRadius / 8),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
@@ -74,7 +79,7 @@ fun OrderCard(
             HeaderRow(order = order)
             AddressDateBlock(order = order, innerSpacing = innerSpacing)
             MetaInfoRow(order = order, innerSpacing = innerSpacing)
-            ActionButton(order = order, onClick = onClick, actionContent = actionContent)
+            ActionButton(order = order, onClick = onClick, actionContent = actionContent, enabled = enabled)
         }
     }
 }
@@ -89,8 +94,8 @@ private fun HeaderRow(order: OrderModel) {
         OrderStatusChip(status = order.status)
         Text(
             text = "${order.pricePerHour.toInt()} ₽/ч",
-            style = rateTextStyle(),
-            color = MaterialTheme.colorScheme.onSurface
+            style = orderTitleMediumStyle(),
+            color = MaterialTheme.colorScheme.primary
         )
     }
 }
@@ -100,13 +105,13 @@ private fun AddressDateBlock(order: OrderModel, innerSpacing: androidx.compose.u
     Column(verticalArrangement = Arrangement.spacedBy(innerSpacing / 2)) {
         Text(
             text = order.address,
-            style = addressTextStyle(),
+            style = orderTitleLargeStyle(),
             maxLines = 2,
             overflow = TextOverflow.Ellipsis
         )
         Text(
             text = formatOrderDateTime(order.dateTime),
-            style = dateTextStyle(),
+            style = orderLabelStyle(),
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
@@ -116,24 +121,18 @@ private fun AddressDateBlock(order: OrderModel, innerSpacing: androidx.compose.u
 private fun MetaInfoRow(order: OrderModel, innerSpacing: androidx.compose.ui.unit.Dp) {
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
+        horizontalArrangement = Arrangement.spacedBy(innerSpacing),
         verticalAlignment = Alignment.CenterVertically
     ) {
         MetaItem(
-            icon = Icons.Default.Person,
-            value = "Нужно грузчиков: ${order.requiredWorkers}",
+            icon = Icons.Default.Timer,
+            value = "Минимум ${order.estimatedHours} часов",
             innerSpacing = innerSpacing,
             modifier = Modifier.weight(1f)
         )
         MetaItem(
-            icon = Icons.Default.Schedule,
-            value = "Время работы: ${order.estimatedHours} ч",
-            innerSpacing = innerSpacing,
-            modifier = Modifier.weight(1f)
-        )
-        MetaItem(
-            icon = Icons.Default.Star,
-            value = "Требуемый рейтинг: ${order.minWorkerRating}",
+            icon = Icons.Default.Groups,
+            value = "${order.requiredWorkers} грузчиков",
             innerSpacing = innerSpacing,
             modifier = Modifier.weight(1f)
         )
@@ -160,9 +159,9 @@ private fun MetaItem(
         )
         Text(
             text = value,
-            style = metaTextStyle(),
+            style = orderBodyStyle(),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            maxLines = 2,
+            maxLines = 1,
             overflow = TextOverflow.Ellipsis
         )
     }
@@ -172,10 +171,13 @@ private fun MetaItem(
 private fun ActionButton(
     order: OrderModel,
     onClick: () -> Unit,
-    actionContent: (@Composable () -> Unit)?
+    actionContent: (@Composable () -> Unit)?,
+    enabled: Boolean
 ) {
     if (actionContent != null) {
-        actionContent()
+        if (enabled) {
+            actionContent()
+        }
         return
     }
 
@@ -186,7 +188,7 @@ private fun ActionButton(
     }
     Button(
         onClick = onClick,
-        enabled = order.status == OrderStatusModel.AVAILABLE,
+        enabled = enabled && order.status == OrderStatusModel.AVAILABLE,
         modifier = Modifier.fillMaxWidth()
     ) {
         Text(title)
@@ -240,9 +242,9 @@ fun DispatcherOrderCard(
 @Composable
 fun OrderStatusChip(status: OrderStatusModel) {
     val (text, color) = when (status) {
-        OrderStatusModel.AVAILABLE -> "Доступен" to Color(0xFF2E7D32)
-        OrderStatusModel.TAKEN, OrderStatusModel.IN_PROGRESS -> "В работе" to Color(0xFF1565C0)
-        OrderStatusModel.COMPLETED, OrderStatusModel.CANCELLED -> "Завершён" to Color(0xFF757575)
+        OrderStatusModel.AVAILABLE -> "Доступен" to statusAvailable
+        OrderStatusModel.TAKEN, OrderStatusModel.IN_PROGRESS -> "В работе" to statusInProgress
+        OrderStatusModel.COMPLETED, OrderStatusModel.CANCELLED -> "Завершён" to statusCompleted
     }
     Surface(
         color = color.copy(alpha = 0.16f),
@@ -254,7 +256,7 @@ fun OrderStatusChip(status: OrderStatusModel) {
                 horizontal = dimensionResource(id = R.dimen.order_status_horizontal_padding),
                 vertical = dimensionResource(id = R.dimen.order_status_vertical_padding)
             ),
-            style = metaTextStyle(),
+            style = orderLabelStyle(),
             color = color
         )
     }
@@ -266,15 +268,15 @@ fun formatOrderDateTime(timestamp: Long): String {
     val target = Calendar.getInstance().apply { timeInMillis = timestamp }
 
     return when {
-        isSameDay(now, target) -> "Сегодня в ${SimpleDateFormat("HH:mm", locale).format(Date(timestamp))}"
+        isSameDay(now, target) -> "Сегодня ${SimpleDateFormat("HH:mm", locale).format(Date(timestamp))}"
         isSameDay(
             (now.clone() as Calendar).apply { add(Calendar.DAY_OF_YEAR, 1) },
             target
-        ) -> "Завтра в ${SimpleDateFormat("HH:mm", locale).format(Date(timestamp))}"
+        ) -> "Завтра ${SimpleDateFormat("HH:mm", locale).format(Date(timestamp))}"
         isSameDay(
             (now.clone() as Calendar).apply { add(Calendar.DAY_OF_YEAR, 2) },
             target
-        ) -> SimpleDateFormat("dd MMM 'в' HH:mm", locale).format(Date(timestamp))
+        ) -> SimpleDateFormat("dd MMM HH:mm", locale).format(Date(timestamp))
         else -> SimpleDateFormat("dd.MM.yyyy HH:mm", locale).format(Date(timestamp))
     }
 }
