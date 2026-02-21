@@ -3,6 +3,7 @@ package com.loaderapp.features.orders.data
 import com.loaderapp.features.orders.domain.Order
 import com.loaderapp.features.orders.domain.OrderStateMachine
 import com.loaderapp.features.orders.domain.OrderStatus
+import com.loaderapp.features.orders.domain.OrderTransitionResult
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.flow.Flow
@@ -23,15 +24,30 @@ class OrdersRepositoryImpl @Inject constructor() : OrdersRepository {
     }
 
     override suspend fun acceptOrder(id: Long) {
-        mutateOrder(id) { OrderStateMachine.transition(it, OrderStatus.IN_PROGRESS) }
+        mutateOrder(id) { order ->
+            when (val result = OrderStateMachine.transition(order, OrderStatus.IN_PROGRESS)) {
+                is OrderTransitionResult.Success -> result.order
+                is OrderTransitionResult.Failure -> order
+            }
+        }
     }
 
     override suspend fun cancelOrder(id: Long, reason: String?) {
-        mutateOrder(id) { OrderStateMachine.transition(it, OrderStatus.CANCELED) }
+        mutateOrder(id) { order ->
+            when (val result = OrderStateMachine.transition(order, OrderStatus.CANCELED)) {
+                is OrderTransitionResult.Success -> result.order
+                is OrderTransitionResult.Failure -> order
+            }
+        }
     }
 
     override suspend fun completeOrder(id: Long) {
-        mutateOrder(id) { OrderStateMachine.transition(it, OrderStatus.COMPLETED) }
+        mutateOrder(id) { order ->
+            when (val result = OrderStateMachine.transition(order, OrderStatus.COMPLETED)) {
+                is OrderTransitionResult.Success -> result.order
+                is OrderTransitionResult.Failure -> order
+            }
+        }
     }
 
     override suspend fun refresh() {
@@ -39,7 +55,10 @@ class OrdersRepositoryImpl @Inject constructor() : OrdersRepository {
         ordersFlow.update { current ->
             current.map { order ->
                 if (order.status == OrderStatus.AVAILABLE && order.dateTime < threshold) {
-                    order.copy(status = OrderStatus.EXPIRED)
+                    when (val result = OrderStateMachine.transition(order, OrderStatus.EXPIRED)) {
+                        is OrderTransitionResult.Success -> result.order
+                        is OrderTransitionResult.Failure -> order
+                    }
                 } else {
                     order
                 }
@@ -50,7 +69,9 @@ class OrdersRepositoryImpl @Inject constructor() : OrdersRepository {
     private fun mutateOrder(id: Long, mutate: (Order) -> Order) {
         ordersFlow.update { current ->
             val index = current.indexOfFirst { it.id == id }
-            require(index >= 0) { "Order not found: $id" }
+            if (index < 0) {
+                return@update current
+            }
             current.mapIndexed { orderIndex, order ->
                 if (orderIndex == index) mutate(order) else order
             }
