@@ -9,13 +9,13 @@ import androidx.compose.ui.unit.sp
 val orderAddressTextStyle = TextStyle(
     fontSize = 18.sp,
     lineHeight = 24.sp,
-    fontWeight = FontWeight.Bold
+    fontWeight = FontWeight.SemiBold
 )
 
 val orderRateTextStyle = TextStyle(
-    fontSize = 16.sp,
-    lineHeight = 22.sp,
-    fontWeight = FontWeight.SemiBold
+    fontSize = 20.sp,
+    lineHeight = 26.sp,
+    fontWeight = FontWeight.Bold
 )
 
 val orderDateTextStyle = TextStyle(
