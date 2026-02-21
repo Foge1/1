@@ -11,6 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.*
 import com.loaderapp.domain.model.UserRoleModel
@@ -123,7 +124,17 @@ fun MainScreen(
                                 viewModel               = vm,
                                 onOrderClick            = { orderId -> onOrderClick(orderId, true) },
                                 onNavigateToCreateOrder = {
-                                    navController.navigate(Route.CreateOrder.route)
+                                    val currentEntry = navController.currentBackStackEntry
+                                    val isCurrentEntryResumed =
+                                        currentEntry?.lifecycle?.currentState == Lifecycle.State.RESUMED
+
+                                    if (isCurrentEntryResumed &&
+                                        navController.currentDestination?.route != Route.CreateOrder.route
+                                    ) {
+                                        navController.navigate(Route.CreateOrder.route) {
+                                            launchSingleTop = true
+                                        }
+                                    }
                                 }
                             )
                         }
