@@ -1,5 +1,6 @@
 package com.loaderapp.ui.components
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -12,9 +13,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.CalendarToday
 import androidx.compose.material.icons.rounded.Groups
+import androidx.compose.material.icons.rounded.Message
 import androidx.compose.material.icons.rounded.Schedule
 import androidx.compose.material.icons.rounded.Timelapse
+import androidx.compose.material.icons.rounded.WatchLater
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -33,9 +37,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -45,9 +46,6 @@ import androidx.compose.ui.unit.sp
 import com.loaderapp.domain.model.OrderModel
 import com.loaderapp.domain.model.OrderStatusModel
 import com.loaderapp.ui.theme.LoaderAppTheme
-import com.loaderapp.ui.theme.statusAvailable
-import com.loaderapp.ui.theme.statusCompleted
-import com.loaderapp.ui.theme.statusInProgress
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
@@ -66,29 +64,28 @@ fun OrderCard(
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .alpha(if (enabled) 1f else 0.6f)
             .clickable(enabled = enabled, onClick = onClick),
-        shape = RoundedCornerShape(20.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
+        Column(modifier = Modifier.padding(20.dp)) {
             OrderCardHeader(order = order)
-            OrderCardTitle(order = order)
-            OrderMetaChips(order = order)
-            if (order.comment.isNotBlank()) {
-                OrderComment(comment = order.comment)
-            }
+            OrderCardTitle(order = order, modifier = Modifier.padding(top = 14.dp))
+            OrderDateTimeRow(order = order, modifier = Modifier.padding(top = 10.dp))
+            OrderMetaRow(order = order, modifier = Modifier.padding(top = 16.dp))
+            OrderCommentBlock(comment = order.comment, modifier = Modifier.padding(top = 14.dp))
+
             if (actionContent != null) {
-                if (enabled) actionContent()
+                Column(modifier = Modifier.padding(top = 20.dp)) {
+                    if (enabled) actionContent()
+                }
             } else {
-                OrderCardActionButton(
+                OrderCTA(
                     order = order,
                     onClick = onClick,
-                    enabled = canTakeOrder
+                    enabled = canTakeOrder,
+                    modifier = Modifier.padding(top = 20.dp)
                 )
             }
         }
@@ -103,50 +100,174 @@ fun OrderCardHeader(order: OrderModel) {
         verticalAlignment = Alignment.Top
     ) {
         OrderStatusChip(status = order.status)
+        Row(verticalAlignment = Alignment.Bottom) {
+            Text(
+                text = "₽${order.pricePerHour.toInt()}",
+                style = orderPriceTextStyle(),
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Text(
+                text = "/ч",
+                modifier = Modifier.padding(start = 2.dp, bottom = 2.dp),
+                style = MaterialTheme.typography.labelSmall.copy(
+                    fontWeight = FontWeight.Medium,
+                    fontSize = 12.sp
+                ),
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+@Composable
+fun OrderCardTitle(order: OrderModel, modifier: Modifier = Modifier) {
+    Text(
+        text = order.address,
+        modifier = modifier,
+        style = orderTitleTextStyle(),
+        color = MaterialTheme.colorScheme.onSurface,
+        maxLines = 2,
+        overflow = TextOverflow.Ellipsis
+    )
+}
+
+@Composable
+fun OrderDateTimeRow(order: OrderModel, modifier: Modifier = Modifier) {
+    Row(
+        modifier = modifier,
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            Icon(
+                imageVector = Icons.Rounded.CalendarToday,
+                contentDescription = null,
+                modifier = Modifier.size(14.dp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Text(
+                text = formatOrderDate(order.dateTime),
+                style = orderDateTextStyle(),
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        Surface(
+            modifier = Modifier.size(4.dp),
+            shape = RoundedCornerShape(50),
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        ) {}
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            Icon(
+                imageVector = Icons.Rounded.WatchLater,
+                contentDescription = null,
+                modifier = Modifier.size(14.dp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Text(
+                text = formatOrderTime(order.dateTime),
+                style = orderDateTextStyle(),
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+@Composable
+fun OrderMetaRow(order: OrderModel, modifier: Modifier = Modifier, workerCount: Int? = null) {
+    val currentWorkers = workerCount ?: order.workerId?.let { 1 } ?: 0
+
+    FlowRow(
+        modifier = modifier,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        OrderMetaChip(icon = Icons.Rounded.Schedule, text = order.cargoDescription)
+        OrderMetaChip(icon = Icons.Rounded.Timelapse, text = "${order.estimatedHours}ч мин")
+        OrderMetaChip(icon = Icons.Rounded.Groups, text = "$currentWorkers/${order.requiredWorkers}")
+    }
+}
+
+@Composable
+fun OrderCommentBlock(comment: String, modifier: Modifier = Modifier) {
+    if (comment.isBlank()) return
+
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .background(
+                color = MaterialTheme.colorScheme.surfaceVariant,
+                shape = RoundedCornerShape(8.dp)
+            )
+            .padding(horizontal = 12.dp, vertical = 10.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.Top
+    ) {
+        Icon(
+            imageVector = Icons.Rounded.Message,
+            contentDescription = null,
+            modifier = Modifier
+                .size(14.dp)
+                .padding(top = 2.dp),
+            tint = MaterialTheme.colorScheme.onSurfaceVariant
+        )
         Text(
-            text = "${order.pricePerHour.toInt()} ₽/ч",
-            style = orderPriceTextStyle(),
-            color = MaterialTheme.colorScheme.primary
+            text = comment,
+            style = MaterialTheme.typography.labelSmall.copy(
+                fontSize = 12.sp,
+                lineHeight = 18.sp
+            ),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis
         )
     }
 }
 
 @Composable
-fun OrderCardTitle(order: OrderModel) {
-    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Text(
-            text = order.address,
-            style = orderTitleTextStyle(),
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis
+fun OrderCTA(order: OrderModel, onClick: () -> Unit, enabled: Boolean, modifier: Modifier = Modifier) {
+    val (title, colors) = when (order.status) {
+        OrderStatusModel.AVAILABLE -> "Взять заказ" to ButtonDefaults.buttonColors(
+            containerColor = MaterialTheme.colorScheme.onSurface,
+            contentColor = MaterialTheme.colorScheme.surface
         )
-        Text(
-            text = formatOrderDateTime(order.dateTime),
-            style = orderDateTextStyle(),
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
+
+        OrderStatusModel.TAKEN, OrderStatusModel.IN_PROGRESS ->
+            "Чат" to ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+            )
+
+        OrderStatusModel.COMPLETED, OrderStatusModel.CANCELLED ->
+            "Завершён" to ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+            )
+    }
+
+    Button(
+        onClick = onClick,
+        enabled = enabled,
+        modifier = modifier
+            .fillMaxWidth()
+            .height(52.dp),
+        shape = RoundedCornerShape(12.dp),
+        colors = colors
+    ) {
+        Text(text = title, style = orderActionTextStyle())
     }
 }
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun OrderMetaChips(order: OrderModel, workerCount: Int? = null) {
-    FlowRow(
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        OrderMetaChip(icon = Icons.Rounded.Schedule, text = "${order.cargoDescription}")
-        OrderMetaChip(icon = Icons.Rounded.Timelapse, text = "Мин ${order.estimatedHours}ч")
-        val currentWorkers = workerCount ?: order.workerId?.let { 1 } ?: 0
-        OrderMetaChip(icon = Icons.Rounded.Groups, text = "$currentWorkers/${order.requiredWorkers}")
-    }
+    OrderMetaRow(order = order, workerCount = workerCount)
 }
 
 @Composable
-private fun OrderMetaChip(icon: ImageVector, text: String) {
+private fun OrderMetaChip(icon: androidx.compose.ui.graphics.vector.ImageVector, text: String) {
     Surface(
         color = MaterialTheme.colorScheme.surfaceVariant,
-        shape = RoundedCornerShape(12.dp)
+        shape = RoundedCornerShape(8.dp)
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
@@ -156,7 +277,7 @@ private fun OrderMetaChip(icon: ImageVector, text: String) {
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                modifier = Modifier.size(16.dp),
+                modifier = Modifier.size(14.dp),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Text(
@@ -172,41 +293,7 @@ private fun OrderMetaChip(icon: ImageVector, text: String) {
 
 @Composable
 fun OrderComment(comment: String) {
-    Text(
-        text = comment,
-        style = MaterialTheme.typography.bodyMedium.copy(
-            fontSize = 14.sp,
-            lineHeight = 20.sp
-        ),
-        color = MaterialTheme.colorScheme.onSurface
-    )
-}
-
-@Composable
-private fun OrderCardActionButton(order: OrderModel, onClick: () -> Unit, enabled: Boolean) {
-    val (title, colors) = when (order.status) {
-        OrderStatusModel.AVAILABLE -> "Взять заказ" to ButtonDefaults.buttonColors()
-        OrderStatusModel.TAKEN, OrderStatusModel.IN_PROGRESS ->
-            "Чат" to ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                contentColor = MaterialTheme.colorScheme.onSecondaryContainer
-            )
-
-        OrderStatusModel.COMPLETED, OrderStatusModel.CANCELLED ->
-            "Завершён" to ButtonDefaults.buttonColors()
-    }
-
-    Button(
-        onClick = onClick,
-        enabled = enabled,
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(52.dp),
-        shape = RoundedCornerShape(16.dp),
-        colors = colors
-    ) {
-        Text(text = title, style = orderActionTextStyle())
-    }
+    OrderCommentBlock(comment = comment)
 }
 
 @Composable
@@ -229,7 +316,7 @@ fun DispatcherOrderCard(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(52.dp),
-                    shape = RoundedCornerShape(16.dp),
+                    shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)
                 ) {
                     Text("Отменить", style = orderActionTextStyle())
@@ -259,55 +346,79 @@ fun DispatcherOrderCard(
 @Composable
 fun OrderStatusChip(status: OrderStatusModel) {
     val (text, containerColor, textColor) = when (status) {
-        OrderStatusModel.AVAILABLE -> Triple("Доступен", statusAvailable.copy(alpha = 0.20f), Color(0xFF1B5E20))
-        OrderStatusModel.TAKEN, OrderStatusModel.IN_PROGRESS -> Triple("В работе", statusInProgress.copy(alpha = 0.20f), statusInProgress)
-        OrderStatusModel.COMPLETED, OrderStatusModel.CANCELLED ->
-            Triple("Завершён", statusCompleted.copy(alpha = 0.20f), MaterialTheme.colorScheme.onSurfaceVariant)
+        OrderStatusModel.AVAILABLE -> Triple(
+            "Доступен",
+            MaterialTheme.colorScheme.primaryContainer,
+            MaterialTheme.colorScheme.onPrimaryContainer
+        )
+
+        OrderStatusModel.TAKEN, OrderStatusModel.IN_PROGRESS -> Triple(
+            "В работе",
+            MaterialTheme.colorScheme.tertiaryContainer,
+            MaterialTheme.colorScheme.onTertiaryContainer
+        )
+
+        OrderStatusModel.COMPLETED, OrderStatusModel.CANCELLED -> Triple(
+            "Завершён",
+            MaterialTheme.colorScheme.surfaceVariant,
+            MaterialTheme.colorScheme.onSurfaceVariant
+        )
     }
+
     Surface(
         color = containerColor,
         shape = RoundedCornerShape(50),
-        modifier = Modifier.height(28.dp)
     ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = text,
-                style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
-                color = textColor
-            )
-        }
+        Text(
+            text = text,
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 2.dp),
+            style = MaterialTheme.typography.labelSmall.copy(
+                fontWeight = FontWeight.Medium,
+                letterSpacing = 0.3.sp,
+                fontSize = 12.sp
+            ),
+            color = textColor
+        )
     }
 }
 
 @Composable
-private fun orderPriceTextStyle(): TextStyle = MaterialTheme.typography.titleLarge.copy(
-    fontSize = 20.sp,
-    fontWeight = FontWeight.Bold
+private fun orderPriceTextStyle(): TextStyle = MaterialTheme.typography.headlineSmall.copy(
+    fontSize = 24.sp,
+    fontWeight = FontWeight.Bold,
+    letterSpacing = (-0.3).sp
 )
 
 @Composable
 private fun orderTitleTextStyle(): TextStyle = MaterialTheme.typography.titleMedium.copy(
-    fontSize = 17.sp,
-    fontWeight = FontWeight.SemiBold
+    fontSize = 16.sp,
+    fontWeight = FontWeight.SemiBold,
+    lineHeight = 22.sp
 )
 
 @Composable
-private fun orderDateTextStyle(): TextStyle = MaterialTheme.typography.labelMedium.copy(fontSize = 13.sp)
+private fun orderDateTextStyle(): TextStyle = MaterialTheme.typography.bodySmall.copy(fontSize = 14.sp)
 
 @Composable
-private fun orderMetaTextStyle(): TextStyle = MaterialTheme.typography.labelMedium.copy(
-    fontSize = 13.sp,
+private fun orderMetaTextStyle(): TextStyle = MaterialTheme.typography.labelSmall.copy(
+    fontSize = 12.sp,
     fontWeight = FontWeight.Medium
 )
 
 @Composable
-private fun orderActionTextStyle(): TextStyle = MaterialTheme.typography.titleMedium.copy(
-    fontSize = 16.sp,
-    fontWeight = FontWeight.SemiBold
+private fun orderActionTextStyle(): TextStyle = MaterialTheme.typography.titleSmall.copy(
+    fontSize = 14.sp,
+    fontWeight = FontWeight.SemiBold,
+    letterSpacing = 0.3.sp
 )
+
+private fun formatOrderDate(timestamp: Long): String {
+    return SimpleDateFormat("dd MMM", Locale("ru")).format(Date(timestamp))
+}
+
+private fun formatOrderTime(timestamp: Long): String {
+    return SimpleDateFormat("HH:mm", Locale("ru")).format(Date(timestamp))
+}
 
 fun formatOrderDateTime(timestamp: Long): String {
     val locale = Locale("ru")
