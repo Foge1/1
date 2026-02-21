@@ -15,7 +15,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.CalendarToday
 import androidx.compose.material.icons.rounded.Message
-import androidx.compose.material.icons.rounded.Package
+import androidx.compose.material.icons.rounded.LocalShipping
 import androidx.compose.material.icons.rounded.Schedule
 import androidx.compose.material.icons.rounded.Timer
 import androidx.compose.material.icons.rounded.Groups
@@ -184,7 +184,7 @@ fun OrderMetaRow(order: OrderModel, workerCount: Int? = null) {
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        OrderMetaChip(icon = Icons.Rounded.Package, text = order.cargoDescription)
+        OrderMetaChip(icon = Icons.Rounded.LocalShipping, text = order.cargoDescription)
         OrderMetaChip(icon = Icons.Rounded.Timer, text = "${order.estimatedHours}ч мин")
         OrderMetaChip(icon = Icons.Rounded.Groups, text = "$currentWorkers/${order.requiredWorkers}")
     }
