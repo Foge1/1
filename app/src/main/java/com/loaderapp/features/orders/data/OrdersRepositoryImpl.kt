@@ -1,5 +1,6 @@
 package com.loaderapp.features.orders.data
 
+import android.util.Log
 import com.loaderapp.features.orders.domain.Order
 import com.loaderapp.features.orders.domain.OrderStateMachine
 import com.loaderapp.features.orders.domain.OrderStatus
@@ -13,7 +14,7 @@ import kotlinx.coroutines.flow.update
 
 @Singleton
 class OrdersRepositoryImpl @Inject constructor() : OrdersRepository {
-    private val ordersFlow = MutableStateFlow(seedOrders())
+    private val ordersFlow = MutableStateFlow<List<Order>>(emptyList())
 
     override fun observeOrders(): Flow<List<Order>> = ordersFlow.asStateFlow()
 
@@ -21,10 +22,11 @@ class OrdersRepositoryImpl @Inject constructor() : OrdersRepository {
         val nextId = (ordersFlow.value.maxOfOrNull { it.id } ?: 0L) + 1L
         val createdOrder = order.copy(id = nextId, status = OrderStatus.AVAILABLE)
         ordersFlow.update { current -> current + createdOrder }
+        logDebug("createOrder", createdOrder.id, createdOrder.status)
     }
 
     override suspend fun acceptOrder(id: Long) {
-        mutateOrder(id) { order ->
+        mutateOrder("acceptOrder", id) { order ->
             when (val result = OrderStateMachine.transition(order, OrderStatus.IN_PROGRESS)) {
                 is OrderTransitionResult.Success -> result.order
                 is OrderTransitionResult.Failure -> order
@@ -33,7 +35,7 @@ class OrdersRepositoryImpl @Inject constructor() : OrdersRepository {
     }
 
     override suspend fun cancelOrder(id: Long, reason: String?) {
-        mutateOrder(id) { order ->
+        mutateOrder("cancelOrder", id) { order ->
             when (val result = OrderStateMachine.transition(order, OrderStatus.CANCELED)) {
                 is OrderTransitionResult.Success -> result.order
                 is OrderTransitionResult.Failure -> order
@@ -42,7 +44,7 @@ class OrdersRepositoryImpl @Inject constructor() : OrdersRepository {
     }
 
     override suspend fun completeOrder(id: Long) {
-        mutateOrder(id) { order ->
+        mutateOrder("completeOrder", id) { order ->
             when (val result = OrderStateMachine.transition(order, OrderStatus.COMPLETED)) {
                 is OrderTransitionResult.Success -> result.order
                 is OrderTransitionResult.Failure -> order
@@ -64,32 +66,37 @@ class OrdersRepositoryImpl @Inject constructor() : OrdersRepository {
                 }
             }
         }
+        ordersFlow.value.forEach { order ->
+            logDebug("refresh", order.id, order.status)
+        }
     }
 
-    private fun mutateOrder(id: Long, mutate: (Order) -> Order) {
+    private fun mutateOrder(action: String, id: Long, mutate: (Order) -> Order) {
+        var updatedStatus: OrderStatus? = null
         ordersFlow.update { current ->
             val index = current.indexOfFirst { it.id == id }
             if (index < 0) {
                 return@update current
             }
             current.mapIndexed { orderIndex, order ->
-                if (orderIndex == index) mutate(order) else order
+                if (orderIndex == index) {
+                    val updated = mutate(order)
+                    updatedStatus = updated.status
+                    updated
+                } else {
+                    order
+                }
             }
         }
+        updatedStatus?.let { status -> logDebug(action, id, status) }
     }
 
-    private fun seedOrders(): List<Order> {
-        val now = System.currentTimeMillis()
-        return listOf(
-            Order(1, "Разгрузка фуры", "Москва, Тверская 12", 700.0, now + 20 * 60_000, 180, 0, 3, listOf("Хрупкое"), mapOf("cargo" to "Бытовая техника"), "Позвонить за 15 минут", OrderStatus.AVAILABLE),
-            Order(2, "Переезд офиса", "Москва, Арбат 18", 850.0, now + 2 * 60 * 60_000, 240, 1, 4, listOf("Подъем"), mapOf("floor" to "5"), null, OrderStatus.AVAILABLE),
-            Order(3, "Паллеты на склад", "Химки, Заводская 7", 650.0, now + 3 * 60 * 60_000, 120, 1, 2, listOf("Срочно"), mapOf("dock" to "B2"), "Въезд со двора", OrderStatus.IN_PROGRESS),
-            Order(4, "Разбор мебели", "Мытищи, Юбилейная 9", 600.0, now - 6 * 60 * 60_000, 180, 2, 2, listOf("Инструмент"), mapOf("type" to "шкафы"), null, OrderStatus.COMPLETED),
-            Order(5, "Срочная выгрузка", "Москва, Лобачевского 24", 900.0, now - 90 * 60_000, 90, 0, 2, listOf("Срочно"), emptyMap(), "Опоздание критично", OrderStatus.EXPIRED)
-        )
+    private fun logDebug(action: String, orderId: Long, status: OrderStatus) {
+        Log.d(LOG_TAG, "$action: id=$orderId, status=$status")
     }
 
     private companion object {
         const val ONE_HOUR_MS = 60 * 60 * 1000L
+        const val LOG_TAG = "OrdersRepo"
     }
 }

@@ -12,8 +12,9 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import com.loaderapp.core.common.UiState
 import com.loaderapp.domain.model.OrderModel
-import com.loaderapp.domain.model.OrderStatusModel
 import com.loaderapp.features.orders.ui.OrdersTab
+import com.loaderapp.features.orders.ui.matches
+import com.loaderapp.features.orders.ui.toFeatureStatus
 import com.loaderapp.presentation.dispatcher.DispatcherViewModel
 import com.loaderapp.ui.components.AppScaffold
 import com.loaderapp.ui.components.DispatcherOrderCard
@@ -162,21 +163,4 @@ private fun OrdersPage(
 
 
 private fun List<OrderModel>.filterByTab(tab: OrdersTab): List<OrderModel> =
-    filter { order ->
-        when (tab) {
-            OrdersTab.Available -> order.toFeatureStatus() == com.loaderapp.features.orders.domain.OrderStatus.AVAILABLE
-            OrdersTab.InProgress -> order.toFeatureStatus() == com.loaderapp.features.orders.domain.OrderStatus.IN_PROGRESS
-            OrdersTab.History -> order.toFeatureStatus() in setOf(
-                com.loaderapp.features.orders.domain.OrderStatus.COMPLETED,
-                com.loaderapp.features.orders.domain.OrderStatus.CANCELED,
-                com.loaderapp.features.orders.domain.OrderStatus.EXPIRED
-            )
-        }
-    }
-
-private fun OrderModel.toFeatureStatus() = when (status) {
-    OrderStatusModel.AVAILABLE -> com.loaderapp.features.orders.domain.OrderStatus.AVAILABLE
-    OrderStatusModel.TAKEN, OrderStatusModel.IN_PROGRESS -> com.loaderapp.features.orders.domain.OrderStatus.IN_PROGRESS
-    OrderStatusModel.COMPLETED -> com.loaderapp.features.orders.domain.OrderStatus.COMPLETED
-    OrderStatusModel.CANCELLED -> com.loaderapp.features.orders.domain.OrderStatus.CANCELED
-}
+    filter { order -> tab.matches(order.toFeatureStatus()) }

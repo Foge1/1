@@ -19,32 +19,43 @@ fun Order.toUiModel(): OrderUiModel {
     return OrderUiModel(this, actions.canAccept, actions.canCancel, actions.canComplete, actions.canOpenChat)
 }
 
-fun OrderUiModel.toLegacyOrderModel(): OrderModel {
-    val status = when (order.status) {
-        OrderStatus.AVAILABLE -> OrderStatusModel.AVAILABLE
-        OrderStatus.IN_PROGRESS -> OrderStatusModel.IN_PROGRESS
-        OrderStatus.COMPLETED -> OrderStatusModel.COMPLETED
-        OrderStatus.CANCELED,
-        OrderStatus.EXPIRED -> OrderStatusModel.CANCELLED
-    }
+fun OrderModel.toFeatureStatus(): OrderStatus = when (status) {
+    OrderStatusModel.AVAILABLE -> OrderStatus.AVAILABLE
+    OrderStatusModel.TAKEN, OrderStatusModel.IN_PROGRESS -> OrderStatus.IN_PROGRESS
+    OrderStatusModel.COMPLETED -> OrderStatus.COMPLETED
+    OrderStatusModel.CANCELLED -> OrderStatus.CANCELED
+}
 
-    val durationHours = (order.durationMin / 60).coerceAtLeast(1)
+fun Order.toLegacyOrderModel(): OrderModel {
+    val durationHours = (durationMin / 60).coerceAtLeast(1)
 
     return OrderModel(
-        id = order.id,
-        address = order.address,
-        dateTime = order.dateTime,
-        cargoDescription = order.tags.firstOrNull() ?: order.title,
-        pricePerHour = order.pricePerHour,
+        id = id,
+        address = address,
+        dateTime = dateTime,
+        cargoDescription = tags.firstOrNull() ?: title,
+        pricePerHour = pricePerHour,
         estimatedHours = durationHours,
-        requiredWorkers = order.workersTotal,
+        requiredWorkers = workersTotal,
         minWorkerRating = 0f,
-        status = status,
-        createdAt = order.dateTime,
+        status = status.toLegacyStatusModel(),
+        createdAt = dateTime,
         completedAt = null,
-        workerId = if (order.workersCurrent > 0) 1L else null,
+        workerId = if (workersCurrent > 0) 1L else null,
         dispatcherId = 0L,
         workerRating = null,
-        comment = order.comment.orEmpty()
+        comment = comment.orEmpty()
     )
+}
+
+fun OrderUiModel.toLegacyOrderModel(): OrderModel {
+    return order.toLegacyOrderModel()
+}
+
+private fun OrderStatus.toLegacyStatusModel(): OrderStatusModel = when (this) {
+    OrderStatus.AVAILABLE -> OrderStatusModel.AVAILABLE
+    OrderStatus.IN_PROGRESS -> OrderStatusModel.IN_PROGRESS
+    OrderStatus.COMPLETED -> OrderStatusModel.COMPLETED
+    OrderStatus.CANCELED,
+    OrderStatus.EXPIRED -> OrderStatusModel.CANCELLED
 }

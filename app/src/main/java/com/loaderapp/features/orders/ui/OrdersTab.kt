@@ -12,13 +12,11 @@ enum class OrdersTab(val title: String) {
 fun OrdersTab.matches(status: OrderStatus): Boolean = when (this) {
     OrdersTab.Available -> status == OrderStatus.AVAILABLE
     OrdersTab.InProgress -> status == OrderStatus.IN_PROGRESS
-    OrdersTab.History -> status in HISTORY_STATUSES
+    OrdersTab.History ->
+        status == OrderStatus.COMPLETED ||
+            status == OrderStatus.CANCELED ||
+            status == OrderStatus.EXPIRED
 }
 
 fun OrdersTab.filter(orders: List<Order>): List<Order> = orders.filter { order -> matches(order.status) }
 
-private val HISTORY_STATUSES = setOf(
-    OrderStatus.COMPLETED,
-    OrderStatus.CANCELED,
-    OrderStatus.EXPIRED
-)
