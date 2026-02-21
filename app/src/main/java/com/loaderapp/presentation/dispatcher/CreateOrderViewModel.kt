@@ -1,13 +1,10 @@
 package com.loaderapp.presentation.dispatcher
 
-import com.loaderapp.core.common.onError
-import com.loaderapp.core.common.onSuccess
-import com.loaderapp.domain.model.OrderModel
 import com.loaderapp.domain.model.OrderRules
-import com.loaderapp.domain.model.OrderStatusModel
-import com.loaderapp.domain.usecase.order.CreateOrderParams
-import com.loaderapp.domain.usecase.order.CreateOrderUseCase
 import com.loaderapp.presentation.base.BaseViewModel
+import com.loaderapp.features.orders.data.OrdersRepository
+import com.loaderapp.features.orders.domain.Order
+import com.loaderapp.features.orders.domain.OrderStatus
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -19,7 +16,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class CreateOrderViewModel @Inject constructor(
-    private val createOrderUseCase: CreateOrderUseCase
+    private val ordersRepository: OrdersRepository
 ) : BaseViewModel() {
 
     private val _navigationEvent = Channel<NavigationEvent>(Channel.BUFFERED)
@@ -81,31 +78,25 @@ class CreateOrderViewModel @Inject constructor(
         comment: String
     ) {
         val state = _uiState.value
-        val order = OrderModel(
+        val order = Order(
             id = 0,
+            title = cargoDescription.trim().ifBlank { "Заказ" },
             address = address.trim(),
-            dateTime = buildDateTimeMillis(state.selectedDateMillis, state.selectedHour, state.selectedMinute),
-            cargoDescription = cargoDescription.trim(),
             pricePerHour = pricePerHour,
-            estimatedHours = state.estimatedHours.coerceIn(OrderRules.MIN_ESTIMATED_HOURS, OrderRules.MAX_ESTIMATED_HOURS),
-            requiredWorkers = requiredWorkers,
-            minWorkerRating = minWorkerRating.coerceIn(0f, 5f),
-            status = OrderStatusModel.AVAILABLE,
-            createdAt = System.currentTimeMillis(),
-            completedAt = null,
-            workerId = null,
-            dispatcherId = dispatcherId,
-            workerRating = null,
-            comment = comment.trim()
+            dateTime = buildDateTimeMillis(state.selectedDateMillis, state.selectedHour, state.selectedMinute),
+            durationMin = state.estimatedHours.coerceIn(OrderRules.MIN_ESTIMATED_HOURS, OrderRules.MAX_ESTIMATED_HOURS) * 60,
+            workersCurrent = 0,
+            workersTotal = requiredWorkers,
+            tags = listOf(cargoDescription.trim()).filter { it.isNotBlank() },
+            meta = mapOf("dispatcherId" to dispatcherId.toString(), "minWorkerRating" to minWorkerRating.coerceIn(0f, 5f).toString()),
+            comment = comment.trim(),
+            status = OrderStatus.AVAILABLE
         )
 
         launchSafe {
-            createOrderUseCase(CreateOrderParams(order))
-                .onSuccess {
-                    showSnackbar("Заказ создан успешно")
-                    _navigationEvent.send(NavigationEvent.NavigateUp)
-                }
-                .onError { msg, _ -> showSnackbar(msg) }
+            ordersRepository.createOrder(order)
+            showSnackbar("Заказ создан успешно")
+            _navigationEvent.send(NavigationEvent.NavigateUp)
         }
     }
 
