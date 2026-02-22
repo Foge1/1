@@ -10,6 +10,7 @@ import com.loaderapp.features.orders.domain.usecase.CompleteOrderUseCase
 import com.loaderapp.features.orders.domain.usecase.CreateOrderUseCase
 import com.loaderapp.features.orders.domain.usecase.ObserveOrdersUseCase
 import com.loaderapp.features.orders.domain.usecase.RefreshOrdersUseCase
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -22,6 +23,7 @@ import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.Assert.assertFalse
@@ -38,11 +40,12 @@ class OrdersViewModelTest {
 
     @Test
     fun `refresh success toggles refreshing true to false`() = runTest {
-        val repository = TestOrdersRepository(refreshDelayMs = 100)
+        val repository = TestOrdersRepository(refreshMode = ExecutionMode.Success)
         val viewModel = buildViewModel(repository)
         advanceUntilIdle()
 
         viewModel.refresh()
+        runCurrent()
 
         assertTrue(viewModel.uiState.value.refreshing)
         advanceUntilIdle()
@@ -51,14 +54,34 @@ class OrdersViewModelTest {
 
     @Test
     fun `refresh failure toggles refreshing true to false and emits snackbar`() = runTest {
-        val repository = TestOrdersRepository(refreshDelayMs = 100)
+        val repository = TestOrdersRepository(refreshMode = ExecutionMode.Failure)
         val viewModel = buildViewModel(repository)
         advanceUntilIdle()
-        repository.failRefresh = true
 
         val snackbarCollector = backgroundScope.launch { viewModel.snackbarMessage.first() }
 
         viewModel.refresh()
+        runCurrent()
+
+        assertTrue(viewModel.uiState.value.refreshing)
+        advanceUntilIdle()
+
+        assertFalse(viewModel.uiState.value.refreshing)
+        assertTrue(viewModel.uiState.value.errorMessage != null)
+        assertTrue(snackbarCollector.isCompleted)
+    }
+
+
+    @Test
+    fun `refresh exception toggles refreshing true to false and emits snackbar`() = runTest {
+        val repository = TestOrdersRepository(refreshMode = ExecutionMode.Exception)
+        val viewModel = buildViewModel(repository)
+        advanceUntilIdle()
+
+        val snackbarCollector = backgroundScope.launch { viewModel.snackbarMessage.first() }
+
+        viewModel.refresh()
+        runCurrent()
 
         assertTrue(viewModel.uiState.value.refreshing)
         advanceUntilIdle()
@@ -69,29 +92,74 @@ class OrdersViewModelTest {
     }
 
     @Test
+    fun `refresh cancellation toggles refreshing true->false and emits no snackbar`() = runTest {
+        val repository = TestOrdersRepository(refreshMode = ExecutionMode.Cancel)
+        val viewModel = buildViewModel(repository)
+        advanceUntilIdle()
+
+        val snackbarCollector = backgroundScope.launch { viewModel.snackbarMessage.first() }
+
+        viewModel.refresh()
+        runCurrent()
+
+        assertTrue(viewModel.uiState.value.refreshing)
+        advanceUntilIdle()
+
+        assertFalse(viewModel.uiState.value.refreshing)
+        assertTrue(viewModel.uiState.value.errorMessage == null)
+        assertFalse(snackbarCollector.isCompleted)
+        snackbarCollector.cancel()
+    }
+
+    @Test
     fun `pending action is added and removed on both success and failure`() = runTest {
         val repository = TestOrdersRepository(
             orders = listOf(
                 testOrder(id = 1L, status = OrderStatus.AVAILABLE),
                 testOrder(id = 2L, status = OrderStatus.COMPLETED)
             ),
-            acceptDelayMs = 100
+            acceptMode = ExecutionMode.Success
         )
         val viewModel = buildViewModel(repository)
         advanceUntilIdle()
 
         viewModel.onAcceptClicked(1L)
+        runCurrent()
         assertTrue(viewModel.uiState.value.pendingActions.contains(1L))
         advanceUntilIdle()
         assertFalse(viewModel.uiState.value.pendingActions.contains(1L))
 
+        repository.acceptMode = ExecutionMode.Failure
         val snackbarCollector = backgroundScope.launch { viewModel.snackbarMessage.first() }
         viewModel.onAcceptClicked(2L)
+        runCurrent()
         assertTrue(viewModel.uiState.value.pendingActions.contains(2L))
         advanceUntilIdle()
 
         assertFalse(viewModel.uiState.value.pendingActions.contains(2L))
         assertTrue(snackbarCollector.isCompleted)
+    }
+
+    @Test
+    fun `pending action is removed even when cancelled`() = runTest {
+        val repository = TestOrdersRepository(
+            orders = listOf(testOrder(id = 1L, status = OrderStatus.AVAILABLE)),
+            acceptMode = ExecutionMode.Cancel
+        )
+        val viewModel = buildViewModel(repository)
+        advanceUntilIdle()
+
+        val snackbarCollector = backgroundScope.launch { viewModel.snackbarMessage.first() }
+
+        viewModel.onAcceptClicked(1L)
+        runCurrent()
+        assertTrue(viewModel.uiState.value.pendingActions.contains(1L))
+        advanceUntilIdle()
+
+        assertFalse(viewModel.uiState.value.pendingActions.contains(1L))
+        assertTrue(viewModel.uiState.value.errorMessage == null)
+        assertFalse(snackbarCollector.isCompleted)
+        snackbarCollector.cancel()
     }
 
     private fun TestScope.buildViewModel(repository: TestOrdersRepository): OrdersViewModel {
@@ -108,13 +176,18 @@ class OrdersViewModelTest {
         )
     }
 
+    private enum class ExecutionMode {
+        Success,
+        Failure,
+        Exception,
+        Cancel
+    }
+
     private class TestOrdersRepository(
         orders: List<Order> = emptyList(),
-        private val refreshDelayMs: Long = 0,
-        private val acceptDelayMs: Long = 0
+        var refreshMode: ExecutionMode = ExecutionMode.Success,
+        var acceptMode: ExecutionMode = ExecutionMode.Success
     ) : OrdersRepository {
-
-        var failRefresh: Boolean = false
 
         private val state = MutableStateFlow(orders)
 
@@ -125,7 +198,7 @@ class OrdersViewModelTest {
         }
 
         override suspend fun acceptOrder(id: Long) {
-            if (acceptDelayMs > 0) delay(acceptDelayMs)
+            executeMode(acceptMode, "accept failed")
             state.update { current ->
                 current.map { order ->
                     if (order.id == id) order.copy(status = OrderStatus.IN_PROGRESS) else order
@@ -150,11 +223,20 @@ class OrdersViewModelTest {
         }
 
         override suspend fun refresh() {
-            if (refreshDelayMs > 0) delay(refreshDelayMs)
-            if (failRefresh) error("refresh failed")
+            executeMode(refreshMode, "refresh failed")
         }
 
         override suspend fun getOrderById(id: Long): Order? = state.value.firstOrNull { it.id == id }
+
+        private suspend fun executeMode(mode: ExecutionMode, failureMessage: String) {
+            delay(100)
+            when (mode) {
+                ExecutionMode.Success -> Unit
+                ExecutionMode.Failure -> error(failureMessage)
+                ExecutionMode.Exception -> throw IllegalStateException(failureMessage)
+                ExecutionMode.Cancel -> throw CancellationException("cancelled")
+            }
+        }
     }
 
     private class MainDispatcherRule(
