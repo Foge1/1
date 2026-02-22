@@ -7,7 +7,7 @@ import com.loaderapp.domain.repository.ChatRepository
 import com.loaderapp.domain.repository.OrderRepository
 import com.loaderapp.domain.repository.UserRepository
 import com.loaderapp.features.orders.data.OrdersRepositoryImpl
-import com.loaderapp.features.orders.data.OrdersRepository
+import com.loaderapp.features.orders.domain.repository.OrdersRepository
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn

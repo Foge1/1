@@ -2,7 +2,12 @@ package com.loaderapp.features.orders.ui
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.loaderapp.features.orders.data.OrdersRepository
+import com.loaderapp.features.orders.domain.usecase.AcceptOrderUseCase
+import com.loaderapp.features.orders.domain.usecase.CancelOrderUseCase
+import com.loaderapp.features.orders.domain.usecase.CompleteOrderUseCase
+import com.loaderapp.features.orders.domain.usecase.ObserveOrdersUseCase
+import com.loaderapp.features.orders.domain.usecase.RefreshOrdersUseCase
+import com.loaderapp.features.orders.domain.usecase.UseCaseResult
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -16,7 +21,11 @@ import kotlinx.coroutines.launch
 
 @HiltViewModel
 class OrdersViewModel @Inject constructor(
-    private val ordersRepository: OrdersRepository
+    private val observeOrdersUseCase: ObserveOrdersUseCase,
+    private val acceptOrderUseCase: AcceptOrderUseCase,
+    private val cancelOrderUseCase: CancelOrderUseCase,
+    private val completeOrderUseCase: CompleteOrderUseCase,
+    private val refreshOrdersUseCase: RefreshOrdersUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(OrdersUiState())
@@ -32,7 +41,7 @@ class OrdersViewModel @Inject constructor(
 
     private fun observeOrders() {
         viewModelScope.launch {
-            ordersRepository.observeOrders().collect { orders ->
+            observeOrdersUseCase().collect { orders ->
                 _uiState.update {
                     it.copy(
                         loading = false,
@@ -50,36 +59,44 @@ class OrdersViewModel @Inject constructor(
     fun refresh() {
         viewModelScope.launch {
             _uiState.update { it.copy(refreshing = true) }
-            runCatching { ordersRepository.refresh() }
-                .onFailure { e -> _uiState.update { it.copy(refreshing = false, errorMessage = e.message) } }
+            when (val result = refreshOrdersUseCase()) {
+                is UseCaseResult.Success -> {
+                    _uiState.update { it.copy(refreshing = false) }
+                }
+
+                is UseCaseResult.Failure -> {
+                    _uiState.update { it.copy(refreshing = false, errorMessage = result.reason) }
+                }
+            }
         }
     }
 
-    fun onAcceptClicked(id: Long) = submitAction(id) { ordersRepository.acceptOrder(id) }
+    fun onAcceptClicked(id: Long) = submitAction(id) { acceptOrderUseCase(id) }
 
     fun onCancelClicked(id: Long, reason: String? = null) = submitAction(id) {
-        ordersRepository.cancelOrder(id, reason)
+        cancelOrderUseCase(id, reason)
     }
 
-    fun onCompleteClicked(id: Long) = submitAction(id) { ordersRepository.completeOrder(id) }
+    fun onCompleteClicked(id: Long) = submitAction(id) { completeOrderUseCase(id) }
 
-    private fun submitAction(orderId: Long, action: suspend () -> Unit) {
+    private fun submitAction(orderId: Long, action: suspend () -> UseCaseResult<Unit>) {
         _uiState.update { it.copy(pendingActions = it.pendingActions + orderId) }
         viewModelScope.launch {
-            runCatching { action() }
-                .onFailure { e ->
+            when (val result = action()) {
+                is UseCaseResult.Success -> {
+                    _uiState.update { it.copy(pendingActions = it.pendingActions - orderId) }
+                }
+
+                is UseCaseResult.Failure -> {
                     _uiState.update {
                         it.copy(
-                            errorMessage = e.message,
+                            errorMessage = result.reason,
                             pendingActions = it.pendingActions - orderId
                         )
                     }
-                    _snackbarMessage.emit(e.message ?: "Неизвестная ошибка")
+                    _snackbarMessage.emit(result.reason)
                 }
-                .onSuccess {
-                    _uiState.update { it.copy(pendingActions = it.pendingActions - orderId) }
-                }
+            }
         }
     }
 }
-

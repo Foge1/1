@@ -2,7 +2,7 @@ package com.loaderapp.domain.usecase.chat
 
 import com.loaderapp.core.common.Result
 import com.loaderapp.domain.usecase.base.UseCase
-import com.loaderapp.features.orders.data.OrdersRepository
+import com.loaderapp.features.orders.domain.repository.OrdersRepository
 import com.loaderapp.features.orders.domain.OrderStatus
 import javax.inject.Inject
 import kotlinx.coroutines.flow.firstOrNull
