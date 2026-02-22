@@ -7,6 +7,7 @@ import com.loaderapp.domain.usecase.order.DispatcherStats
 import com.loaderapp.features.orders.data.OrdersRepository
 import com.loaderapp.features.orders.domain.Order
 import com.loaderapp.features.orders.domain.OrderStatus
+import com.loaderapp.features.orders.domain.OrderTime
 import com.loaderapp.features.orders.ui.toOrderModel
 import com.loaderapp.presentation.base.BaseViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -99,7 +100,7 @@ private fun OrderModel.toFeatureOrder(): Order = Order(
     title = cargoDescription.ifBlank { "Заказ" },
     address = address,
     pricePerHour = pricePerHour,
-    dateTime = dateTime,
+    orderTime = OrderTime.Exact(dateTime),
     durationMin = estimatedHours * 60,
     workersCurrent = if (workerId == null) 0 else 1,
     workersTotal = requiredWorkers,

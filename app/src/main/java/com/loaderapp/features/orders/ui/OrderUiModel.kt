@@ -41,7 +41,7 @@ fun Order.toOrderModel(): OrderModel {
         requiredWorkers = workersTotal,
         minWorkerRating = meta[MIN_WORKER_RATING_KEY]?.toFloatOrNull() ?: 0f,
         status = status.toLegacyStatusModel(),
-        createdAt = dateTime,
+        createdAt = meta[Order.CREATED_AT_KEY]?.toLongOrNull() ?: dateTime,
         completedAt = null,
         workerId = if (workersCurrent > 0) 1L else null,
         dispatcherId = meta[DISPATCHER_ID_KEY]?.toLongOrNull() ?: 0L,

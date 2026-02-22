@@ -4,6 +4,7 @@ import com.loaderapp.features.orders.domain.Order
 import com.loaderapp.features.orders.domain.OrderStateMachine
 import com.loaderapp.features.orders.domain.OrderStatus
 import com.loaderapp.features.orders.domain.OrderTransitionResult
+import com.loaderapp.features.orders.domain.OrderTime
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -77,7 +78,8 @@ class FakeOrdersRepository @Inject constructor() : OrdersRepository {
         val expirationThreshold = now - ORDER_EXPIRATION_GRACE_MS
         orders.update { current ->
             current.map { order ->
-                if (order.status == OrderStatus.AVAILABLE && order.dateTime < expirationThreshold) {
+                val shouldExpire = order.status == OrderStatus.AVAILABLE && order.orderTime is OrderTime.Exact && order.dateTime < expirationThreshold
+                if (shouldExpire) {
                     when (val result = OrderStateMachine.transition(order, OrderStatus.EXPIRED)) {
                         is OrderTransitionResult.Success -> result.order
                         is OrderTransitionResult.Failure -> order

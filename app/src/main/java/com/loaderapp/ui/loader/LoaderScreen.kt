@@ -163,8 +163,8 @@ private fun OrdersPage(
             val pending = pendingActions.contains(order.order.id)
             OrderCard(
                 order = legacy,
-                onClick = { if (order.canOpenChat) onOrderClick(order.order.id) },
-                enabled = !pending && (order.canOpenChat || order.canAccept),
+                onClick = { onOrderClick(order.order.id) },
+                enabled = !pending,
                 actionContent = { action(order) }
             )
             Spacer(Modifier.height(dimensionResource(id = R.dimen.order_spacing_12)))
