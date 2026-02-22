@@ -21,7 +21,7 @@ class OrdersOrchestrator @Inject constructor(
         log("execute: $command")
         val result = when (command) {
             is OrdersCommand.Refresh -> refreshOrdersUseCase()
-            is OrdersCommand.Create -> createOrderUseCase(command.order)
+            is OrdersCommand.Create -> createOrderUseCase(command.orderDraft)
             is OrdersCommand.Accept -> acceptOrderUseCase(command.orderId)
             is OrdersCommand.Cancel -> cancelOrderUseCase(command.orderId, command.reason)
             is OrdersCommand.Complete -> completeOrderUseCase(command.orderId)

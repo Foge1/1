@@ -1,6 +1,5 @@
 package com.loaderapp.features.orders.data.session
 
-import com.loaderapp.core.common.Result
 import com.loaderapp.data.preferences.UserPreferences
 import com.loaderapp.domain.model.UserRoleModel
 import com.loaderapp.domain.repository.UserRepository
@@ -9,6 +8,12 @@ import com.loaderapp.features.orders.domain.session.CurrentUser
 import com.loaderapp.features.orders.domain.session.CurrentUserProvider
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
 
 @Singleton
 class CurrentUserProviderImpl @Inject constructor(
@@ -16,20 +21,26 @@ class CurrentUserProviderImpl @Inject constructor(
     private val userRepository: UserRepository
 ) : CurrentUserProvider {
 
-    override suspend fun getCurrentUser(): CurrentUser {
-        val userId = userPreferences.getCurrentUserId()
-            ?: error("Current user is not selected")
-        val user = when (val result = userRepository.getUserById(userId)) {
-            is Result.Success -> result.data
-            is Result.Error -> error(result.message)
-            is Result.Loading -> error("User is still loading")
-        }
-
-        return CurrentUser(
-            id = user.id.toString(),
-            role = user.role.toFeatureRole()
-        )
+    override fun observeCurrentUser(): Flow<CurrentUser> {
+        return userPreferences.currentUserId
+            .distinctUntilChanged()
+            .filterNotNull()
+            .flatMapLatest { userId ->
+                userRepository.getUserByIdFlow(userId)
+                    .map { user ->
+                        user?.let {
+                            CurrentUser(
+                                id = it.id.toString(),
+                                role = it.role.toFeatureRole()
+                            )
+                        }
+                    }
+            }
+            .filterNotNull()
+            .distinctUntilChanged()
     }
+
+    override suspend fun getCurrentUser(): CurrentUser = observeCurrentUser().first()
 }
 
 private fun UserRoleModel.toFeatureRole(): Role = when (this) {

@@ -1,6 +1,7 @@
 package com.loaderapp.features.orders.domain.usecase
 
 import com.loaderapp.features.orders.domain.Order
+import com.loaderapp.features.orders.domain.OrderDraft
 import com.loaderapp.features.orders.domain.OrderStatus
 import com.loaderapp.features.orders.domain.OrderTime
 import com.loaderapp.features.orders.domain.Role
@@ -10,7 +11,10 @@ import com.loaderapp.features.orders.domain.session.CurrentUserProvider
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.take
+import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -22,7 +26,7 @@ class OrdersOwnershipUseCasesTest {
     fun `createOrder sets createdBy and resets acceptance`() = runBlocking {
         val repo = InMemoryOrdersRepository()
         val useCase = CreateOrderUseCase(repo, StaticCurrentUserProvider(CurrentUser("10", Role.DISPATCHER)))
-        useCase(baseOrder())
+        useCase(baseOrderDraft())
         val created = repo.observeOrders().first().first()
         assertEquals("10", created.createdByUserId)
         assertNull(created.acceptedByUserId)
@@ -61,8 +65,45 @@ class OrdersOwnershipUseCasesTest {
         assertEquals(listOf(1L, 3L), useCase().first().map { it.id })
     }
 
+    @Test
+    fun `observe orders reacts to current user and role changes`() = runBlocking {
+        val repo = InMemoryOrdersRepository(
+            listOf(
+                baseOrder(id = 1, createdBy = "dispatcher-1", status = OrderStatus.AVAILABLE, acceptedBy = null),
+                baseOrder(id = 2, createdBy = "dispatcher-2", status = OrderStatus.AVAILABLE, acceptedBy = null),
+                baseOrder(id = 3, createdBy = "dispatcher-1", status = OrderStatus.IN_PROGRESS, acceptedBy = "loader-1"),
+                baseOrder(id = 4, createdBy = "dispatcher-2", status = OrderStatus.IN_PROGRESS, acceptedBy = "loader-2")
+            )
+        )
+        val currentUserProvider = FakeCurrentUserProvider(CurrentUser("dispatcher-1", Role.DISPATCHER))
+        val useCase = ObserveOrdersForRoleUseCase(repo, currentUserProvider)
+
+        val emissionsDeferred = async {
+            useCase().take(3).toList()
+        }
+
+        currentUserProvider.emit(CurrentUser("loader-1", Role.LOADER))
+        currentUserProvider.emit(CurrentUser("dispatcher-2", Role.DISPATCHER))
+
+        val emissions = emissionsDeferred.await()
+        assertEquals(listOf(1L, 3L), emissions[0].map { it.id })
+        assertEquals(listOf(1L, 2L, 3L), emissions[1].map { it.id })
+        assertEquals(listOf(2L, 4L), emissions[2].map { it.id })
+    }
+
     private class StaticCurrentUserProvider(private val currentUser: CurrentUser) : CurrentUserProvider {
-        override suspend fun getCurrentUser(): CurrentUser = currentUser
+        private val state = MutableStateFlow(currentUser)
+        override fun observeCurrentUser(): Flow<CurrentUser> = state
+        override suspend fun getCurrentUser(): CurrentUser = state.value
+    }
+
+    private class FakeCurrentUserProvider(initial: CurrentUser) : CurrentUserProvider {
+        private val state = MutableStateFlow(initial)
+        override fun observeCurrentUser(): Flow<CurrentUser> = state
+        override suspend fun getCurrentUser(): CurrentUser = state.value
+        suspend fun emit(currentUser: CurrentUser) {
+            state.emit(currentUser)
+        }
     }
 
     private class InMemoryOrdersRepository(initial: List<Order> = emptyList()) : OrdersRepository {
@@ -77,6 +118,20 @@ class OrdersOwnershipUseCasesTest {
         override suspend fun refresh() = Unit
         override suspend fun getOrderById(id: Long): Order? = state.value.firstOrNull { it.id == id }
     }
+
+
+    private fun baseOrderDraft() = OrderDraft(
+        title = "Order",
+        address = "Addr",
+        pricePerHour = 100.0,
+        orderTime = OrderTime.Soon,
+        durationMin = 60,
+        workersCurrent = 0,
+        workersTotal = 1,
+        tags = emptyList(),
+        meta = emptyMap(),
+        comment = null
+    )
 
     private fun baseOrder(id: Long = 0, createdBy: String = "1", acceptedBy: String? = null, status: OrderStatus = OrderStatus.AVAILABLE) = Order(
         id = id,

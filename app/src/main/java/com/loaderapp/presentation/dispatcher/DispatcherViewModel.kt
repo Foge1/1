@@ -3,11 +3,15 @@ package com.loaderapp.presentation.dispatcher
 import androidx.lifecycle.viewModelScope
 import com.loaderapp.core.common.UiState
 import com.loaderapp.domain.model.OrderModel
+import com.loaderapp.domain.model.OrderRules
 import com.loaderapp.domain.usecase.order.DispatcherStats
 import com.loaderapp.features.orders.data.OrdersRepository
 import com.loaderapp.features.orders.domain.Order
+import com.loaderapp.features.orders.domain.OrderDraft
 import com.loaderapp.features.orders.domain.OrderStatus
 import com.loaderapp.features.orders.domain.OrderTime
+import com.loaderapp.features.orders.domain.usecase.CreateOrderUseCase
+import com.loaderapp.features.orders.domain.usecase.UseCaseResult
 import com.loaderapp.features.orders.ui.toOrderModel
 import com.loaderapp.presentation.base.BaseViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -24,7 +28,8 @@ import kotlinx.coroutines.flow.onEach
 @OptIn(FlowPreview::class)
 @HiltViewModel
 class DispatcherViewModel @Inject constructor(
-    private val ordersRepository: OrdersRepository
+    private val ordersRepository: OrdersRepository,
+    private val createOrderUseCase: CreateOrderUseCase
 ) : BaseViewModel() {
 
     private val _ordersState = MutableStateFlow<UiState<List<OrderModel>>>(UiState.Loading)
@@ -75,8 +80,10 @@ class DispatcherViewModel @Inject constructor(
 
     fun createOrder(order: OrderModel) {
         launchSafe {
-            ordersRepository.createOrder(order.toFeatureOrder())
-            showSnackbar("Заказ создан успешно")
+            when (val result = createOrderUseCase(order.toOrderDraft())) {
+                is UseCaseResult.Success -> showSnackbar("Заказ создан успешно")
+                is UseCaseResult.Failure -> showSnackbar(result.reason)
+            }
         }
     }
 
@@ -95,20 +102,15 @@ class DispatcherViewModel @Inject constructor(
     }
 }
 
-private fun OrderModel.toFeatureOrder(): Order = Order(
-    id = id,
+private fun OrderModel.toOrderDraft(): OrderDraft = OrderDraft(
     title = cargoDescription.ifBlank { "Заказ" },
     address = address,
     pricePerHour = pricePerHour,
     orderTime = OrderTime.Exact(dateTime),
-    durationMin = estimatedHours * 60,
+    durationMin = estimatedHours.coerceIn(OrderRules.MIN_ESTIMATED_HOURS, OrderRules.MAX_ESTIMATED_HOURS) * 60,
     workersCurrent = if (workerId == null) 0 else 1,
     workersTotal = requiredWorkers,
     tags = listOf(cargoDescription),
     meta = mapOf("minWorkerRating" to minWorkerRating.toString(), "dispatcherId" to dispatcherId.toString()),
-    comment = comment,
-    status = OrderStatus.AVAILABLE,
-    createdByUserId = dispatcherId.toString(),
-    acceptedByUserId = workerId?.toString(),
-    acceptedAtMillis = null
+    comment = comment
 )

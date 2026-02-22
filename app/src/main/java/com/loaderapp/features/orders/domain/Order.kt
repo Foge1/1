@@ -17,8 +17,8 @@ data class Order(
     val tags: List<String>,
     val meta: Map<String, String>,
     val comment: String? = null,
-    val status: OrderStatus = OrderStatus.AVAILABLE,
-    val createdByUserId: String = "",
+    val status: OrderStatus,
+    val createdByUserId: String,
     val acceptedByUserId: String? = null,
     val acceptedAtMillis: Long? = null
 ) {
@@ -34,3 +34,16 @@ data class Order(
         const val TIME_TYPE_SOON = "soon"
     }
 }
+
+data class OrderDraft(
+    val title: String,
+    val address: String,
+    val pricePerHour: Double,
+    val orderTime: OrderTime,
+    val durationMin: Int,
+    val workersCurrent: Int,
+    val workersTotal: Int,
+    val tags: List<String>,
+    val meta: Map<String, String>,
+    val comment: String? = null
+)

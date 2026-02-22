@@ -19,6 +19,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -256,7 +257,9 @@ class OrdersViewModelTest {
 
 
     private class TestCurrentUserProvider : CurrentUserProvider {
-        override suspend fun getCurrentUser(): CurrentUser = CurrentUser(id = "1", role = Role.LOADER)
+        private val currentUser = CurrentUser(id = "1", role = Role.LOADER)
+        override fun observeCurrentUser(): Flow<CurrentUser> = flowOf(currentUser)
+        override suspend fun getCurrentUser(): CurrentUser = currentUser
     }
 
     private fun testOrder(id: Long, status: OrderStatus): Order {
