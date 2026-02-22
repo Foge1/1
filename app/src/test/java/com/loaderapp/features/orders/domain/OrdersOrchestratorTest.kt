@@ -1,5 +1,6 @@
 package com.loaderapp.features.orders.domain
 
+import com.loaderapp.features.orders.domain.OrderDraft
 import com.loaderapp.features.orders.domain.repository.OrdersRepository
 import com.loaderapp.features.orders.domain.session.CurrentUser
 import com.loaderapp.features.orders.domain.session.CurrentUserProvider
@@ -13,6 +14,7 @@ import com.loaderapp.features.orders.ui.OrdersCommand
 import com.loaderapp.features.orders.ui.OrdersOrchestrator
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -46,7 +48,7 @@ class OrdersOrchestratorTest {
     fun `execute create returns success for valid order`() = runBlocking {
         val orchestrator = buildOrchestrator(InMemoryOrdersRepository())
 
-        val result = orchestrator.execute(OrdersCommand.Create(testOrder(id = 0L, status = OrderStatus.AVAILABLE)))
+        val result = orchestrator.execute(OrdersCommand.Create(testOrderDraft()))
 
         assertTrue(result is UseCaseResult.Success)
     }
@@ -99,8 +101,24 @@ class OrdersOrchestratorTest {
 
 
     private class TestCurrentUserProvider : CurrentUserProvider {
-        override suspend fun getCurrentUser(): CurrentUser = CurrentUser(id = "1", role = Role.LOADER)
+        private val currentUser = CurrentUser(id = "1", role = Role.LOADER)
+        override fun observeCurrentUser(): Flow<CurrentUser> = flowOf(currentUser)
+        override suspend fun getCurrentUser(): CurrentUser = currentUser
     }
+
+
+    private fun testOrderDraft(): OrderDraft = OrderDraft(
+        title = "Test",
+        address = "Address",
+        pricePerHour = 100.0,
+        orderTime = OrderTime.Soon,
+        durationMin = 60,
+        workersCurrent = 0,
+        workersTotal = 2,
+        tags = emptyList(),
+        meta = mapOf(Order.CREATED_AT_KEY to "0"),
+        comment = null
+    )
 
     private fun testOrder(id: Long, status: OrderStatus): Order {
         return Order(

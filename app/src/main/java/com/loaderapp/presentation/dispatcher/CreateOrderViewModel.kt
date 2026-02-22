@@ -4,6 +4,7 @@ import com.loaderapp.domain.model.OrderRules
 import com.loaderapp.features.orders.domain.usecase.CreateOrderUseCase
 import com.loaderapp.features.orders.domain.usecase.UseCaseResult
 import com.loaderapp.features.orders.domain.Order
+import com.loaderapp.features.orders.domain.OrderDraft
 import com.loaderapp.features.orders.domain.OrderTime
 import com.loaderapp.presentation.base.BaseViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -92,8 +93,7 @@ class CreateOrderViewModel @Inject constructor(
             else -> OrderTime.Exact(exactDateTime)
         }
 
-        val order = Order(
-            id = 0,
+        val orderDraft = OrderDraft(
             title = cargoDescription.trim().ifBlank { "Заказ" },
             address = address.trim(),
             pricePerHour = pricePerHour,
@@ -112,7 +112,7 @@ class CreateOrderViewModel @Inject constructor(
         )
 
         launchSafe {
-            when (val result = createOrderUseCase(order)) {
+            when (val result = createOrderUseCase(orderDraft)) {
                 is UseCaseResult.Success -> {
                     showSnackbar("Заказ создан успешно")
                     _navigationEvent.send(NavigationEvent.NavigateUp)

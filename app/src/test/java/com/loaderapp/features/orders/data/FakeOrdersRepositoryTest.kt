@@ -24,6 +24,7 @@ class FakeOrdersRepositoryTest {
                 workersTotal = 1,
                 tags = emptyList(),
                 meta = emptyMap(),
+                status = OrderStatus.AVAILABLE,
                 createdByUserId = "dispatcher"
             )
         )

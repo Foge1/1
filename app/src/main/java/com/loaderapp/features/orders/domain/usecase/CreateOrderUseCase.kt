@@ -1,6 +1,7 @@
 package com.loaderapp.features.orders.domain.usecase
 
 import com.loaderapp.features.orders.domain.Order
+import com.loaderapp.features.orders.domain.OrderDraft
 import com.loaderapp.features.orders.domain.OrderStatus
 import com.loaderapp.features.orders.domain.repository.OrdersRepository
 import com.loaderapp.features.orders.domain.session.CurrentUserProvider
@@ -10,19 +11,30 @@ class CreateOrderUseCase @Inject constructor(
     private val ordersRepository: OrdersRepository,
     private val currentUserProvider: CurrentUserProvider
 ) {
-    suspend operator fun invoke(order: Order): UseCaseResult<Unit> {
-        if (order.title.isBlank()) {
+    suspend operator fun invoke(orderDraft: OrderDraft): UseCaseResult<Unit> {
+        if (orderDraft.title.isBlank()) {
             return UseCaseResult.Failure("Название заказа не может быть пустым")
         }
-        if (order.workersTotal <= 0) {
+        if (orderDraft.workersTotal <= 0) {
             return UseCaseResult.Failure("Количество сотрудников должно быть больше нуля")
         }
-        if (order.workersCurrent < 0 || order.workersCurrent > order.workersTotal) {
+        if (orderDraft.workersCurrent < 0 || orderDraft.workersCurrent > orderDraft.workersTotal) {
             return UseCaseResult.Failure("Некорректное количество занятых сотрудников")
         }
 
         val currentUser = currentUserProvider.getCurrentUser()
-        val normalizedOrder = order.copy(
+        val order = Order(
+            id = 0,
+            title = orderDraft.title,
+            address = orderDraft.address,
+            pricePerHour = orderDraft.pricePerHour,
+            orderTime = orderDraft.orderTime,
+            durationMin = orderDraft.durationMin,
+            workersCurrent = orderDraft.workersCurrent,
+            workersTotal = orderDraft.workersTotal,
+            tags = orderDraft.tags,
+            meta = orderDraft.meta,
+            comment = orderDraft.comment,
             status = OrderStatus.AVAILABLE,
             createdByUserId = currentUser.id,
             acceptedByUserId = null,
@@ -30,7 +42,7 @@ class CreateOrderUseCase @Inject constructor(
         )
 
         return runCatching {
-            ordersRepository.createOrder(normalizedOrder)
+            ordersRepository.createOrder(order)
             UseCaseResult.Success(Unit)
         }.getOrElse { error ->
             UseCaseResult.Failure(error.message ?: "Не удалось создать заказ")
