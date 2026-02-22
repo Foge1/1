@@ -21,6 +21,7 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -302,7 +303,14 @@ private fun DayOptionSelector(
                     index = index,
                     count = DayOption.entries.size
                 ),
-                label = { Text(option.label) }
+                modifier = Modifier.weight(1f),
+                label = {
+                    Text(
+                        text = option.label,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
             )
         }
     }

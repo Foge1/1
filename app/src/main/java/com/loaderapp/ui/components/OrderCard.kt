@@ -419,7 +419,15 @@ private fun orderActionTextStyle(): TextStyle = MaterialTheme.typography.titleSm
 
 fun formatOrderDate(timestamp: Long): String = SimpleDateFormat("dd MMM", Locale("ru")).format(Date(timestamp))
 
-fun formatOrderTime(timestamp: Long): String = SimpleDateFormat("HH:mm", Locale("ru")).format(Date(timestamp))
+fun formatOrderTime(timestamp: Long): String {
+    val now = System.currentTimeMillis()
+    val nearFutureThreshold = now + 60 * 60 * 1000L
+    return if (timestamp in now..nearFutureThreshold) {
+        "Ближайшее время"
+    } else {
+        SimpleDateFormat("HH:mm", Locale("ru")).format(Date(timestamp))
+    }
+}
 
 fun formatOrderDateTime(timestamp: Long): String {
     val locale = Locale("ru")
