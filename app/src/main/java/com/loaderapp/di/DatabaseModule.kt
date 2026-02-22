@@ -7,6 +7,8 @@ import com.loaderapp.data.dao.ChatDao
 import com.loaderapp.data.dao.OrderDao
 import com.loaderapp.data.dao.OrderWorkerDao
 import com.loaderapp.data.dao.UserDao
+import com.loaderapp.features.orders.data.local.dao.OrdersDao
+import com.loaderapp.features.orders.data.local.db.AppDatabase as OrdersAppDatabase
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -38,6 +40,27 @@ object DatabaseModule {
             .build()
     }
     
+
+    @Provides
+    @Singleton
+    fun provideOrdersAppDatabase(
+        @ApplicationContext context: Context
+    ): OrdersAppDatabase {
+        return Room.databaseBuilder(
+            context,
+            OrdersAppDatabase::class.java,
+            "orders_feature_database"
+        )
+            .fallbackToDestructiveMigration()
+            .build()
+    }
+
+    @Provides
+    @Singleton
+    fun provideOrdersDao(database: OrdersAppDatabase): OrdersDao {
+        return database.ordersDao()
+    }
+
     /**
      * Предоставить OrderDao
      */
