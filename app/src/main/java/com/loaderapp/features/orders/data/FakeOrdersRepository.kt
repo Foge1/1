@@ -4,6 +4,7 @@ import com.loaderapp.features.orders.domain.Order
 import com.loaderapp.features.orders.domain.OrderStateMachine
 import com.loaderapp.features.orders.domain.OrderStatus
 import com.loaderapp.features.orders.domain.OrderTransitionResult
+import com.loaderapp.features.orders.domain.repository.OrdersRepository
 import com.loaderapp.features.orders.domain.OrderTime
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -71,6 +72,9 @@ class FakeOrdersRepository @Inject constructor() : OrdersRepository {
             }
         }
     }
+
+    override suspend fun getOrderById(id: Long): Order? =
+        orders.value.firstOrNull { it.id == id }
 
     override suspend fun refresh() {
         simulateLatency()

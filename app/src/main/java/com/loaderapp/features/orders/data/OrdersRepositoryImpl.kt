@@ -9,6 +9,7 @@ import com.loaderapp.features.orders.domain.OrderStateMachine
 import com.loaderapp.features.orders.domain.OrderStatus
 import com.loaderapp.features.orders.domain.OrderTime
 import com.loaderapp.features.orders.domain.OrderTransitionResult
+import com.loaderapp.features.orders.domain.repository.OrdersRepository
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.flow.Flow
@@ -59,6 +60,9 @@ class OrdersRepositoryImpl @Inject constructor(
             }
         }
     }
+
+    override suspend fun getOrderById(id: Long): Order? =
+        ordersDao.getOrderById(id)?.toDomain()
 
     override suspend fun refresh() {
         val now = System.currentTimeMillis()
