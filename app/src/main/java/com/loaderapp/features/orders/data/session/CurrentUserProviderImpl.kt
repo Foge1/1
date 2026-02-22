@@ -22,6 +22,7 @@ class CurrentUserProviderImpl @Inject constructor(
         val user = when (val result = userRepository.getUserById(userId)) {
             is Result.Success -> result.data
             is Result.Error -> error(result.message)
+            is Result.Loading -> error("User is still loading")
         }
 
         return CurrentUser(
