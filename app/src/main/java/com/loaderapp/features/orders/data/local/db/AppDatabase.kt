@@ -9,7 +9,7 @@ import com.loaderapp.features.orders.data.local.entity.OrdersConverters
 
 @Database(
     entities = [OrderEntity::class],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 @TypeConverters(OrdersConverters::class)

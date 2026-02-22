@@ -3,12 +3,15 @@ package com.loaderapp.features.orders.ui
 import com.loaderapp.features.orders.domain.Order
 import com.loaderapp.features.orders.domain.OrderStatus
 import com.loaderapp.features.orders.domain.OrderTime
+import com.loaderapp.features.orders.domain.Role
 import com.loaderapp.features.orders.domain.repository.OrdersRepository
+import com.loaderapp.features.orders.domain.session.CurrentUser
+import com.loaderapp.features.orders.domain.session.CurrentUserProvider
 import com.loaderapp.features.orders.domain.usecase.AcceptOrderUseCase
 import com.loaderapp.features.orders.domain.usecase.CancelOrderUseCase
 import com.loaderapp.features.orders.domain.usecase.CompleteOrderUseCase
 import com.loaderapp.features.orders.domain.usecase.CreateOrderUseCase
-import com.loaderapp.features.orders.domain.usecase.ObserveOrdersUseCase
+import com.loaderapp.features.orders.domain.usecase.ObserveOrdersForRoleUseCase
 import com.loaderapp.features.orders.domain.usecase.RefreshOrdersUseCase
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -164,14 +167,14 @@ class OrdersViewModelTest {
 
     private fun TestScope.buildViewModel(repository: TestOrdersRepository): OrdersViewModel {
         val orchestrator = OrdersOrchestrator(
-            createOrderUseCase = CreateOrderUseCase(repository),
-            acceptOrderUseCase = AcceptOrderUseCase(repository),
-            cancelOrderUseCase = CancelOrderUseCase(repository),
-            completeOrderUseCase = CompleteOrderUseCase(repository),
+            createOrderUseCase = CreateOrderUseCase(repository, TestCurrentUserProvider()),
+            acceptOrderUseCase = AcceptOrderUseCase(repository, TestCurrentUserProvider()),
+            cancelOrderUseCase = CancelOrderUseCase(repository, TestCurrentUserProvider()),
+            completeOrderUseCase = CompleteOrderUseCase(repository, TestCurrentUserProvider()),
             refreshOrdersUseCase = RefreshOrdersUseCase(repository)
         )
         return OrdersViewModel(
-            observeOrdersUseCase = ObserveOrdersUseCase(repository),
+            observeOrdersUseCase = ObserveOrdersForRoleUseCase(repository, TestCurrentUserProvider()),
             ordersOrchestrator = orchestrator
         )
     }
@@ -197,11 +200,11 @@ class OrdersViewModelTest {
             state.update { it + order }
         }
 
-        override suspend fun acceptOrder(id: Long) {
+        override suspend fun acceptOrder(id: Long, acceptedByUserId: String, acceptedAtMillis: Long) {
             executeMode(acceptMode, "accept failed")
             state.update { current ->
                 current.map { order ->
-                    if (order.id == id) order.copy(status = OrderStatus.IN_PROGRESS) else order
+                    if (order.id == id) order.copy(status = OrderStatus.IN_PROGRESS, acceptedByUserId = acceptedByUserId, acceptedAtMillis = acceptedAtMillis) else order
                 }
             }
         }
@@ -251,6 +254,11 @@ class OrdersViewModelTest {
         }
     }
 
+
+    private class TestCurrentUserProvider : CurrentUserProvider {
+        override suspend fun getCurrentUser(): CurrentUser = CurrentUser(id = "1", role = Role.LOADER)
+    }
+
     private fun testOrder(id: Long, status: OrderStatus): Order {
         return Order(
             id = id,
@@ -263,7 +271,10 @@ class OrdersViewModelTest {
             workersTotal = 2,
             tags = emptyList(),
             meta = mapOf(Order.CREATED_AT_KEY to "0"),
-            status = status
+            status = status,
+            createdByUserId = "2",
+            acceptedByUserId = null,
+            acceptedAtMillis = null
         )
     }
 }

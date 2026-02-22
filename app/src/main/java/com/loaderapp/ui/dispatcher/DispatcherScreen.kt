@@ -151,9 +151,10 @@ private fun OrdersPage(
         ) {
             items(orders, key = { it.id }) { order ->
                 DispatcherOrderCard(
-                    order    = order,
-                    onClick  = { onOrderClick(order.id) },
-                    onCancel = { onCancelOrder(order) }
+                    order = order,
+                    onClick = { onOrderClick(order.id) },
+                    onCancel = { onCancelOrder(order) },
+                    showAcceptedBadge = order.status == com.loaderapp.domain.model.OrderStatusModel.IN_PROGRESS
                 )
                 Spacer(Modifier.height(12.dp))
             }

@@ -2,7 +2,7 @@ package com.loaderapp.features.orders.ui
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.loaderapp.features.orders.domain.usecase.ObserveOrdersUseCase
+import com.loaderapp.features.orders.domain.usecase.ObserveOrdersForRoleUseCase
 import com.loaderapp.features.orders.domain.usecase.UseCaseResult
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -22,7 +22,7 @@ import kotlinx.coroutines.launch
 
 @HiltViewModel
 class OrdersViewModel @Inject constructor(
-    private val observeOrdersUseCase: ObserveOrdersUseCase,
+    private val observeOrdersUseCase: ObserveOrdersForRoleUseCase,
     private val ordersOrchestrator: OrdersOrchestrator
 ) : ViewModel() {
 

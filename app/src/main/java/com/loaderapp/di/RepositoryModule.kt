@@ -7,7 +7,9 @@ import com.loaderapp.domain.repository.ChatRepository
 import com.loaderapp.domain.repository.OrderRepository
 import com.loaderapp.domain.repository.UserRepository
 import com.loaderapp.features.orders.data.OrdersRepositoryImpl
+import com.loaderapp.features.orders.data.session.CurrentUserProviderImpl
 import com.loaderapp.features.orders.domain.repository.OrdersRepository
+import com.loaderapp.features.orders.domain.session.CurrentUserProvider
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -56,4 +58,10 @@ abstract class RepositoryModule {
     abstract fun bindOrdersRepository(
         ordersRepositoryImpl: OrdersRepositoryImpl
     ): OrdersRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindCurrentUserProvider(
+        currentUserProviderImpl: CurrentUserProviderImpl
+    ): CurrentUserProvider
 }
