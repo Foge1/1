@@ -1,31 +1,33 @@
 package com.loaderapp.features.orders.data
 
 import android.util.Log
+import com.loaderapp.features.orders.data.local.dao.OrdersDao
+import com.loaderapp.features.orders.data.mappers.toDomain
+import com.loaderapp.features.orders.data.mappers.toEntity
 import com.loaderapp.features.orders.domain.Order
 import com.loaderapp.features.orders.domain.OrderStateMachine
 import com.loaderapp.features.orders.domain.OrderStatus
-import com.loaderapp.features.orders.domain.OrderTransitionResult
 import com.loaderapp.features.orders.domain.OrderTime
+import com.loaderapp.features.orders.domain.OrderTransitionResult
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.map
 
 @Singleton
-class OrdersRepositoryImpl @Inject constructor() : OrdersRepository {
-    private val ordersFlow = MutableStateFlow<List<Order>>(emptyList())
+class OrdersRepositoryImpl @Inject constructor(
+    private val ordersDao: OrdersDao
+) : OrdersRepository {
 
-    override fun observeOrders(): Flow<List<Order>> = ordersFlow.asStateFlow()
+    override fun observeOrders(): Flow<List<Order>> =
+        ordersDao.observeOrders().map { entities -> entities.map { it.toDomain() } }
 
     override suspend fun createOrder(order: Order) {
-        val nextId = (ordersFlow.value.maxOfOrNull { it.id } ?: 0L) + 1L
-        val createdOrder = order.copy(id = nextId, status = OrderStatus.AVAILABLE)
-        ordersFlow.update { current -> current + createdOrder }
+        val createdOrder = order.copy(id = 0L, status = OrderStatus.AVAILABLE)
+        val orderId = ordersDao.insertOrder(createdOrder.toEntity())
         logDebug(
             action = "createOrder",
-            orderId = createdOrder.id,
+            orderId = orderId,
             oldStatus = null,
             newStatus = createdOrder.status
         )
@@ -61,59 +63,40 @@ class OrdersRepositoryImpl @Inject constructor() : OrdersRepository {
     override suspend fun refresh() {
         val now = System.currentTimeMillis()
         val expirationThreshold = now - ORDER_EXPIRATION_GRACE_MS
-        ordersFlow.update { current ->
-            current.map { order ->
-                val shouldExpire = order.status == OrderStatus.AVAILABLE && order.orderTime is OrderTime.Exact && order.dateTime < expirationThreshold
-                if (shouldExpire) {
-                    when (val result = OrderStateMachine.transition(order, OrderStatus.EXPIRED)) {
-                        is OrderTransitionResult.Success -> {
-                            logDebug(
-                                action = "refresh",
-                                orderId = order.id,
-                                oldStatus = order.status,
-                                newStatus = result.order.status
-                            )
-                            result.order
-                        }
+        ordersDao.getOrders().forEach { entity ->
+            val order = entity.toDomain()
+            val shouldExpire = order.status == OrderStatus.AVAILABLE &&
+                order.orderTime is OrderTime.Exact &&
+                order.dateTime < expirationThreshold
 
-                        is OrderTransitionResult.Failure -> order
+            if (shouldExpire) {
+                when (val result = OrderStateMachine.transition(order, OrderStatus.EXPIRED)) {
+                    is OrderTransitionResult.Success -> {
+                        ordersDao.updateOrder(result.order.toEntity())
+                        logDebug(
+                            action = "refresh",
+                            orderId = order.id,
+                            oldStatus = order.status,
+                            newStatus = result.order.status
+                        )
                     }
-                } else {
-                    order
+
+                    is OrderTransitionResult.Failure -> Unit
                 }
             }
         }
     }
 
-    private fun mutateOrder(action: String, id: Long, mutate: (Order) -> Order) {
-        var oldStatus: OrderStatus? = null
-        var updatedStatus: OrderStatus? = null
-        ordersFlow.update { current ->
-            val index = current.indexOfFirst { it.id == id }
-            if (index < 0) {
-                return@update current
-            }
-            current.mapIndexed { orderIndex, order ->
-                if (orderIndex == index) {
-                    oldStatus = order.status
-                    val updated = mutate(order)
-                    updatedStatus = updated.status
-                    updated
-                } else {
-                    order
-                }
-            }
-        }
-        val stableOldStatus = oldStatus
-        val stableUpdatedStatus = updatedStatus
-        if (stableOldStatus != null && stableUpdatedStatus != null) {
-            logDebug(
-                action = action,
-                orderId = id,
-                oldStatus = stableOldStatus,
-                newStatus = stableUpdatedStatus
-            )
-        }
+    private suspend fun mutateOrder(action: String, id: Long, mutate: (Order) -> Order) {
+        val current = ordersDao.getOrderById(id)?.toDomain() ?: return
+        val updated = mutate(current)
+        ordersDao.updateOrder(updated.toEntity())
+        logDebug(
+            action = action,
+            orderId = id,
+            oldStatus = current.status,
+            newStatus = updated.status
+        )
     }
 
     private fun logDebug(action: String, orderId: Long, oldStatus: OrderStatus?, newStatus: OrderStatus) {
