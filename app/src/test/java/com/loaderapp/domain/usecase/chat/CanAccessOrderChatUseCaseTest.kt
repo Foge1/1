@@ -9,19 +9,17 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class CanAccessOrderChatUseCaseTest {
 
     @Test
-    fun `returns false when order not found`() = runBlocking {
+    fun `returns error when order not found`() = runBlocking {
         val useCase = CanAccessOrderChatUseCase(FakeOrdersRepository(order = null))
 
         val result = useCase(CanAccessOrderChatParams(orderId = 100L, userId = 1L))
 
-        assertTrue(result is Result.Success)
-        assertEquals(false, (result as Result.Success).data)
+        assertEquals(Result.Error("Заказ не найден"), result)
     }
 
     @Test

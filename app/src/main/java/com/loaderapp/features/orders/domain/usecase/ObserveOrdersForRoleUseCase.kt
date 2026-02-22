@@ -8,17 +8,20 @@ import com.loaderapp.features.orders.domain.session.CurrentUser
 import com.loaderapp.features.orders.domain.session.CurrentUserProvider
 import javax.inject.Inject
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
 
 class ObserveOrdersForRoleUseCase @Inject constructor(
     private val ordersRepository: OrdersRepository,
     private val currentUserProvider: CurrentUserProvider
 ) {
-    operator fun invoke(): Flow<List<Order>> = combine(
-        currentUserProvider.observeCurrentUser(),
-        ordersRepository.observeOrders()
-    ) { user, orders ->
-        orders.filterForUser(user)
+    operator fun invoke(): Flow<List<Order>> {
+        return currentUserProvider.observeCurrentUser()
+            .flatMapLatest { user ->
+                ordersRepository.observeOrders().map { orders ->
+                    orders.filterForUser(user)
+                }
+            }
     }
 }
 

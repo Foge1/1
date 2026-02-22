@@ -10,7 +10,6 @@ import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
@@ -24,19 +23,19 @@ class CurrentUserProviderImpl @Inject constructor(
     override fun observeCurrentUser(): Flow<CurrentUser> {
         return userPreferences.currentUserId
             .distinctUntilChanged()
-            .filterNotNull()
+            .map { userId ->
+                userId ?: error("Current user is not selected")
+            }
             .flatMapLatest { userId ->
                 userRepository.getUserByIdFlow(userId)
                     .map { user ->
-                        user?.let {
-                            CurrentUser(
-                                id = it.id.toString(),
-                                role = it.role.toFeatureRole()
-                            )
-                        }
+                        val resolvedUser = user ?: error("Current user not found: $userId")
+                        CurrentUser(
+                            id = resolvedUser.id.toString(),
+                            role = resolvedUser.role.toFeatureRole()
+                        )
                     }
             }
-            .filterNotNull()
             .distinctUntilChanged()
     }
 

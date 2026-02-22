@@ -17,7 +17,7 @@ class CanAccessOrderChatUseCase @Inject constructor(
 
     override suspend fun execute(params: CanAccessOrderChatParams): Result<Boolean> {
         val order = ordersRepository.getOrderById(params.orderId)
-            ?: return Result.Success(false)
+            ?: return Result.Error("Заказ не найден")
 
         return Result.Success(order.status == OrderStatus.IN_PROGRESS)
     }
