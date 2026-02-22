@@ -1,0 +1,113 @@
+package com.loaderapp.features.orders.domain
+
+import com.loaderapp.features.orders.domain.repository.OrdersRepository
+import com.loaderapp.features.orders.domain.usecase.AcceptOrderUseCase
+import com.loaderapp.features.orders.domain.usecase.CancelOrderUseCase
+import com.loaderapp.features.orders.domain.usecase.CompleteOrderUseCase
+import com.loaderapp.features.orders.domain.usecase.CreateOrderUseCase
+import com.loaderapp.features.orders.domain.usecase.RefreshOrdersUseCase
+import com.loaderapp.features.orders.domain.usecase.UseCaseResult
+import com.loaderapp.features.orders.ui.OrdersCommand
+import com.loaderapp.features.orders.ui.OrdersOrchestrator
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.runBlocking
+import org.junit.Assert.assertTrue
+import org.junit.Test
+
+class OrdersOrchestratorTest {
+
+    @Test
+    fun `execute accept returns failure for invalid status`() = runBlocking {
+        val repository = InMemoryOrdersRepository(
+            orders = listOf(
+                testOrder(id = 7L, status = OrderStatus.COMPLETED)
+            )
+        )
+        val orchestrator = buildOrchestrator(repository)
+
+        val result = orchestrator.execute(OrdersCommand.Accept(orderId = 7L))
+
+        assertTrue(result is UseCaseResult.Failure)
+    }
+
+    @Test
+    fun `execute refresh returns success`() = runBlocking {
+        val orchestrator = buildOrchestrator(InMemoryOrdersRepository())
+
+        val result = orchestrator.execute(OrdersCommand.Refresh)
+
+        assertTrue(result is UseCaseResult.Success)
+    }
+
+    @Test
+    fun `execute create returns success for valid order`() = runBlocking {
+        val orchestrator = buildOrchestrator(InMemoryOrdersRepository())
+
+        val result = orchestrator.execute(OrdersCommand.Create(testOrder(id = 0L, status = OrderStatus.AVAILABLE)))
+
+        assertTrue(result is UseCaseResult.Success)
+    }
+
+    private fun buildOrchestrator(repository: OrdersRepository): OrdersOrchestrator {
+        return OrdersOrchestrator(
+            createOrderUseCase = CreateOrderUseCase(repository),
+            acceptOrderUseCase = AcceptOrderUseCase(repository),
+            cancelOrderUseCase = CancelOrderUseCase(repository),
+            completeOrderUseCase = CompleteOrderUseCase(repository),
+            refreshOrdersUseCase = RefreshOrdersUseCase(repository)
+        )
+    }
+
+    private class InMemoryOrdersRepository(
+        private val orders: MutableList<Order> = mutableListOf()
+    ) : OrdersRepository {
+
+        constructor(orders: List<Order>) : this(orders.toMutableList())
+
+        override fun observeOrders(): Flow<List<Order>> = emptyFlow()
+
+        override suspend fun createOrder(order: Order) {
+            orders.add(order.copy(id = if (order.id == 0L) 1L else order.id))
+        }
+
+        override suspend fun acceptOrder(id: Long) {
+            mutate(id) { it.copy(status = OrderStatus.IN_PROGRESS) }
+        }
+
+        override suspend fun cancelOrder(id: Long, reason: String?) {
+            mutate(id) { it.copy(status = OrderStatus.CANCELED) }
+        }
+
+        override suspend fun completeOrder(id: Long) {
+            mutate(id) { it.copy(status = OrderStatus.COMPLETED) }
+        }
+
+        override suspend fun refresh() = Unit
+
+        override suspend fun getOrderById(id: Long): Order? = orders.firstOrNull { it.id == id }
+
+        private fun mutate(id: Long, transform: (Order) -> Order) {
+            val index = orders.indexOfFirst { it.id == id }
+            if (index >= 0) {
+                orders[index] = transform(orders[index])
+            }
+        }
+    }
+
+    private fun testOrder(id: Long, status: OrderStatus): Order {
+        return Order(
+            id = id,
+            title = "Test",
+            address = "Address",
+            pricePerHour = 100.0,
+            orderTime = OrderTime.Soon,
+            durationMin = 60,
+            workersCurrent = 0,
+            workersTotal = 2,
+            tags = emptyList(),
+            meta = mapOf(Order.CREATED_AT_KEY to "0"),
+            status = status
+        )
+    }
+}

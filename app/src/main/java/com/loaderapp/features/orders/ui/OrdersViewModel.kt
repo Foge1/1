@@ -2,37 +2,39 @@ package com.loaderapp.features.orders.ui
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.loaderapp.features.orders.domain.usecase.AcceptOrderUseCase
-import com.loaderapp.features.orders.domain.usecase.CancelOrderUseCase
-import com.loaderapp.features.orders.domain.usecase.CompleteOrderUseCase
 import com.loaderapp.features.orders.domain.usecase.ObserveOrdersUseCase
-import com.loaderapp.features.orders.domain.usecase.RefreshOrdersUseCase
 import com.loaderapp.features.orders.domain.usecase.UseCaseResult
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.filterIsInstance
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 @HiltViewModel
 class OrdersViewModel @Inject constructor(
     private val observeOrdersUseCase: ObserveOrdersUseCase,
-    private val acceptOrderUseCase: AcceptOrderUseCase,
-    private val cancelOrderUseCase: CancelOrderUseCase,
-    private val completeOrderUseCase: CompleteOrderUseCase,
-    private val refreshOrdersUseCase: RefreshOrdersUseCase
+    private val ordersOrchestrator: OrdersOrchestrator
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(OrdersUiState())
     val uiState: StateFlow<OrdersUiState> = _uiState.asStateFlow()
 
-    private val _snackbarMessage = MutableSharedFlow<String>()
-    val snackbarMessage: SharedFlow<String> = _snackbarMessage.asSharedFlow()
+    private val _uiEvents = MutableSharedFlow<OrdersUiEvent>()
+    val uiEvents: SharedFlow<OrdersUiEvent> = _uiEvents.asSharedFlow()
+
+    val snackbarMessage: SharedFlow<String> = uiEvents
+        .filterIsInstance<OrdersUiEvent.ShowSnackbar>()
+        .map { it.message }
+        .shareIn(viewModelScope, SharingStarted.WhileSubscribed(5000), replay = 0)
 
     init {
         observeOrders()
@@ -56,47 +58,50 @@ class OrdersViewModel @Inject constructor(
         }
     }
 
-    fun refresh() {
-        viewModelScope.launch {
-            _uiState.update { it.copy(refreshing = true) }
-            when (val result = refreshOrdersUseCase()) {
-                is UseCaseResult.Success -> {
-                    _uiState.update { it.copy(refreshing = false) }
-                }
+    fun refresh() = submit(OrdersCommand.Refresh)
 
-                is UseCaseResult.Failure -> {
-                    _uiState.update { it.copy(refreshing = false, errorMessage = result.reason) }
+    fun onAcceptClicked(id: Long) = submit(OrdersCommand.Accept(id), id)
+
+    fun onCancelClicked(id: Long, reason: String? = null) = submit(OrdersCommand.Cancel(id, reason), id)
+
+    fun onCompleteClicked(id: Long) = submit(OrdersCommand.Complete(id), id)
+
+    private fun submit(command: OrdersCommand, pendingOrderId: Long? = null) {
+        startExecution(command, pendingOrderId)
+
+        viewModelScope.launch {
+            var failureReason: String? = null
+            try {
+                when (val result = ordersOrchestrator.execute(command)) {
+                    is UseCaseResult.Success -> Unit
+                    is UseCaseResult.Failure -> failureReason = result.reason
                 }
+            } finally {
+                finishExecution(command, pendingOrderId)
+            }
+
+            failureReason?.let { reason ->
+                _uiState.update { it.copy(errorMessage = reason) }
+                _uiEvents.emit(OrdersUiEvent.ShowSnackbar(reason))
             }
         }
     }
 
-    fun onAcceptClicked(id: Long) = submitAction(id) { acceptOrderUseCase(id) }
-
-    fun onCancelClicked(id: Long, reason: String? = null) = submitAction(id) {
-        cancelOrderUseCase(id, reason)
+    private fun startExecution(command: OrdersCommand, pendingOrderId: Long?) {
+        if (command is OrdersCommand.Refresh) {
+            _uiState.update { it.copy(refreshing = true) }
+        }
+        pendingOrderId?.let { orderId ->
+            _uiState.update { it.copy(pendingActions = it.pendingActions + orderId) }
+        }
     }
 
-    fun onCompleteClicked(id: Long) = submitAction(id) { completeOrderUseCase(id) }
-
-    private fun submitAction(orderId: Long, action: suspend () -> UseCaseResult<Unit>) {
-        _uiState.update { it.copy(pendingActions = it.pendingActions + orderId) }
-        viewModelScope.launch {
-            when (val result = action()) {
-                is UseCaseResult.Success -> {
-                    _uiState.update { it.copy(pendingActions = it.pendingActions - orderId) }
-                }
-
-                is UseCaseResult.Failure -> {
-                    _uiState.update {
-                        it.copy(
-                            errorMessage = result.reason,
-                            pendingActions = it.pendingActions - orderId
-                        )
-                    }
-                    _snackbarMessage.emit(result.reason)
-                }
-            }
+    private fun finishExecution(command: OrdersCommand, pendingOrderId: Long?) {
+        if (command is OrdersCommand.Refresh) {
+            _uiState.update { it.copy(refreshing = false) }
+        }
+        pendingOrderId?.let { orderId ->
+            _uiState.update { it.copy(pendingActions = it.pendingActions - orderId) }
         }
     }
 }
