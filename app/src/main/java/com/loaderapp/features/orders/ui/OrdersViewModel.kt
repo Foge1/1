@@ -77,8 +77,8 @@ class OrdersViewModel @Inject constructor(
                     is UseCaseResult.Success -> Unit
                     is UseCaseResult.Failure -> failureReason = result.reason
                 }
-            } catch (_: CancellationException) {
-                throw
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 failureReason = e.message ?: "Неизвестная ошибка"
             } finally {
