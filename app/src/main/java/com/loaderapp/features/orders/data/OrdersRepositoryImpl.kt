@@ -24,7 +24,7 @@ class OrdersRepositoryImpl @Inject constructor(
         ordersDao.observeOrders().map { entities -> entities.map { it.toDomain() } }
 
     override suspend fun createOrder(order: Order) {
-        val createdOrder = order.copy(id = 0L, status = OrderStatus.AVAILABLE)
+        val createdOrder = order.copy(id = 0L, status = OrderStatus.AVAILABLE, acceptedByUserId = null, acceptedAtMillis = null)
         val orderId = ordersDao.insertOrder(createdOrder.toEntity())
         logDebug(
             action = "createOrder",
@@ -34,10 +34,13 @@ class OrdersRepositoryImpl @Inject constructor(
         )
     }
 
-    override suspend fun acceptOrder(id: Long) {
+    override suspend fun acceptOrder(id: Long, acceptedByUserId: String, acceptedAtMillis: Long) {
         mutateOrder("acceptOrder", id) { order ->
             when (val result = OrderStateMachine.transition(order, OrderStatus.IN_PROGRESS)) {
-                is OrderTransitionResult.Success -> result.order
+                is OrderTransitionResult.Success -> result.order.copy(
+                    acceptedByUserId = acceptedByUserId,
+                    acceptedAtMillis = acceptedAtMillis
+                )
                 is OrderTransitionResult.Failure -> order
             }
         }

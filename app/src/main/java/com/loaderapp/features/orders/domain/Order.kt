@@ -17,7 +17,10 @@ data class Order(
     val tags: List<String>,
     val meta: Map<String, String>,
     val comment: String? = null,
-    val status: OrderStatus
+    val status: OrderStatus = OrderStatus.AVAILABLE,
+    val createdByUserId: String = "",
+    val acceptedByUserId: String? = null,
+    val acceptedAtMillis: Long? = null
 ) {
     val dateTime: Long
         get() = when (val time = orderTime) {

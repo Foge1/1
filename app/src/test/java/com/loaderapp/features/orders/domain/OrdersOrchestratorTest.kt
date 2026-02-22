@@ -1,6 +1,8 @@
 package com.loaderapp.features.orders.domain
 
 import com.loaderapp.features.orders.domain.repository.OrdersRepository
+import com.loaderapp.features.orders.domain.session.CurrentUser
+import com.loaderapp.features.orders.domain.session.CurrentUserProvider
 import com.loaderapp.features.orders.domain.usecase.AcceptOrderUseCase
 import com.loaderapp.features.orders.domain.usecase.CancelOrderUseCase
 import com.loaderapp.features.orders.domain.usecase.CompleteOrderUseCase
@@ -51,10 +53,10 @@ class OrdersOrchestratorTest {
 
     private fun buildOrchestrator(repository: OrdersRepository): OrdersOrchestrator {
         return OrdersOrchestrator(
-            createOrderUseCase = CreateOrderUseCase(repository),
-            acceptOrderUseCase = AcceptOrderUseCase(repository),
-            cancelOrderUseCase = CancelOrderUseCase(repository),
-            completeOrderUseCase = CompleteOrderUseCase(repository),
+            createOrderUseCase = CreateOrderUseCase(repository, TestCurrentUserProvider()),
+            acceptOrderUseCase = AcceptOrderUseCase(repository, TestCurrentUserProvider()),
+            cancelOrderUseCase = CancelOrderUseCase(repository, TestCurrentUserProvider()),
+            completeOrderUseCase = CompleteOrderUseCase(repository, TestCurrentUserProvider()),
             refreshOrdersUseCase = RefreshOrdersUseCase(repository)
         )
     }
@@ -71,8 +73,8 @@ class OrdersOrchestratorTest {
             orders.add(order.copy(id = if (order.id == 0L) 1L else order.id))
         }
 
-        override suspend fun acceptOrder(id: Long) {
-            mutate(id) { it.copy(status = OrderStatus.IN_PROGRESS) }
+        override suspend fun acceptOrder(id: Long, acceptedByUserId: String, acceptedAtMillis: Long) {
+            mutate(id) { it.copy(status = OrderStatus.IN_PROGRESS, acceptedByUserId = acceptedByUserId, acceptedAtMillis = acceptedAtMillis) }
         }
 
         override suspend fun cancelOrder(id: Long, reason: String?) {
@@ -95,6 +97,11 @@ class OrdersOrchestratorTest {
         }
     }
 
+
+    private class TestCurrentUserProvider : CurrentUserProvider {
+        override suspend fun getCurrentUser(): CurrentUser = CurrentUser(id = "1", role = Role.LOADER)
+    }
+
     private fun testOrder(id: Long, status: OrderStatus): Order {
         return Order(
             id = id,
@@ -107,7 +114,10 @@ class OrdersOrchestratorTest {
             workersTotal = 2,
             tags = emptyList(),
             meta = mapOf(Order.CREATED_AT_KEY to "0"),
-            status = status
+            status = status,
+            createdByUserId = "2",
+            acceptedByUserId = null,
+            acceptedAtMillis = null
         )
     }
 }

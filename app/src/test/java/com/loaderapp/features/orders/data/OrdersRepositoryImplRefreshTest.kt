@@ -30,7 +30,10 @@ class OrdersRepositoryImplRefreshTest {
                 workersTotal = 1,
                 tags = emptyList(),
                 meta = emptyMap(),
-                status = OrderStatus.AVAILABLE
+                status = OrderStatus.AVAILABLE,
+                createdByUserId = "2",
+                acceptedByUserId = null,
+                acceptedAtMillis = null
             )
         )
 
@@ -55,7 +58,10 @@ class OrdersRepositoryImplRefreshTest {
                 workersTotal = 1,
                 tags = emptyList(),
                 meta = emptyMap(),
-                status = OrderStatus.AVAILABLE
+                status = OrderStatus.AVAILABLE,
+                createdByUserId = "2",
+                acceptedByUserId = null,
+                acceptedAtMillis = null
             )
         )
 

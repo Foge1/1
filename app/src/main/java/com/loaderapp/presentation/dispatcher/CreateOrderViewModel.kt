@@ -1,9 +1,9 @@
 package com.loaderapp.presentation.dispatcher
 
 import com.loaderapp.domain.model.OrderRules
-import com.loaderapp.features.orders.data.OrdersRepository
+import com.loaderapp.features.orders.domain.usecase.CreateOrderUseCase
+import com.loaderapp.features.orders.domain.usecase.UseCaseResult
 import com.loaderapp.features.orders.domain.Order
-import com.loaderapp.features.orders.domain.OrderStatus
 import com.loaderapp.features.orders.domain.OrderTime
 import com.loaderapp.presentation.base.BaseViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -17,7 +17,7 @@ import kotlinx.coroutines.flow.receiveAsFlow
 
 @HiltViewModel
 class CreateOrderViewModel @Inject constructor(
-    private val ordersRepository: OrdersRepository
+    private val createOrderUseCase: CreateOrderUseCase
 ) : BaseViewModel() {
 
     private val _navigationEvent = Channel<NavigationEvent>(Channel.BUFFERED)
@@ -108,14 +108,19 @@ class CreateOrderViewModel @Inject constructor(
                 Order.CREATED_AT_KEY to now.toString(),
                 Order.TIME_TYPE_KEY to if (normalizedOrderTime == OrderTime.Soon) Order.TIME_TYPE_SOON else "exact"
             ),
-            comment = comment.trim(),
-            status = OrderStatus.AVAILABLE
+            comment = comment.trim()
         )
 
         launchSafe {
-            ordersRepository.createOrder(order)
-            showSnackbar("Заказ создан успешно")
-            _navigationEvent.send(NavigationEvent.NavigateUp)
+            when (val result = createOrderUseCase(order)) {
+                is UseCaseResult.Success -> {
+                    showSnackbar("Заказ создан успешно")
+                    _navigationEvent.send(NavigationEvent.NavigateUp)
+                }
+                is UseCaseResult.Failure -> {
+                    showSnackbar(result.reason)
+                }
+            }
         }
     }
 

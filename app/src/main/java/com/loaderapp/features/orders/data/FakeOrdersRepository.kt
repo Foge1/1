@@ -3,18 +3,18 @@ package com.loaderapp.features.orders.data
 import com.loaderapp.features.orders.domain.Order
 import com.loaderapp.features.orders.domain.OrderStateMachine
 import com.loaderapp.features.orders.domain.OrderStatus
+import com.loaderapp.features.orders.domain.OrderTime
 import com.loaderapp.features.orders.domain.OrderTransitionResult
 import com.loaderapp.features.orders.domain.repository.OrdersRepository
-import com.loaderapp.features.orders.domain.OrderTime
+import java.util.concurrent.atomic.AtomicLong
+import javax.inject.Inject
+import javax.inject.Singleton
+import kotlin.random.Random
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
-import java.util.concurrent.atomic.AtomicLong
-import javax.inject.Inject
-import javax.inject.Singleton
-import kotlin.random.Random
 
 @Singleton
 class FakeOrdersRepository @Inject constructor() : OrdersRepository {
@@ -36,18 +36,23 @@ class FakeOrdersRepository @Inject constructor() : OrdersRepository {
 
         val newOrder = order.copy(
             id = resolvedId,
-            status = OrderStatus.AVAILABLE
+            status = OrderStatus.AVAILABLE,
+            acceptedByUserId = null,
+            acceptedAtMillis = null
         )
         orders.update { current ->
             current + newOrder
         }
     }
 
-    override suspend fun acceptOrder(id: Long) {
+    override suspend fun acceptOrder(id: Long, acceptedByUserId: String, acceptedAtMillis: Long) {
         simulateLatency()
         mutateOrder(id) { order ->
             when (val result = OrderStateMachine.transition(order, OrderStatus.IN_PROGRESS)) {
-                is OrderTransitionResult.Success -> result.order
+                is OrderTransitionResult.Success -> result.order.copy(
+                    acceptedByUserId = acceptedByUserId,
+                    acceptedAtMillis = acceptedAtMillis
+                )
                 is OrderTransitionResult.Failure -> order
             }
         }
@@ -82,7 +87,9 @@ class FakeOrdersRepository @Inject constructor() : OrdersRepository {
         val expirationThreshold = now - ORDER_EXPIRATION_GRACE_MS
         orders.update { current ->
             current.map { order ->
-                val shouldExpire = order.status == OrderStatus.AVAILABLE && order.orderTime is OrderTime.Exact && order.dateTime < expirationThreshold
+                val shouldExpire = order.status == OrderStatus.AVAILABLE &&
+                    order.orderTime is OrderTime.Exact &&
+                    order.dateTime < expirationThreshold
                 if (shouldExpire) {
                     when (val result = OrderStateMachine.transition(order, OrderStatus.EXPIRED)) {
                         is OrderTransitionResult.Success -> result.order

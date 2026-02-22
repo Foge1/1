@@ -107,5 +107,8 @@ private fun OrderModel.toFeatureOrder(): Order = Order(
     tags = listOf(cargoDescription),
     meta = mapOf("minWorkerRating" to minWorkerRating.toString(), "dispatcherId" to dispatcherId.toString()),
     comment = comment,
-    status = OrderStatus.AVAILABLE
+    status = OrderStatus.AVAILABLE,
+    createdByUserId = dispatcherId.toString(),
+    acceptedByUserId = workerId?.toString(),
+    acceptedAtMillis = null
 )

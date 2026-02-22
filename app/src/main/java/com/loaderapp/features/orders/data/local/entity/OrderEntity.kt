@@ -18,5 +18,8 @@ data class OrderEntity(
     val tags: List<String>,
     val meta: Map<String, String>,
     val comment: String?,
-    val status: String
+    val status: String,
+    val createdByUserId: String,
+    val acceptedByUserId: String?,
+    val acceptedAtMillis: Long?
 )

@@ -294,7 +294,8 @@ fun DispatcherOrderCard(
     order: OrderModel,
     onClick: () -> Unit,
     onCancel: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    showAcceptedBadge: Boolean = false
 ) {
     var showCancelDialog by remember { mutableStateOf(false) }
 
@@ -303,6 +304,14 @@ fun DispatcherOrderCard(
         onClick = onClick,
         modifier = modifier,
         actionContent = {
+            if (showAcceptedBadge) {
+                Text(
+                    text = "Взяли",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+            }
             if (order.status == OrderStatusModel.AVAILABLE || order.status == OrderStatusModel.TAKEN) {
                 OutlinedButton(
                     onClick = { showCancelDialog = true },

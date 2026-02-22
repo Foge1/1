@@ -25,7 +25,10 @@ fun OrderEntity.toDomain(): Order {
         tags = tags,
         meta = meta,
         comment = comment,
-        status = OrderStatus.valueOf(status)
+        status = OrderStatus.valueOf(status),
+        createdByUserId = createdByUserId,
+        acceptedByUserId = acceptedByUserId,
+        acceptedAtMillis = acceptedAtMillis
     )
 }
 
@@ -48,6 +51,9 @@ fun Order.toEntity(): OrderEntity {
         tags = tags,
         meta = meta,
         comment = comment,
-        status = status.name
+        status = status.name,
+        createdByUserId = createdByUserId,
+        acceptedByUserId = acceptedByUserId,
+        acceptedAtMillis = acceptedAtMillis
     )
 }
