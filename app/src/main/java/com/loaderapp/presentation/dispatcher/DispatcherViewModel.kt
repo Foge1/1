@@ -3,11 +3,12 @@ package com.loaderapp.presentation.dispatcher
 import androidx.lifecycle.viewModelScope
 import com.loaderapp.core.common.UiState
 import com.loaderapp.domain.model.OrderModel
-import com.loaderapp.domain.model.OrderStatusModel
 import com.loaderapp.domain.usecase.order.DispatcherStats
 import com.loaderapp.features.orders.data.OrdersRepository
 import com.loaderapp.features.orders.domain.Order
 import com.loaderapp.features.orders.domain.OrderStatus
+import com.loaderapp.features.orders.domain.OrderTime
+import com.loaderapp.features.orders.ui.toOrderModel
 import com.loaderapp.presentation.base.BaseViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -19,7 +20,6 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.flow.update
 
 @OptIn(FlowPreview::class)
 @HiltViewModel
@@ -54,7 +54,7 @@ class DispatcherViewModel @Inject constructor(
                     order.comment?.contains(query, ignoreCase = true) == true
             }
         }
-            .onEach { orders -> _ordersState.value = UiState.Success(orders.map { it.toOrderModel() }) }
+            .onEach { orders -> _ordersState.value = UiState.Success(orders.map(Order::toOrderModel)) }
             .launchIn(viewModelScope)
     }
 
@@ -95,44 +95,17 @@ class DispatcherViewModel @Inject constructor(
     }
 }
 
-private fun Order.toOrderModel(): OrderModel {
-    val status = when (status) {
-        OrderStatus.AVAILABLE -> OrderStatusModel.AVAILABLE
-        OrderStatus.IN_PROGRESS -> OrderStatusModel.IN_PROGRESS
-        OrderStatus.COMPLETED -> OrderStatusModel.COMPLETED
-        OrderStatus.CANCELED, OrderStatus.EXPIRED -> OrderStatusModel.CANCELLED
-    }
-
-    return OrderModel(
-        id = id,
-        address = address,
-        dateTime = dateTime,
-        cargoDescription = title,
-        pricePerHour = pricePerHour,
-        estimatedHours = (durationMin / 60).coerceAtLeast(1),
-        requiredWorkers = workersTotal,
-        minWorkerRating = 0f,
-        status = status,
-        createdAt = dateTime,
-        completedAt = null,
-        workerId = if (workersCurrent > 0) 1L else null,
-        dispatcherId = 0L,
-        workerRating = null,
-        comment = comment.orEmpty()
-    )
-}
-
 private fun OrderModel.toFeatureOrder(): Order = Order(
     id = id,
     title = cargoDescription.ifBlank { "Заказ" },
     address = address,
     pricePerHour = pricePerHour,
-    dateTime = dateTime,
+    orderTime = OrderTime.Exact(dateTime),
     durationMin = estimatedHours * 60,
     workersCurrent = if (workerId == null) 0 else 1,
     workersTotal = requiredWorkers,
     tags = listOf(cargoDescription),
-    meta = emptyMap(),
+    meta = mapOf("minWorkerRating" to minWorkerRating.toString(), "dispatcherId" to dispatcherId.toString()),
     comment = comment,
     status = OrderStatus.AVAILABLE
 )

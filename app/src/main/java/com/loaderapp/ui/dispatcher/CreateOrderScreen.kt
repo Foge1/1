@@ -21,6 +21,7 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -117,19 +118,28 @@ fun CreateOrderScreen(
                 }
             )
 
+            if (uiState.isSoon) {
+                Text(
+                    text = "Режим: Ближайшее время",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 AppPickerButton(
                     icon = Icons.Default.DateRange,
                     label = dateFormatter.format(Date(uiState.selectedDateMillis)),
                     modifier = Modifier.weight(1f),
                     onClick = { showDatePicker = true },
-                    enabled = uiState.selectedDayOption == OrderDayOption.OTHER_DATE
+                    enabled = uiState.selectedDayOption == OrderDayOption.OTHER_DATE && !uiState.isSoon
                 )
                 AppPickerButton(
                     icon = Icons.Default.AccessTime,
                     label = "%02d:%02d".format(uiState.selectedHour, uiState.selectedMinute),
                     modifier = Modifier.weight(0.7f),
-                    onClick = { showTimePicker = true }
+                    onClick = { showTimePicker = true },
+                    enabled = !uiState.isSoon
                 )
             }
 
@@ -293,7 +303,14 @@ private fun DayOptionSelector(
                     index = index,
                     count = DayOption.entries.size
                 ),
-                label = { Text(option.label) }
+                modifier = Modifier.weight(1f),
+                label = {
+                    Text(
+                        text = option.label,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
             )
         }
     }
@@ -302,7 +319,8 @@ private fun DayOptionSelector(
 private enum class DayOption(val value: OrderDayOption, val label: String) {
     TODAY(OrderDayOption.TODAY, "Сегодня"),
     TOMORROW(OrderDayOption.TOMORROW, "Завтра"),
-    OTHER_DATE(OrderDayOption.OTHER_DATE, "Другая дата")
+    SOON(OrderDayOption.SOON, "Ближайшее"),
+    OTHER_DATE(OrderDayOption.OTHER_DATE, "Дата")
 }
 
 @Composable
