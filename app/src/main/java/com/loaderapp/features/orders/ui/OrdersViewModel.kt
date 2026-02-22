@@ -6,6 +6,7 @@ import com.loaderapp.features.orders.domain.usecase.ObserveOrdersUseCase
 import com.loaderapp.features.orders.domain.usecase.UseCaseResult
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -76,6 +77,10 @@ class OrdersViewModel @Inject constructor(
                     is UseCaseResult.Success -> Unit
                     is UseCaseResult.Failure -> failureReason = result.reason
                 }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                failureReason = e.message ?: "Неизвестная ошибка"
             } finally {
                 finishExecution(command, pendingOrderId)
             }
