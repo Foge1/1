@@ -5,10 +5,8 @@ import com.loaderapp.features.orders.data.local.dao.OrdersDao
 import com.loaderapp.features.orders.data.mappers.toDomain
 import com.loaderapp.features.orders.data.mappers.toEntity
 import com.loaderapp.features.orders.domain.Order
-import com.loaderapp.features.orders.domain.OrderStateMachine
 import com.loaderapp.features.orders.domain.OrderStatus
 import com.loaderapp.features.orders.domain.OrderTime
-import com.loaderapp.features.orders.domain.OrderTransitionResult
 import com.loaderapp.features.orders.domain.repository.OrdersRepository
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -36,31 +34,23 @@ class OrdersRepositoryImpl @Inject constructor(
 
     override suspend fun acceptOrder(id: Long, acceptedByUserId: String, acceptedAtMillis: Long) {
         mutateOrder("acceptOrder", id) { order ->
-            when (val result = OrderStateMachine.transition(order, OrderStatus.IN_PROGRESS)) {
-                is OrderTransitionResult.Success -> result.order.copy(
-                    acceptedByUserId = acceptedByUserId,
-                    acceptedAtMillis = acceptedAtMillis
-                )
-                is OrderTransitionResult.Failure -> order
-            }
+            order.copy(
+                status = OrderStatus.IN_PROGRESS,
+                acceptedByUserId = acceptedByUserId,
+                acceptedAtMillis = acceptedAtMillis
+            )
         }
     }
 
     override suspend fun cancelOrder(id: Long, reason: String?) {
         mutateOrder("cancelOrder", id) { order ->
-            when (val result = OrderStateMachine.transition(order, OrderStatus.CANCELED)) {
-                is OrderTransitionResult.Success -> result.order
-                is OrderTransitionResult.Failure -> order
-            }
+            order.copy(status = OrderStatus.CANCELED)
         }
     }
 
     override suspend fun completeOrder(id: Long) {
         mutateOrder("completeOrder", id) { order ->
-            when (val result = OrderStateMachine.transition(order, OrderStatus.COMPLETED)) {
-                is OrderTransitionResult.Success -> result.order
-                is OrderTransitionResult.Failure -> order
-            }
+            order.copy(status = OrderStatus.COMPLETED)
         }
     }
 
@@ -77,19 +67,14 @@ class OrdersRepositoryImpl @Inject constructor(
                 order.dateTime < expirationThreshold
 
             if (shouldExpire) {
-                when (val result = OrderStateMachine.transition(order, OrderStatus.EXPIRED)) {
-                    is OrderTransitionResult.Success -> {
-                        ordersDao.updateOrder(result.order.toEntity())
-                        logDebug(
-                            action = "refresh",
-                            orderId = order.id,
-                            oldStatus = order.status,
-                            newStatus = result.order.status
-                        )
-                    }
-
-                    is OrderTransitionResult.Failure -> Unit
-                }
+                val expired = order.copy(status = OrderStatus.EXPIRED)
+                ordersDao.updateOrder(expired.toEntity())
+                logDebug(
+                    action = "refresh",
+                    orderId = order.id,
+                    oldStatus = order.status,
+                    newStatus = expired.status
+                )
             }
         }
     }
