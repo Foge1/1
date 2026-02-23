@@ -263,7 +263,7 @@ class OrdersOrchestratorTest {
             cancelOrderUseCase = CancelOrderUseCase(repo, userProvider),
             completeOrderUseCase = CompleteOrderUseCase(repo, userProvider),
             refreshOrdersUseCase = RefreshOrdersUseCase(repo),
-            acceptOrderUseCase = AcceptOrderUseCase(applyUseCase)
+            acceptOrderUseCase = AcceptOrderUseCase(repo, userProvider, applyUseCase)
         )
     }
 

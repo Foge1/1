@@ -112,7 +112,7 @@ fun Order.toOrderModel(): OrderModel {
         status = status.toLegacyStatusModel(),
         createdAt = meta[Order.CREATED_AT_KEY]?.toLongOrNull() ?: dateTime,
         completedAt = null,
-        workerId = if (workersCurrent > 0) 1L else null,
+        workerId = null,
         dispatcherId = meta[DISPATCHER_ID_KEY]?.toLongOrNull() ?: 0L,
         workerRating = null,
         comment = comment.orEmpty()

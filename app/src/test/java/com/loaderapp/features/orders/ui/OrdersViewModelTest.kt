@@ -269,7 +269,7 @@ class OrdersViewModelTest {
             cancelOrderUseCase = CancelOrderUseCase(repository, userProvider),
             completeOrderUseCase = CompleteOrderUseCase(repository, userProvider),
             refreshOrdersUseCase = RefreshOrdersUseCase(repository),
-            acceptOrderUseCase = AcceptOrderUseCase(applyUseCase)
+            acceptOrderUseCase = AcceptOrderUseCase(repository, userProvider, applyUseCase)
         )
         return OrdersViewModel(
             observeOrderUiModels = ObserveOrderUiModelsUseCase(

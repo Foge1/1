@@ -187,7 +187,7 @@ class OrdersRepositoryImpl @Inject constructor(
                     orderId = orderId,
                     loaderId = app.loaderId,
                     status = OrderAssignmentStatus.ACTIVE.name,
-                    assignedAtMillis = startedAtMillis,
+                    assignedAtMillis = app.appliedAtMillis,
                     startedAtMillis = startedAtMillis
                 )
             }
@@ -225,10 +225,16 @@ class OrdersRepositoryImpl @Inject constructor(
 
     @Deprecated("Use applyToOrder + selectApplicant + startOrder")
     override suspend fun acceptOrder(id: Long, acceptedByUserId: String, acceptedAtMillis: Long) {
-        // Compat shim: apply → select → start in one shot so old call-sites still function.
+        val order = getOrderById(id) ?: error("acceptOrder: order $id not found")
+        require(order.status == OrderStatus.STAFFING) {
+            "acceptOrder is only allowed for STAFFING orders"
+        }
+        require(order.workersTotal == 1) {
+            "acceptOrder is only allowed for single-worker orders"
+        }
+
+        // Legacy compat: only create APPLIED application. Start remains dispatcher-driven.
         applyToOrder(orderId = id, loaderId = acceptedByUserId, now = acceptedAtMillis)
-        selectApplicant(orderId = id, loaderId = acceptedByUserId)
-        startOrder(orderId = id, startedAtMillis = acceptedAtMillis)
     }
 
     // ── Private ───────────────────────────────────────────────────────────────

@@ -184,7 +184,7 @@ class FakeOrdersRepository @Inject constructor() : OrdersRepository {
                     orderId = orderId,
                     loaderId = app.loaderId,
                     status = OrderAssignmentStatus.ACTIVE,
-                    assignedAtMillis = startedAtMillis,
+                    assignedAtMillis = app.appliedAtMillis,
                     startedAtMillis = startedAtMillis
                 )
             }
@@ -212,9 +212,16 @@ class FakeOrdersRepository @Inject constructor() : OrdersRepository {
 
     @Deprecated("Use applyToOrder + selectApplicant + startOrder")
     override suspend fun acceptOrder(id: Long, acceptedByUserId: String, acceptedAtMillis: Long) {
+        val order = getOrderById(id) ?: error("acceptOrder: order $id not found")
+        require(order.status == OrderStatus.STAFFING) {
+            "acceptOrder is only allowed for STAFFING orders"
+        }
+        require(order.workersTotal == 1) {
+            "acceptOrder is only allowed for single-worker orders"
+        }
+
+        // Legacy compat: only create APPLIED application. Start remains dispatcher-driven.
         applyToOrder(orderId = id, loaderId = acceptedByUserId, now = acceptedAtMillis)
-        selectApplicant(orderId = id, loaderId = acceptedByUserId)
-        startOrder(orderId = id, startedAtMillis = acceptedAtMillis)
     }
 
     // ── Private ───────────────────────────────────────────────────────────────
