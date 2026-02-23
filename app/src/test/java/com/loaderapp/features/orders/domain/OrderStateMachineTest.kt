@@ -72,9 +72,9 @@ class OrderStateMachineTest {
     }
 
     @Test
-    fun `loader canApply false when activeAppliedCount at limit`() {
+    fun `loader canApply false when activeApplicationsForLimitCount at limit`() {
         val order = baseOrder()
-        val context = OrderRulesContext(activeAppliedCount = 3)
+        val context = OrderRulesContext(activeApplicationsForLimitCount = 3)
 
         val actions = OrderStateMachine.actionsFor(order, loaderActor, context)
 
@@ -85,7 +85,7 @@ class OrderStateMachineTest {
     @Test
     fun `loader canApply false when already applied to this order`() {
         val order = baseOrder(applications = listOf(application("loader-1", OrderApplicationStatus.APPLIED)))
-        val context = OrderRulesContext(activeAppliedCount = 1)
+        val context = OrderRulesContext(activeApplicationsForLimitCount = 1)
 
         val actions = OrderStateMachine.actionsFor(order, loaderActor, context)
 
@@ -104,7 +104,7 @@ class OrderStateMachineTest {
     @Test
     fun `loader canApply true when all conditions met`() {
         val order = baseOrder()
-        val context = OrderRulesContext(activeAssignmentExists = false, activeAppliedCount = 2)
+        val context = OrderRulesContext(activeAssignmentExists = false, activeApplicationsForLimitCount = 2)
 
         val actions = OrderStateMachine.actionsFor(order, loaderActor, context)
 
@@ -272,8 +272,8 @@ class OrderStateMachineTest {
     }
 
     @Test
-    fun `APPLY when activeAppliedCount at limit returns Failure`() {
-        val context = OrderRulesContext(activeAppliedCount = 3)
+    fun `APPLY when activeApplicationsForLimitCount at limit returns Failure`() {
+        val context = OrderRulesContext(activeApplicationsForLimitCount = 3)
 
         val result = OrderStateMachine.transition(
             order = baseOrder(),

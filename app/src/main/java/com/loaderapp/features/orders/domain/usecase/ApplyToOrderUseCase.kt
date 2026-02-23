@@ -13,7 +13,7 @@ import javax.inject.Inject
  * Правила (канонические, Step 3):
  *  - Актор должен быть LOADER.
  *  - Не более 1 активного assignment одновременно.
- *  - Не более 3 активных откликов (APPLIED) одновременно.
+ *  - Не более 3 активных откликов (APPLIED + SELECTED) одновременно.
  *  - Заказ должен быть в статусе STAFFING.
  *  - Грузчик ещё не откликнулся / не выбран в этот заказ.
  *
@@ -35,7 +35,7 @@ class ApplyToOrderUseCase @Inject constructor(
 
         val context = OrderRulesContext(
             activeAssignmentExists = repository.hasActiveAssignment(actor.id),
-            activeAppliedCount = repository.countActiveAppliedApplications(actor.id),
+            activeApplicationsForLimitCount = repository.countActiveApplicationsForLimit(actor.id),
             loaderHasActiveAssignmentInThisOrder = false
         )
 

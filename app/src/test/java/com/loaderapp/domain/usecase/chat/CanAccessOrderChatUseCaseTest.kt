@@ -11,7 +11,6 @@ import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
-@Suppress("DEPRECATION")
 class CanAccessOrderChatUseCaseTest {
 
     @Test
@@ -27,8 +26,7 @@ class CanAccessOrderChatUseCaseTest {
             id = 7L, title = "Order", address = "Addr", pricePerHour = 100.0,
             orderTime = OrderTime.Soon, durationMin = 60, workersCurrent = 1, workersTotal = 2,
             tags = emptyList(), meta = emptyMap(), comment = null,
-            status = OrderStatus.IN_PROGRESS, createdByUserId = "dispatcher-1",
-            acceptedByUserId = "loader-1", acceptedAtMillis = 10L
+            status = OrderStatus.IN_PROGRESS, createdByUserId = "dispatcher-1"
         )
         val useCase = CanAccessOrderChatUseCase(FakeOrdersRepository(order))
         val result = useCase(CanAccessOrderChatParams(orderId = 7L, userId = 1L))
@@ -49,6 +47,6 @@ class CanAccessOrderChatUseCaseTest {
         override suspend fun unselectApplicant(orderId: Long, loaderId: String) = Unit
         override suspend fun startOrder(orderId: Long, startedAtMillis: Long) = Unit
         override suspend fun hasActiveAssignment(loaderId: String): Boolean = false
-        override suspend fun countActiveAppliedApplications(loaderId: String): Int = 0
+        override suspend fun countActiveApplicationsForLimit(loaderId: String): Int = 0
     }
 }

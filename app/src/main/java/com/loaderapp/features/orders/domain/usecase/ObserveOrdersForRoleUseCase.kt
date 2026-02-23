@@ -1,7 +1,6 @@
 package com.loaderapp.features.orders.domain.usecase
 
 import com.loaderapp.features.orders.domain.Order
-import com.loaderapp.features.orders.domain.OrderAssignmentStatus
 import com.loaderapp.features.orders.domain.OrderStatus
 import com.loaderapp.features.orders.domain.Role
 import com.loaderapp.features.orders.domain.repository.OrdersRepository
@@ -26,7 +25,6 @@ class ObserveOrdersForRoleUseCase @Inject constructor(
     }
 }
 
-@Suppress("DEPRECATION")
 private fun List<Order>.filterForUser(user: CurrentUser): List<Order> {
     return when (user.role) {
         Role.DISPATCHER -> filter { order -> order.createdByUserId == user.id }
@@ -38,8 +36,7 @@ private fun List<Order>.filterForUser(user: CurrentUser): List<Order> {
                 OrderStatus.CANCELED,
                 OrderStatus.EXPIRED -> {
                     // Loader sees orders where they have an assignment
-                    order.assignments.any { it.loaderId == user.id } ||
-                        order.acceptedByUserId == user.id // compat fallback
+                    order.assignments.any { it.loaderId == user.id }
                 }
             }
         }

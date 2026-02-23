@@ -28,7 +28,7 @@ class ObserveOrderUiModelsUseCaseTest {
         val repo = InMemoryOrdersRepository(
             orders = listOf(order(id = 1L, status = OrderStatus.STAFFING)),
             hasActiveAssignment = true,
-            activeAppliedCount = 0
+            activeApplicationsForLimitCount = 0
         )
         val currentUserProvider = StaticCurrentUserProvider(CurrentUser("loader-1", Role.LOADER))
         val useCase = ObserveOrderUiModelsUseCase(repo, currentUserProvider)
@@ -45,7 +45,7 @@ class ObserveOrderUiModelsUseCaseTest {
         val repo = InMemoryOrdersRepository(
             orders = listOf(order(id = 1L, status = OrderStatus.STAFFING)),
             hasActiveAssignment = false,
-            activeAppliedCount = 3
+            activeApplicationsForLimitCount = 3
         )
         val currentUserProvider = StaticCurrentUserProvider(CurrentUser("loader-1", Role.LOADER))
         val useCase = ObserveOrderUiModelsUseCase(repo, currentUserProvider)
@@ -88,7 +88,7 @@ class ObserveOrderUiModelsUseCaseTest {
     private class InMemoryOrdersRepository(
         orders: List<Order>,
         private val hasActiveAssignment: Boolean = false,
-        private val activeAppliedCount: Int = 0,
+        private val activeApplicationsForLimitCount: Int = 0,
     ) : OrdersRepository {
         private val state = MutableStateFlow(orders)
 
@@ -112,7 +112,7 @@ class ObserveOrderUiModelsUseCaseTest {
         override suspend fun unselectApplicant(orderId: Long, loaderId: String) = Unit
         override suspend fun startOrder(orderId: Long, startedAtMillis: Long) = Unit
         override suspend fun hasActiveAssignment(loaderId: String): Boolean = hasActiveAssignment
-        override suspend fun countActiveAppliedApplications(loaderId: String): Int = activeAppliedCount
+        override suspend fun countActiveApplicationsForLimit(loaderId: String): Int = activeApplicationsForLimitCount
     }
 
     private fun order(id: Long, status: OrderStatus) = Order(

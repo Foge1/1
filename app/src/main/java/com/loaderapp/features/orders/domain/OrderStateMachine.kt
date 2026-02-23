@@ -6,12 +6,12 @@ import com.loaderapp.features.orders.domain.session.CurrentUser
  * Контекст, необходимый для вычисления доступных действий.
  *
  * @param activeAssignmentExists                 true если у актора уже есть ACTIVE assignment в другом заказе.
- * @param activeAppliedCount                     количество откликов со статусом APPLIED у актора по всем заказам.
+ * @param activeApplicationsForLimitCount         количество активных откликов (APPLIED + SELECTED) у актора по всем заказам.
  * @param loaderHasActiveAssignmentInThisOrder   true если у актора есть ACTIVE assignment именно в этом заказе.
  */
 data class OrderRulesContext(
     val activeAssignmentExists: Boolean = false,
-    val activeAppliedCount: Int = 0,
+    val activeApplicationsForLimitCount: Int = 0,
     val loaderHasActiveAssignmentInThisOrder: Boolean = false
 )
 
@@ -104,7 +104,7 @@ object OrderStateMachine {
                 "Заказ не принимает отклики (статус: ${order.status})"
             context.activeAssignmentExists ->
                 "У вас уже есть активный заказ"
-            context.activeAppliedCount >= MAX_ACTIVE_APPLICATIONS ->
+            context.activeApplicationsForLimitCount >= MAX_ACTIVE_APPLICATIONS ->
                 "Достигнут лимит откликов ($MAX_ACTIVE_APPLICATIONS)"
             alreadyApplied -> "Вы уже откликнулись на этот заказ"
             alreadySelected -> "Вы уже выбраны в этот заказ"
@@ -203,7 +203,7 @@ object OrderStateMachine {
                     OrderTransitionResult.Failure("Только грузчик может откликнуться на заказ")
                 context.activeAssignmentExists ->
                     OrderTransitionResult.Failure("У грузчика уже есть активный заказ")
-                context.activeAppliedCount >= MAX_ACTIVE_APPLICATIONS ->
+                context.activeApplicationsForLimitCount >= MAX_ACTIVE_APPLICATIONS ->
                     OrderTransitionResult.Failure(
                         "Достигнут лимит активных откликов ($MAX_ACTIVE_APPLICATIONS)"
                     )
