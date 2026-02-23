@@ -121,7 +121,6 @@ fun Order.toOrderModel(): OrderModel {
 
 fun OrderUiModel.toLegacyOrderModel(): OrderModel = order.toLegacyOrderModel()
 
-@Suppress("DEPRECATION")
 private fun OrderStatus.toLegacyStatusModel(): OrderStatusModel = when (this) {
     OrderStatus.STAFFING -> OrderStatusModel.AVAILABLE
     OrderStatus.IN_PROGRESS -> OrderStatusModel.IN_PROGRESS

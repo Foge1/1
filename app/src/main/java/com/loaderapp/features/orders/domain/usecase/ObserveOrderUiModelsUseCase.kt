@@ -39,7 +39,7 @@ class ObserveOrderUiModelsUseCase @Inject constructor(
         when (actor.role) {
             Role.LOADER -> OrderRulesContext(
                 activeAssignmentExists = repository.hasActiveAssignment(actor.id),
-                activeAppliedCount = repository.countActiveAppliedApplications(actor.id),
+                activeApplicationsForLimitCount = repository.countActiveApplicationsForLimit(actor.id),
                 loaderHasActiveAssignmentInThisOrder = false
             )
             Role.DISPATCHER -> OrderRulesContext()
@@ -73,7 +73,6 @@ class ObserveOrderUiModelsUseCase @Inject constructor(
     }
 }
 
-@Suppress("DEPRECATION")
 private fun List<Order>.filterForUser(user: CurrentUser): List<Order> =
     when (user.role) {
         Role.DISPATCHER -> filter { order -> order.createdByUserId == user.id }
@@ -84,8 +83,7 @@ private fun List<Order>.filterForUser(user: CurrentUser): List<Order> =
                 OrderStatus.COMPLETED,
                 OrderStatus.CANCELED,
                 OrderStatus.EXPIRED -> {
-                    order.assignments.any { it.loaderId == user.id } ||
-                        order.acceptedByUserId == user.id
+                    order.assignments.any { it.loaderId == user.id }
                 }
             }
         }

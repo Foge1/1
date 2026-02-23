@@ -55,7 +55,7 @@ class OrdersOrchestratorTest {
     fun `Apply fails when loader has reached applied count limit`() = runBlocking {
         val repo = InMemoryOrdersRepository(
             orders = listOf(testOrder(id = 1L, status = OrderStatus.STAFFING)),
-            activeAppliedCount = 3
+            activeApplicationsForLimitCount = 3
         )
         val orchestrator = buildOrchestrator(repo, loaderUser)
 
@@ -258,10 +258,10 @@ class OrdersOrchestratorTest {
     private class InMemoryOrdersRepository(
         private val orders: MutableList<Order> = mutableListOf(),
         private val hasActiveAssignment: Boolean = false,
-        private val activeAppliedCount: Int = 0
+        private val activeApplicationsForLimitCount: Int = 0
     ) : OrdersRepository {
-        constructor(orders: List<Order>, hasActiveAssignment: Boolean = false, activeAppliedCount: Int = 0)
-            : this(orders.toMutableList(), hasActiveAssignment, activeAppliedCount)
+        constructor(orders: List<Order>, hasActiveAssignment: Boolean = false, activeApplicationsForLimitCount: Int = 0)
+            : this(orders.toMutableList(), hasActiveAssignment, activeApplicationsForLimitCount)
 
         override fun observeOrders(): Flow<List<Order>> = emptyFlow()
 
@@ -279,7 +279,7 @@ class OrdersOrchestratorTest {
         override suspend fun unselectApplicant(orderId: Long, loaderId: String) = Unit
         override suspend fun startOrder(orderId: Long, startedAtMillis: Long) = Unit
         override suspend fun hasActiveAssignment(loaderId: String): Boolean = hasActiveAssignment
-        override suspend fun countActiveAppliedApplications(loaderId: String): Int = activeAppliedCount
+        override suspend fun countActiveApplicationsForLimit(loaderId: String): Int = activeApplicationsForLimitCount
 
         private fun mutate(id: Long, transform: (Order) -> Order) {
             val i = orders.indexOfFirst { it.id == id }

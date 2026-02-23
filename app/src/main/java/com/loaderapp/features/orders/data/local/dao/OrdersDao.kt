@@ -78,6 +78,14 @@ interface OrdersDao {
     )
     suspend fun countApplicationsByLoaderAndStatus(loaderId: String, status: String): Int
 
+    @Query(
+        """
+        SELECT COUNT(*) FROM order_applications
+        WHERE loaderId = :loaderId AND status IN (:statuses)
+        """
+    )
+    suspend fun countApplicationsByLoaderAndStatuses(loaderId: String, statuses: List<String>): Int
+
     // ── Assignments ───────────────────────────────────────────────────────────
 
     @Query("SELECT * FROM order_assignments ORDER BY assignedAtMillis DESC")

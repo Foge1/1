@@ -56,14 +56,11 @@ class FakeOrdersRepository @Inject constructor() : OrdersRepository {
             idGenerator.getAndIncrement()
         }
 
-        @Suppress("DEPRECATION")
         val newOrder = order.copy(
             id = resolvedId,
             status = OrderStatus.STAFFING,
             applications = emptyList(),
-            assignments = emptyList(),
-            acceptedByUserId = null,
-            acceptedAtMillis = null
+            assignments = emptyList()
         )
         orders.update { it + newOrder }
     }
@@ -207,8 +204,11 @@ class FakeOrdersRepository @Inject constructor() : OrdersRepository {
     override suspend fun hasActiveAssignment(loaderId: String): Boolean =
         assignments.value.any { it.loaderId == loaderId && it.status == OrderAssignmentStatus.ACTIVE }
 
-    override suspend fun countActiveAppliedApplications(loaderId: String): Int =
-        applications.value.count { it.loaderId == loaderId && it.status == OrderApplicationStatus.APPLIED }
+    override suspend fun countActiveApplicationsForLimit(loaderId: String): Int =
+        applications.value.count {
+            it.loaderId == loaderId &&
+                (it.status == OrderApplicationStatus.APPLIED || it.status == OrderApplicationStatus.SELECTED)
+        }
 
     // ── Private ───────────────────────────────────────────────────────────────
 

@@ -215,10 +215,13 @@ class OrdersRepositoryImpl @Inject constructor(
             status = OrderAssignmentStatus.ACTIVE.name
         ) > 0
 
-    override suspend fun countActiveAppliedApplications(loaderId: String): Int =
-        ordersDao.countApplicationsByLoaderAndStatus(
+    override suspend fun countActiveApplicationsForLimit(loaderId: String): Int =
+        ordersDao.countApplicationsByLoaderAndStatuses(
             loaderId = loaderId,
-            status = OrderApplicationStatus.APPLIED.name
+            statuses = listOf(
+                OrderApplicationStatus.APPLIED.name,
+                OrderApplicationStatus.SELECTED.name
+            )
         )
 
 

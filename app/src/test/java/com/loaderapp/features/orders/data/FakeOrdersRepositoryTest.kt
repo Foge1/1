@@ -12,7 +12,6 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-@Suppress("DEPRECATION")
 class FakeOrdersRepositoryTest {
 
     private fun baseOrder(status: OrderStatus = OrderStatus.STAFFING, workersTotal: Int = 1) = Order(
@@ -99,7 +98,7 @@ class FakeOrdersRepositoryTest {
     }
 
     @Test
-    fun `countActiveAppliedApplications counts correctly`() = runBlocking {
+    fun `countActiveApplicationsForLimit counts correctly`() = runBlocking {
         val repo = FakeOrdersRepository()
         repo.createOrder(baseOrder())
         repo.createOrder(baseOrder())
@@ -109,10 +108,11 @@ class FakeOrdersRepositoryTest {
 
         repo.applyToOrder(id1, "loader-1", 1000L)
         repo.applyToOrder(id2, "loader-1", 1001L)
+        repo.selectApplicant(id2, "loader-1")
 
-        assertEquals(2, repo.countActiveAppliedApplications("loader-1"))
+        assertEquals(2, repo.countActiveApplicationsForLimit("loader-1"))
 
         repo.withdrawApplication(id1, "loader-1")
-        assertEquals(1, repo.countActiveAppliedApplications("loader-1"))
+        assertEquals(1, repo.countActiveApplicationsForLimit("loader-1"))
     }
 }

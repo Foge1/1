@@ -71,10 +71,10 @@ class OrdersViewModelTest {
     }
 
     @Test
-    fun `loader canApply false when activeAppliedCount at limit`() = runTest {
+    fun `loader canApply false when activeApplicationsForLimitCount at limit`() = runTest {
         val repository = TestOrdersRepository(
             orders = listOf(testOrder(id = 1L, status = OrderStatus.STAFFING)),
-            activeAppliedCount = 3
+            activeApplicationsForLimitCount = 3
         )
         val viewModel = buildViewModel(repository, loaderUser)
         advanceUntilIdle()
@@ -89,7 +89,7 @@ class OrdersViewModelTest {
         val repository = TestOrdersRepository(
             orders = listOf(testOrder(id = 1L, status = OrderStatus.STAFFING)),
             hasActiveAssignment = false,
-            activeAppliedCount = 2
+            activeApplicationsForLimitCount = 2
         )
         val viewModel = buildViewModel(repository, loaderUser)
         advanceUntilIdle()
@@ -291,7 +291,7 @@ class OrdersViewModelTest {
         var refreshMode: ExecutionMode = ExecutionMode.Success,
         var applyMode: ExecutionMode = ExecutionMode.Success,
         private val hasActiveAssignment: Boolean = false,
-        private val activeAppliedCount: Int = 0
+        private val activeApplicationsForLimitCount: Int = 0
     ) : OrdersRepository {
 
         private val state = MutableStateFlow(orders)
@@ -312,7 +312,7 @@ class OrdersViewModelTest {
         override suspend fun startOrder(orderId: Long, startedAtMillis: Long) = Unit
 
         override suspend fun hasActiveAssignment(loaderId: String): Boolean = hasActiveAssignment
-        override suspend fun countActiveAppliedApplications(loaderId: String): Int = activeAppliedCount
+        override suspend fun countActiveApplicationsForLimit(loaderId: String): Int = activeApplicationsForLimitCount
 
         override suspend fun cancelOrder(id: Long, reason: String?) {
             state.update { orders ->
@@ -357,7 +357,6 @@ class OrdersViewModelTest {
     private val loaderUser = CurrentUser(id = "loader-1", role = Role.LOADER)
     private val dispatcherUser = CurrentUser(id = "dispatcher-1", role = Role.DISPATCHER)
 
-    @Suppress("DEPRECATION")
     private fun testOrder(
         id: Long,
         status: OrderStatus,
@@ -378,8 +377,6 @@ class OrdersViewModelTest {
         meta = mapOf(Order.CREATED_AT_KEY to "0"),
         status = status,
         createdByUserId = createdBy,
-        acceptedByUserId = null,
-        acceptedAtMillis = null,
         applications = applications,
         assignments = assignments
     )

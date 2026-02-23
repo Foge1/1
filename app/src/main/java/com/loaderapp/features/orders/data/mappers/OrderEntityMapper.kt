@@ -31,7 +31,6 @@ fun OrderEntity.toDomain(
         OrderStatus.STAFFING
     }
 
-    @Suppress("DEPRECATION")
     return Order(
         id = id,
         title = title,
@@ -39,7 +38,7 @@ fun OrderEntity.toDomain(
         pricePerHour = pricePerHour,
         orderTime = time,
         durationMin = durationMin,
-        workersCurrent = workersCurrent,
+        workersCurrent = applications.count { it.status == OrderApplicationStatus.SELECTED },
         workersTotal = workersTotal,
         tags = tags,
         meta = meta,
@@ -47,10 +46,7 @@ fun OrderEntity.toDomain(
         status = parsedStatus,
         createdByUserId = createdByUserId,
         applications = applications,
-        assignments = assignments,
-        // Compat: derive deprecated fields from assignments
-        acceptedByUserId = assignments.firstOrNull()?.loaderId,
-        acceptedAtMillis = assignments.firstOrNull()?.startedAtMillis
+        assignments = assignments
     )
 }
 
@@ -68,7 +64,7 @@ fun Order.toEntity(): OrderEntity {
         orderTimeType = timeType,
         orderTimeExactMillis = exactMillis,
         durationMin = durationMin,
-        workersCurrent = workersCurrent,
+        workersCurrent = applications.count { it.status == OrderApplicationStatus.SELECTED },
         workersTotal = workersTotal,
         tags = tags,
         meta = meta,
