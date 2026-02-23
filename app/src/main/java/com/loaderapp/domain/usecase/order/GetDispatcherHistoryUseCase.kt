@@ -24,9 +24,10 @@ class GetDispatcherHistoryUseCase @Inject constructor(
 ) : FlowUseCase<GetDispatcherHistoryParams, Flow<List<OrderModel>>>() {
 
     override fun execute(params: GetDispatcherHistoryParams): Flow<List<OrderModel>> =
-        orderRepository.getOrdersByDispatcher(params.dispatcherId)
+        orderRepository.getAllOrders()
             .map { orders ->
                 orders
+                    .filter { it.dispatcherId == params.dispatcherId }
                     .filter { it.status == OrderStatusModel.COMPLETED || it.status == OrderStatusModel.CANCELLED }
                     .sortedByDescending { it.completedAt ?: it.createdAt }
             }

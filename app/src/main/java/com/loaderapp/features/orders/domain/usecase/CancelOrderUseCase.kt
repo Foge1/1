@@ -1,0 +1,49 @@
+package com.loaderapp.features.orders.domain.usecase
+
+import com.loaderapp.features.orders.domain.OrderEvent
+import com.loaderapp.features.orders.domain.OrderRulesContext
+import com.loaderapp.features.orders.domain.OrderStateMachine
+import com.loaderapp.features.orders.domain.OrderTransitionResult
+import com.loaderapp.features.orders.domain.repository.OrdersRepository
+import com.loaderapp.features.orders.domain.session.CurrentUserProvider
+import javax.inject.Inject
+
+/**
+ * Отменяет заказ.
+ *
+ * Правила: только диспетчер-создатель, в статусах STAFFING или IN_PROGRESS.
+ * Все проверки делегируются [OrderStateMachine.transition] — без дублирования бизнес-логики.
+ */
+class CancelOrderUseCase @Inject constructor(
+    private val repository: OrdersRepository,
+    private val currentUserProvider: CurrentUserProvider
+) {
+    suspend operator fun invoke(orderId: Long, reason: String? = null): UseCaseResult<Unit> {
+        if (reason != null && reason.isBlank()) {
+            return UseCaseResult.Failure("Причина отмены не может быть пустой строкой")
+        }
+
+        val actor = currentUserProvider.getCurrentUser()
+        val order = repository.getOrderById(orderId)
+            ?: return UseCaseResult.Failure("Заказ не найден")
+
+        val transitionResult = OrderStateMachine.transition(
+            order = order,
+            event = OrderEvent.CANCEL,
+            actor = actor,
+            now = System.currentTimeMillis(),
+            context = OrderRulesContext()
+        )
+
+        if (transitionResult is OrderTransitionResult.Failure) {
+            return UseCaseResult.Failure(transitionResult.reason)
+        }
+
+        return runCatching {
+            repository.cancelOrder(orderId, reason)
+            UseCaseResult.Success(Unit)
+        }.getOrElse { e ->
+            UseCaseResult.Failure(e.message ?: "Не удалось отменить заказ")
+        }
+    }
+}

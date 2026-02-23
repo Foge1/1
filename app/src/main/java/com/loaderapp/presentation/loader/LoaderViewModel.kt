@@ -2,6 +2,8 @@ package com.loaderapp.presentation.loader
 
 import androidx.lifecycle.viewModelScope
 import com.loaderapp.core.common.UiState
+import com.loaderapp.core.common.onError
+import com.loaderapp.core.common.onSuccess
 import com.loaderapp.domain.model.OrderModel
 import com.loaderapp.domain.model.OrderStatusModel
 import com.loaderapp.domain.usecase.order.*
@@ -35,6 +37,9 @@ class LoaderViewModel @Inject constructor(
     private val _statsState = MutableStateFlow<UiState<WorkerStats>>(UiState.Idle)
     val statsState: StateFlow<UiState<WorkerStats>> = _statsState.asStateFlow()
 
+    private val _workerRating = MutableStateFlow(0f)
+    val workerRating: StateFlow<Float> = _workerRating.asStateFlow()
+
     init {
         observeAvailableOrders()
         observeMyOrders()
@@ -58,8 +63,9 @@ class LoaderViewModel @Inject constructor(
                     getAvailableOrdersUseCase(Unit),
                     getUserByIdFlowUseCase(GetUserByIdFlowParams(workerId))
                 ) { orders, user ->
-                    val rating = user?.rating?.toFloat() ?: 5.0f
-                    orders.filter { it.isAvailableForWorker(rating) }
+                    val rating = user?.rating?.toFloat() ?: 0f
+                    _workerRating.value = rating
+                    orders
                 }
             }
             .onEach { orders -> _availableOrdersState.setSuccess(orders) }

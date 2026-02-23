@@ -15,8 +15,7 @@ import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.*
 import com.loaderapp.domain.model.UserRoleModel
 import com.loaderapp.navigation.Route
-import com.loaderapp.presentation.dispatcher.DispatcherViewModel
-import com.loaderapp.presentation.loader.LoaderViewModel
+import com.loaderapp.features.orders.ui.OrdersViewModel
 import com.loaderapp.presentation.session.SessionViewModel
 import com.loaderapp.ui.components.AppBottomBar
 import com.loaderapp.ui.components.BottomNavItem
@@ -40,12 +39,8 @@ private data class TabConfig(val route: String, val item: BottomNavItem)
 
 /**
  * Декларативное множество маршрутов, скрывающих Bottom Navigation.
- * Добавление нового полноэкранного экрана = одна строка здесь.
- * Никакой условной логики в коде.
  */
-private val FULLSCREEN_ROUTES: Set<String> = setOf(
-    Route.CreateOrder.route
-)
+private val FULLSCREEN_ROUTES: Set<String> = setOf(Route.CreateOrder.route)
 
 @Composable
 private fun tabsForRole(role: UserRoleModel): List<TabConfig> {
@@ -115,23 +110,28 @@ fun MainScreen(
             ) {
 
                 composable(Route.Home.route) {
+                    // Оба экрана — и лоадера, и диспетчера — работают
+                    // через единый OrdersViewModel (новая модель).
+                    // ObserveOrderUiModelsUseCase сам фильтрует заказы по роли актора.
+                    val ordersVm: OrdersViewModel = hiltViewModel()
+
                     when (user.role) {
                         UserRoleModel.DISPATCHER -> {
-                            val vm: DispatcherViewModel = hiltViewModel()
-                            LaunchedEffect(user.id) { vm.initialize(user.id) }
                             DispatcherScreen(
-                                viewModel               = vm,
-                                onOrderClick            = { orderId -> onOrderClick(orderId, true) },
+                                viewModel = ordersVm,
+                                onOrderClick = { orderId -> onOrderClick(orderId, true) },
                                 onNavigateToCreateOrder = {
-                                    navController.navigate(Route.CreateOrder.route)
+                                    if (navController.currentDestination?.route != Route.CreateOrder.route) {
+                                        navController.navigate(Route.CreateOrder.route) {
+                                            launchSingleTop = true
+                                        }
+                                    }
                                 }
                             )
                         }
                         UserRoleModel.LOADER -> {
-                            val vm: LoaderViewModel = hiltViewModel()
-                            LaunchedEffect(user.id) { vm.initialize(user.id) }
                             LoaderScreen(
-                                viewModel    = vm,
+                                viewModel    = ordersVm,
                                 onOrderClick = { orderId -> onOrderClick(orderId, false) }
                             )
                         }
@@ -154,13 +154,6 @@ fun MainScreen(
                     SettingsScreen(onSwitchRole = { sessionViewModel.logout() })
                 }
 
-                // ── Создание заказа ──────────────────────────────────────────
-                // CreateOrderScreen имеет собственный CreateOrderViewModel,
-                // получаемый через стандартный hiltViewModel() без хаков.
-                // После успешного сохранения VM эмитит NavigationEvent.NavigateUp,
-                // экран вызывает onBack → popBackStack.
-                // DispatcherViewModel узнаёт о новом заказе автоматически
-                // через Room Flow — без прямой связи между VM.
                 composable(
                     route           = Route.CreateOrder.route,
                     enterTransition = {

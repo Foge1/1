@@ -32,6 +32,9 @@ class OrderLocalDataSource @Inject constructor(
     
     suspend fun getOrderById(orderId: Long): Order? = 
         orderDao.getOrderById(orderId)
+
+    fun getOrderByIdFlow(orderId: Long): Flow<Order?> =
+        orderDao.getOrderByIdFlow(orderId)
     
     fun searchOrders(query: String, status: OrderStatus? = null): Flow<List<Order>> = 
         orderDao.searchOrders(query, status)

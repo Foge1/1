@@ -10,6 +10,8 @@ import com.loaderapp.domain.usecase.user.CreateUserParams
 import com.loaderapp.domain.usecase.user.CreateUserUseCase
 import com.loaderapp.domain.usecase.user.GetUserByIdParams
 import com.loaderapp.domain.usecase.user.GetUserByIdUseCase
+import com.loaderapp.domain.usecase.user.GetUserByNameAndRoleParams
+import com.loaderapp.domain.usecase.user.GetUserByNameAndRoleUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -40,7 +42,8 @@ data class SessionState(
 class SessionViewModel @Inject constructor(
     private val userPreferences: UserPreferences,
     private val createUserUseCase: CreateUserUseCase,
-    private val getUserByIdUseCase: GetUserByIdUseCase
+    private val getUserByIdUseCase: GetUserByIdUseCase,
+    private val getUserByNameAndRoleUseCase: GetUserByNameAndRoleUseCase
 ) : ViewModel() {
 
     private val _destination = MutableStateFlow<SessionDestination>(SessionDestination.Loading)
@@ -81,9 +84,29 @@ class SessionViewModel @Inject constructor(
         viewModelScope.launch {
             _sessionState.value = SessionState(isLoading = true)
 
+            val normalizedName = name.trim()
+
+            when (val existingUserResult =
+                getUserByNameAndRoleUseCase(GetUserByNameAndRoleParams(normalizedName, role))) {
+                is Result.Success -> {
+                    val existingUser = existingUserResult.data
+                    if (existingUser != null) {
+                        userPreferences.setCurrentUserId(existingUser.id)
+                        _sessionState.value = SessionState(user = existingUser)
+                        _destination.value = SessionDestination.Main
+                        return@launch
+                    }
+                }
+                is Result.Error -> {
+                    _sessionState.value = SessionState(error = existingUserResult.message)
+                    return@launch
+                }
+                is Result.Loading -> Unit
+            }
+
             val domainUser = UserModel(
                 id             = 0,
-                name           = name.trim(),
+                name           = normalizedName,
                 phone          = "",
                 role           = role,
                 rating         = 5.0,

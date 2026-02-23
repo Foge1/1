@@ -35,6 +35,11 @@ interface OrderRepository {
      * Получить заказ по ID
      */
     suspend fun getOrderById(orderId: Long): Result<OrderModel>
+
+    /**
+     * Подписка на заказ по ID
+     */
+    fun getOrderByIdFlow(orderId: Long): Flow<OrderModel?>
     
     /**
      * Поиск заказов

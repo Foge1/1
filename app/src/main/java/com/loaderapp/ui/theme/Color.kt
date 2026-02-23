@@ -13,9 +13,9 @@ val EmeraldGrey40 = Color(0xFF4A8A96)
 val Mint40 = Color(0xFF00838F)
 
 // Акценты статусов
-val StatusOrange = Color(0xFFE67E22)
-val StatusGreen = Color(0xFF27AE60)
-val StatusRed = Color(0xFFE74C3C)
+val statusAvailable = Color(0xFF2E7D32)
+val statusInProgress = Color(0xFF1565C0)
+val statusCompleted = Color(0xFF757575)
 val GoldStar = Color(0xFFFFC107)
 
 // Skeleton shimmer

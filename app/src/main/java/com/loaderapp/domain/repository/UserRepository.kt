@@ -34,6 +34,11 @@ interface UserRepository {
      * Получить пользователя по ID как Flow
      */
     fun getUserByIdFlow(userId: Long): Flow<UserModel?>
+
+    /**
+     * Найти пользователя по имени и роли
+     */
+    suspend fun getUserByNameAndRole(name: String, role: UserRoleModel): Result<UserModel?>
     
     /**
      * Создать пользователя

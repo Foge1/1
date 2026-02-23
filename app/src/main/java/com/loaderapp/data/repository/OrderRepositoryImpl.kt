@@ -9,6 +9,7 @@ import com.loaderapp.domain.model.OrderModel
 import com.loaderapp.domain.model.OrderStatusModel
 import com.loaderapp.domain.repository.OrderRepository
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 
@@ -31,8 +32,15 @@ class OrderRepositoryImpl @Inject constructor(
     }
     
     override fun getOrdersByWorker(workerId: Long): Flow<List<OrderModel>> {
-        return localDataSource.getOrdersByWorker(workerId)
-            .map { OrderMapper.toDomainList(it) }
+        return combine(
+            localDataSource.getAllOrders(),
+            localDataSource.getOrderIdsByWorker(workerId)
+        ) { orders, orderIds ->
+            val relatedIds = orderIds.toSet()
+            orders.filter { order ->
+                order.workerId == workerId || order.id in relatedIds
+            }
+        }.map { OrderMapper.toDomainList(it) }
     }
     
     override fun getOrdersByDispatcher(dispatcherId: Long): Flow<List<OrderModel>> {
@@ -40,6 +48,12 @@ class OrderRepositoryImpl @Inject constructor(
             .map { OrderMapper.toDomainList(it) }
     }
     
+
+    override fun getOrderByIdFlow(orderId: Long): Flow<OrderModel?> {
+        return localDataSource.getOrderByIdFlow(orderId)
+            .map { it?.let(OrderMapper::toDomain) }
+    }
+
     override suspend fun getOrderById(orderId: Long): Result<OrderModel> {
         return try {
             val order = localDataSource.getOrderById(orderId)
