@@ -4,6 +4,7 @@ import com.loaderapp.features.orders.domain.OrderEvent
 import com.loaderapp.features.orders.domain.OrderRulesContext
 import com.loaderapp.features.orders.domain.OrderStateMachine
 import com.loaderapp.features.orders.domain.OrderTransitionResult
+import com.loaderapp.features.orders.domain.toDisplayMessage
 import com.loaderapp.features.orders.domain.repository.OrdersRepository
 import com.loaderapp.features.orders.domain.session.CurrentUserProvider
 import javax.inject.Inject
@@ -36,7 +37,7 @@ class CancelOrderUseCase @Inject constructor(
         )
 
         if (transitionResult is OrderTransitionResult.Failure) {
-            return UseCaseResult.Failure(transitionResult.reason)
+            return UseCaseResult.Failure(transitionResult.reason.toDisplayMessage())
         }
 
         return runCatching {

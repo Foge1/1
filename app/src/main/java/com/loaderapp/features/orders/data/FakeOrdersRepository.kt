@@ -119,17 +119,21 @@ class FakeOrdersRepository @Inject constructor() : OrdersRepository {
 
     override suspend fun applyToOrder(orderId: Long, loaderId: String, now: Long) {
         simulateLatency()
-        val application = OrderApplication(
-            orderId = orderId,
-            loaderId = loaderId,
-            status = OrderApplicationStatus.APPLIED,
-            appliedAtMillis = now,
-            ratingSnapshot = null
-        )
-        applications.update { list ->
-            val existing = list.indexOfFirst { it.orderId == orderId && it.loaderId == loaderId }
-            if (existing >= 0) list.mapIndexed { i, a -> if (i == existing) application else a }
-            else list + application
+        mutex.withLock {
+            val order = orders.value.firstOrNull { it.id == orderId } ?: return@withLock
+            if (order.status != OrderStatus.STAFFING) return@withLock
+
+            val exists = applications.value.any { it.orderId == orderId && it.loaderId == loaderId }
+            if (exists) return@withLock
+
+            val application = OrderApplication(
+                orderId = orderId,
+                loaderId = loaderId,
+                status = OrderApplicationStatus.APPLIED,
+                appliedAtMillis = now,
+                ratingSnapshot = null
+            )
+            applications.update { list -> list + application }
         }
     }
 

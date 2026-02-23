@@ -2,6 +2,7 @@ package com.loaderapp.features.orders.domain.usecase
 
 import com.loaderapp.features.orders.domain.OrderStateMachine
 import com.loaderapp.features.orders.domain.Role
+import com.loaderapp.features.orders.domain.toDisplayMessage
 import com.loaderapp.features.orders.domain.repository.OrdersRepository
 import com.loaderapp.features.orders.domain.session.CurrentUserProvider
 import javax.inject.Inject
@@ -31,7 +32,7 @@ class StartOrderUseCase @Inject constructor(
 
         if (!actions.canStart) {
             return UseCaseResult.Failure(
-                actions.startDisabledReason ?: "Невозможно запустить заказ"
+                actions.startDisabledReason?.toDisplayMessage() ?: "Невозможно запустить заказ"
             )
         }
 

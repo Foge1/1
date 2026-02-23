@@ -2,39 +2,38 @@ package com.loaderapp.features.orders.data
 
 import android.util.Log
 import androidx.room.withTransaction
+import com.loaderapp.features.orders.data.local.dao.ApplicationsDao
+import com.loaderapp.features.orders.data.local.dao.AssignmentsDao
 import com.loaderapp.features.orders.data.local.dao.OrdersDao
 import com.loaderapp.features.orders.data.local.db.AppDatabase
 import com.loaderapp.features.orders.data.local.entity.OrderApplicationEntity
 import com.loaderapp.features.orders.data.local.entity.OrderAssignmentEntity
 import com.loaderapp.features.orders.data.mappers.toDomain
 import com.loaderapp.features.orders.data.mappers.toEntity
+import com.loaderapp.features.orders.data.mappers.toPersistedValue
 import com.loaderapp.features.orders.domain.Order
-import com.loaderapp.features.orders.domain.OrderApplication
 import com.loaderapp.features.orders.domain.OrderApplicationStatus
-import com.loaderapp.features.orders.domain.OrderAssignment
 import com.loaderapp.features.orders.domain.OrderAssignmentStatus
 import com.loaderapp.features.orders.domain.OrderStatus
-import com.loaderapp.features.orders.domain.OrderTime
 import com.loaderapp.features.orders.domain.repository.OrdersRepository
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.map
 
 @Singleton
 class OrdersRepositoryImpl @Inject constructor(
     private val db: AppDatabase,
-    private val ordersDao: OrdersDao
+    private val ordersDao: OrdersDao,
+    private val applicationsDao: ApplicationsDao,
+    private val assignmentsDao: AssignmentsDao,
 ) : OrdersRepository {
-
-    // ── Observation ────────────────────────────────────────────────────────────
 
     override fun observeOrders(): Flow<List<Order>> =
         combine(
             ordersDao.observeOrders(),
-            ordersDao.observeApplications(),
-            ordersDao.observeAssignments()
+            applicationsDao.observeApplications(),
+            assignmentsDao.observeAssignments()
         ) { orderEntities, appEntities, assignmentEntities ->
             val appsByOrder = appEntities.groupBy { it.orderId }
             val assignsByOrder = assignmentEntities.groupBy { it.orderId }
@@ -46,8 +45,6 @@ class OrdersRepositoryImpl @Inject constructor(
             }
         }
 
-    // ── Order lifecycle ────────────────────────────────────────────────────────
-
     override suspend fun createOrder(order: Order) {
         val newOrder = order.copy(
             id = 0L,
@@ -56,17 +53,14 @@ class OrdersRepositoryImpl @Inject constructor(
             assignments = emptyList()
         )
         val orderId = ordersDao.insertOrder(newOrder.toEntity())
-        log("createOrder: id=$orderId, status=STAFFING")
+        log("createOrder: id=$orderId, status=${newOrder.status}")
     }
 
     override suspend fun cancelOrder(id: Long, reason: String?) {
         db.withTransaction {
             val entity = ordersDao.getOrderById(id) ?: return@withTransaction
-            ordersDao.updateOrder(entity.copy(status = OrderStatus.CANCELED.name))
-            ordersDao.updateAssignmentsStatusByOrder(
-                orderId = id,
-                newStatus = OrderAssignmentStatus.CANCELED.name
-            )
+            ordersDao.updateOrder(entity.copy(status = OrderStatus.CANCELED.toPersistedValue()))
+            assignmentsDao.updateAssignmentsStatusByOrder(orderId = id, newStatus = OrderAssignmentStatus.CANCELED)
             log("cancelOrder: id=$id, ${entity.status}->CANCELED")
         }
     }
@@ -74,83 +68,81 @@ class OrdersRepositoryImpl @Inject constructor(
     override suspend fun completeOrder(id: Long) {
         db.withTransaction {
             val entity = ordersDao.getOrderById(id) ?: return@withTransaction
-            ordersDao.updateOrder(entity.copy(status = OrderStatus.COMPLETED.name))
-            ordersDao.updateAssignmentsStatusByOrder(
-                orderId = id,
-                newStatus = OrderAssignmentStatus.COMPLETED.name
-            )
+            ordersDao.updateOrder(entity.copy(status = OrderStatus.COMPLETED.toPersistedValue()))
+            assignmentsDao.updateAssignmentsStatusByOrder(orderId = id, newStatus = OrderAssignmentStatus.COMPLETED)
             log("completeOrder: id=$id, ${entity.status}->COMPLETED")
         }
     }
 
     override suspend fun refresh() {
-        val now = System.currentTimeMillis()
-        val expirationThreshold = now - ORDER_EXPIRATION_GRACE_MS
-        ordersDao.getOrders().forEach { entity ->
-            val status = runCatching { OrderStatus.valueOf(entity.status) }.getOrNull()
-            val orderTime = if (entity.orderTimeType == Order.TIME_TYPE_SOON) {
-                OrderTime.Soon
-            } else {
-                OrderTime.Exact(entity.orderTimeExactMillis ?: 0L)
-            }
-            val dateTime = when (orderTime) {
-                is OrderTime.Exact -> orderTime.dateTimeMillis
-                OrderTime.Soon -> entity.meta["createdAt"]?.toLongOrNull() ?: now
-            }
-            val shouldExpire = status == OrderStatus.STAFFING &&
-                orderTime is OrderTime.Exact &&
-                dateTime < expirationThreshold
-
-            if (shouldExpire) {
-                ordersDao.updateOrder(entity.copy(status = OrderStatus.EXPIRED.name))
-                log("refresh: expired id=${entity.id}")
-            }
+        val expirationThreshold = System.currentTimeMillis() - ORDER_EXPIRATION_GRACE_MS
+        val expiredCount = ordersDao.expireStaffingExactOrders(
+            staffingStatus = OrderStatus.STAFFING.toPersistedValue(),
+            expiredStatus = OrderStatus.EXPIRED.toPersistedValue(),
+            exactTimeType = TIME_TYPE_EXACT,
+            expirationThreshold = expirationThreshold
+        )
+        if (expiredCount > 0) {
+            log("refresh: expired=$expiredCount")
         }
     }
 
     override suspend fun getOrderById(id: Long): Order? {
         val entity = ordersDao.getOrderById(id) ?: return null
-        val apps = ordersDao.getApplicationsByOrder(id).map { it.toDomain() }
-        val assignments = ordersDao.getAssignmentsByOrder(id).map { it.toDomain() }
+        val apps = applicationsDao.getApplicationsByOrder(id).map { it.toDomain() }
+        val assignments = assignmentsDao.getAssignmentsByOrder(id).map { it.toDomain() }
         return entity.toDomain(applications = apps, assignments = assignments)
     }
 
-    // ── Application flow ───────────────────────────────────────────────────────
-
     override suspend fun applyToOrder(orderId: Long, loaderId: String, now: Long) {
-        val application = OrderApplicationEntity(
-            orderId = orderId,
-            loaderId = loaderId,
-            status = OrderApplicationStatus.APPLIED.name,
-            appliedAtMillis = now,
-            ratingSnapshot = null
-        )
-        ordersDao.upsertApplication(application)
-        log("applyToOrder: order=$orderId loader=$loaderId")
+        db.withTransaction {
+            val order = ordersDao.getOrderById(orderId) ?: return@withTransaction
+            if (order.status != OrderStatus.STAFFING.toPersistedValue()) {
+                log("applyToOrder: skipped order=$orderId status=${order.status}")
+                return@withTransaction
+            }
+
+            val existing = applicationsDao.getApplication(orderId, loaderId)
+            if (existing != null) {
+                log("applyToOrder: idempotent hit order=$orderId loader=$loaderId")
+                return@withTransaction
+            }
+
+            applicationsDao.upsertApplication(
+                OrderApplicationEntity(
+                    orderId = orderId,
+                    loaderId = loaderId,
+                    status = OrderApplicationStatus.APPLIED.toPersistedValue(),
+                    appliedAtMillis = now,
+                    ratingSnapshot = null
+                )
+            )
+            log("applyToOrder: order=$orderId loader=$loaderId")
+        }
     }
 
     override suspend fun withdrawApplication(orderId: Long, loaderId: String) {
-        val existing = ordersDao.getApplication(orderId, loaderId) ?: return
-        val canWithdraw = existing.status == OrderApplicationStatus.APPLIED.name ||
-            existing.status == OrderApplicationStatus.SELECTED.name
+        val existing = applicationsDao.getApplication(orderId, loaderId) ?: return
+        val canWithdraw = existing.status in setOf(
+            OrderApplicationStatus.APPLIED.toPersistedValue(),
+            OrderApplicationStatus.SELECTED.toPersistedValue()
+        )
         if (canWithdraw) {
-            ordersDao.updateApplicationStatus(
+            applicationsDao.updateApplicationStatus(
                 orderId = orderId,
                 loaderId = loaderId,
-                newStatus = OrderApplicationStatus.WITHDRAWN.name
+                newStatus = OrderApplicationStatus.WITHDRAWN
             )
             log("withdrawApplication: order=$orderId loader=$loaderId")
         }
     }
 
-    // ── Selection flow ─────────────────────────────────────────────────────────
-
     override suspend fun selectApplicant(orderId: Long, loaderId: String) {
         db.withTransaction {
-            ordersDao.updateApplicationStatus(
+            applicationsDao.updateApplicationStatus(
                 orderId = orderId,
                 loaderId = loaderId,
-                newStatus = OrderApplicationStatus.SELECTED.name
+                newStatus = OrderApplicationStatus.SELECTED
             )
             log("selectApplicant: order=$orderId loader=$loaderId")
         }
@@ -158,74 +150,61 @@ class OrdersRepositoryImpl @Inject constructor(
 
     override suspend fun unselectApplicant(orderId: Long, loaderId: String) {
         db.withTransaction {
-            ordersDao.updateApplicationStatus(
+            applicationsDao.updateApplicationStatus(
                 orderId = orderId,
                 loaderId = loaderId,
-                newStatus = OrderApplicationStatus.APPLIED.name
+                newStatus = OrderApplicationStatus.APPLIED
             )
             log("unselectApplicant: order=$orderId loader=$loaderId")
         }
     }
-
-    // ── Start order ────────────────────────────────────────────────────────────
 
     override suspend fun startOrder(orderId: Long, startedAtMillis: Long) {
         db.withTransaction {
             val orderEntity = ordersDao.getOrderById(orderId)
                 ?: error("startOrder: order $orderId not found")
 
-            val selectedApplications = ordersDao.getApplicationsByOrder(orderId)
-                .filter { it.status == OrderApplicationStatus.SELECTED.name }
+            val selectedApplications = applicationsDao.getApplicationsByOrder(orderId)
+                .filter { it.status == OrderApplicationStatus.SELECTED.toPersistedValue() }
 
             require(selectedApplications.isNotEmpty()) {
                 "startOrder: no SELECTED applicants for order $orderId"
             }
 
-            // Create ACTIVE assignment for each SELECTED loader
             val assignments = selectedApplications.map { app ->
                 OrderAssignmentEntity(
                     orderId = orderId,
                     loaderId = app.loaderId,
-                    status = OrderAssignmentStatus.ACTIVE.name,
+                    status = OrderAssignmentStatus.ACTIVE.toPersistedValue(),
                     assignedAtMillis = app.appliedAtMillis,
                     startedAtMillis = startedAtMillis
                 )
             }
-            ordersDao.upsertAssignments(assignments)
+            assignmentsDao.upsertAssignments(assignments)
 
-            // Reject all remaining APPLIED applicants
-            ordersDao.updateApplicationsStatusByOrder(
+            applicationsDao.updateApplicationsStatusByOrder(
                 orderId = orderId,
-                fromStatus = OrderApplicationStatus.APPLIED.name,
-                toStatus = OrderApplicationStatus.REJECTED.name
+                fromStatus = OrderApplicationStatus.APPLIED,
+                toStatus = OrderApplicationStatus.REJECTED
             )
 
-            // Transition order status to IN_PROGRESS
-            ordersDao.updateOrder(orderEntity.copy(status = OrderStatus.IN_PROGRESS.name))
+            ordersDao.updateOrder(orderEntity.copy(status = OrderStatus.IN_PROGRESS.toPersistedValue()))
 
             log("startOrder: order=$orderId assignedLoaders=${selectedApplications.map { it.loaderId }}")
         }
     }
 
-    // ── Invariant helpers ─────────────────────────────────────────────────────
-
     override suspend fun hasActiveAssignment(loaderId: String): Boolean =
-        ordersDao.countAssignmentsByLoaderAndStatus(
+        assignmentsDao.countAssignmentsByLoaderAndStatus(
             loaderId = loaderId,
-            status = OrderAssignmentStatus.ACTIVE.name
+            status = OrderAssignmentStatus.ACTIVE
         ) > 0
 
     override suspend fun countActiveApplicationsForLimit(loaderId: String): Int =
-        ordersDao.countApplicationsByLoaderAndStatuses(
+        applicationsDao.countApplicationsByLoaderAndStatuses(
             loaderId = loaderId,
-            statuses = listOf(
-                OrderApplicationStatus.APPLIED.name,
-                OrderApplicationStatus.SELECTED.name
-            )
+            statuses = listOf(OrderApplicationStatus.APPLIED, OrderApplicationStatus.SELECTED)
         )
-
-
-    // ── Private ───────────────────────────────────────────────────────────────
 
     private fun log(message: String) {
         Log.d(LOG_TAG, message)
@@ -234,6 +213,40 @@ class OrdersRepositoryImpl @Inject constructor(
     private companion object {
         const val LOG_TAG = "OrdersRepo"
         const val ORDER_EXPIRATION_GRACE_MS = 60_000L
+        const val TIME_TYPE_EXACT = "exact"
     }
 }
 
+private suspend fun ApplicationsDao.updateApplicationStatus(
+    orderId: Long,
+    loaderId: String,
+    newStatus: OrderApplicationStatus
+) {
+    updateApplicationStatus(orderId = orderId, loaderId = loaderId, newStatus = newStatus.toPersistedValue())
+}
+
+private suspend fun ApplicationsDao.updateApplicationsStatusByOrder(
+    orderId: Long,
+    fromStatus: OrderApplicationStatus,
+    toStatus: OrderApplicationStatus,
+) {
+    updateApplicationsStatusByOrder(
+        orderId = orderId,
+        fromStatus = fromStatus.toPersistedValue(),
+        toStatus = toStatus.toPersistedValue()
+    )
+}
+
+private suspend fun ApplicationsDao.countApplicationsByLoaderAndStatuses(
+    loaderId: String,
+    statuses: List<OrderApplicationStatus>
+): Int = countApplicationsByLoaderAndStatuses(loaderId, statuses.map { it.toPersistedValue() })
+
+private suspend fun AssignmentsDao.updateAssignmentsStatusByOrder(orderId: Long, newStatus: OrderAssignmentStatus) {
+    updateAssignmentsStatusByOrder(orderId = orderId, newStatus = newStatus.toPersistedValue())
+}
+
+private suspend fun AssignmentsDao.countAssignmentsByLoaderAndStatus(
+    loaderId: String,
+    status: OrderAssignmentStatus
+): Int = countAssignmentsByLoaderAndStatus(loaderId = loaderId, status = status.toPersistedValue())
