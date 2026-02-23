@@ -9,7 +9,6 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -116,32 +115,4 @@ class FakeOrdersRepositoryTest {
         repo.withdrawApplication(id1, "loader-1")
         assertEquals(1, repo.countActiveAppliedApplications("loader-1"))
     }
-    @Test
-    fun `acceptOrder legacy shim fails fast for multi worker and does not auto start`() = runBlocking {
-        val repo = FakeOrdersRepository()
-        repo.createOrder(baseOrder(workersTotal = 2))
-        val orderId = repo.observeOrders().first().first().id
-
-        val error = kotlin.runCatching {
-            repo.acceptOrder(orderId, acceptedByUserId = "loader-1", acceptedAtMillis = 1000L)
-        }.exceptionOrNull()
-
-        assertTrue(error is IllegalArgumentException)
-
-        val orderAfterFailure = repo.getOrderById(orderId)!!
-        assertEquals(OrderStatus.STAFFING, orderAfterFailure.status)
-        assertTrue(orderAfterFailure.applications.isEmpty())
-
-        repo.createOrder(baseOrder(workersTotal = 1))
-        val singleOrderId = repo.observeOrders().first().last().id
-        repo.acceptOrder(singleOrderId, acceptedByUserId = "loader-1", acceptedAtMillis = 1000L)
-
-        val singleOrder = repo.getOrderById(singleOrderId)!!
-        assertEquals(OrderStatus.STAFFING, singleOrder.status)
-        assertTrue(singleOrder.assignments.isEmpty())
-        val application = singleOrder.applications.single()
-        assertEquals(OrderApplicationStatus.APPLIED, application.status)
-        assertNull(application.ratingSnapshot)
-    }
-
 }

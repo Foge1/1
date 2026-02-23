@@ -162,34 +162,6 @@ class OrdersOwnershipUseCasesTest {
         assertTrue(result is UseCaseResult.Failure)
     }
 
-    // ── Deprecated AcceptOrderUseCase shim ───────────────────────────────────
-
-    @Test
-    @Suppress("DEPRECATION")
-    fun `acceptOrder compat succeeds only for single worker staffing order and delegates to apply`() = runBlocking {
-        val repo = InMemoryOrdersRepository(listOf(baseOrder(id = 1, createdBy = "d-1", workersTotal = 1)))
-        val provider = StaticCurrentUserProvider(CurrentUser("loader-1", Role.LOADER))
-        val applyUseCase = ApplyToOrderUseCase(repo, provider)
-        val useCase = AcceptOrderUseCase(repo, provider, applyUseCase)
-
-        val result = useCase(1)
-
-        assertTrue(result is UseCaseResult.Success)
-    }
-
-    @Test
-    @Suppress("DEPRECATION")
-    fun `acceptOrder compat fails for multi worker order`() = runBlocking {
-        val repo = InMemoryOrdersRepository(listOf(baseOrder(id = 1, createdBy = "d-1", workersTotal = 2)))
-        val provider = StaticCurrentUserProvider(CurrentUser("loader-1", Role.LOADER))
-        val applyUseCase = ApplyToOrderUseCase(repo, provider)
-        val useCase = AcceptOrderUseCase(repo, provider, applyUseCase)
-
-        val result = useCase(1)
-
-        assertTrue(result is UseCaseResult.Failure)
-    }
-
     // ── ObserveOrdersForRoleUseCase ───────────────────────────────────────────
 
     @Test
@@ -262,14 +234,6 @@ class OrdersOwnershipUseCasesTest {
 
         override suspend fun createOrder(order: Order) {
             state.update { it + order.copy(id = if (order.id == 0L) 1L else order.id, status = OrderStatus.STAFFING) }
-        }
-
-        @Deprecated("compat")
-        override suspend fun acceptOrder(id: Long, acceptedByUserId: String, acceptedAtMillis: Long) {
-            val order = state.value.firstOrNull { it.id == id } ?: error("acceptOrder: order $id not found")
-            require(order.status == OrderStatus.STAFFING)
-            require(order.workersTotal == 1)
-            applyToOrder(id, acceptedByUserId, acceptedAtMillis)
         }
 
         override suspend fun cancelOrder(id: Long, reason: String?) = Unit

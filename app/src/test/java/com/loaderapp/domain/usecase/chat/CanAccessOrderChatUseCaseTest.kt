@@ -39,7 +39,6 @@ class CanAccessOrderChatUseCaseTest {
         override fun observeOrders(): Flow<List<Order>> = emptyFlow()
         override suspend fun createOrder(order: Order) = Unit
         @Deprecated("compat")
-        override suspend fun acceptOrder(id: Long, acceptedByUserId: String, acceptedAtMillis: Long) = Unit
         override suspend fun cancelOrder(id: Long, reason: String?) = Unit
         override suspend fun completeOrder(id: Long) = Unit
         override suspend fun refresh() = Unit

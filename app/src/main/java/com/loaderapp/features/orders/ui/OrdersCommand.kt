@@ -26,14 +26,4 @@ sealed class OrdersCommand {
     data class Cancel(val orderId: Long, val reason: String?) : OrdersCommand()
     data class Complete(val orderId: Long) : OrdersCommand()
 
-    // ── Deprecated compat ────────────────────────────────────────────────────
-    /**
-     * @Deprecated Используйте [Apply].
-     * Оставлено только для компиляции call-site'ов до UI-рефакторинга (Step 5).
-     */
-    @Deprecated(
-        message = "Use OrdersCommand.Apply. Will be removed in Step 5.",
-        replaceWith = ReplaceWith("Apply(orderId)")
-    )
-    data class Accept(val orderId: Long) : OrdersCommand()
 }

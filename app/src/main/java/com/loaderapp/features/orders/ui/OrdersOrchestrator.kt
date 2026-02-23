@@ -1,7 +1,6 @@
 package com.loaderapp.features.orders.ui
 
 import android.util.Log
-import com.loaderapp.features.orders.domain.usecase.AcceptOrderUseCase
 import com.loaderapp.features.orders.domain.usecase.ApplyToOrderUseCase
 import com.loaderapp.features.orders.domain.usecase.CancelOrderUseCase
 import com.loaderapp.features.orders.domain.usecase.CompleteOrderUseCase
@@ -23,10 +22,7 @@ class OrdersOrchestrator @Inject constructor(
     private val startOrderUseCase: StartOrderUseCase,
     private val cancelOrderUseCase: CancelOrderUseCase,
     private val completeOrderUseCase: CompleteOrderUseCase,
-    private val refreshOrdersUseCase: RefreshOrdersUseCase,
-    // Deprecated shim — kept until UI is migrated in Step 5
-    @Deprecated("Will be removed in Step 5")
-    private val acceptOrderUseCase: AcceptOrderUseCase
+    private val refreshOrdersUseCase: RefreshOrdersUseCase
 ) {
 
     suspend fun execute(command: OrdersCommand): UseCaseResult<Unit> {
@@ -39,7 +35,6 @@ class OrdersOrchestrator @Inject constructor(
         return result
     }
 
-    @Suppress("DEPRECATION")
     private suspend fun dispatch(command: OrdersCommand): UseCaseResult<Unit> = when (command) {
         is OrdersCommand.Refresh -> refreshOrdersUseCase()
         is OrdersCommand.Create -> createOrderUseCase(command.orderDraft)
@@ -50,8 +45,6 @@ class OrdersOrchestrator @Inject constructor(
         is OrdersCommand.Start -> startOrderUseCase(command.orderId)
         is OrdersCommand.Cancel -> cancelOrderUseCase(command.orderId, command.reason)
         is OrdersCommand.Complete -> completeOrderUseCase(command.orderId)
-        // Deprecated path: delegates to ApplyToOrderUseCase via the shim
-        is OrdersCommand.Accept -> acceptOrderUseCase(command.orderId)
     }
 
     private fun log(message: String) {

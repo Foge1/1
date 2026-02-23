@@ -3,7 +3,6 @@ package com.loaderapp.features.orders.domain
 import com.loaderapp.features.orders.domain.repository.OrdersRepository
 import com.loaderapp.features.orders.domain.session.CurrentUser
 import com.loaderapp.features.orders.domain.session.CurrentUserProvider
-import com.loaderapp.features.orders.domain.usecase.AcceptOrderUseCase
 import com.loaderapp.features.orders.domain.usecase.ApplyToOrderUseCase
 import com.loaderapp.features.orders.domain.usecase.CancelOrderUseCase
 import com.loaderapp.features.orders.domain.usecase.CompleteOrderUseCase
@@ -231,28 +230,11 @@ class OrdersOrchestratorTest {
         assertTrue(result is UseCaseResult.Success)
     }
 
-    // ── Deprecated Accept shim ────────────────────────────────────────────────
-
-    @Test
-    @Suppress("DEPRECATION")
-    fun `Accept (deprecated) delegates to Apply and fails when order is terminal`() = runBlocking {
-        val repo = InMemoryOrdersRepository(
-            orders = listOf(testOrder(id = 7L, status = OrderStatus.COMPLETED))
-        )
-        val orchestrator = buildOrchestrator(repo, loaderUser)
-
-        val result = orchestrator.execute(OrdersCommand.Accept(orderId = 7L))
-
-        // Fails because COMPLETED order is not STAFFING → canApply = false
-        assertTrue(result is UseCaseResult.Failure)
-    }
-
     // ── Builder helpers ───────────────────────────────────────────────────────
 
     private fun buildOrchestrator(repo: OrdersRepository, user: CurrentUser): OrdersOrchestrator {
         val userProvider = StaticCurrentUserProvider(user)
         val applyUseCase = ApplyToOrderUseCase(repo, userProvider)
-        @Suppress("DEPRECATION")
         return OrdersOrchestrator(
             createOrderUseCase = CreateOrderUseCase(repo, userProvider),
             applyToOrderUseCase = applyUseCase,
@@ -262,8 +244,7 @@ class OrdersOrchestratorTest {
             startOrderUseCase = StartOrderUseCase(repo, userProvider),
             cancelOrderUseCase = CancelOrderUseCase(repo, userProvider),
             completeOrderUseCase = CompleteOrderUseCase(repo, userProvider),
-            refreshOrdersUseCase = RefreshOrdersUseCase(repo),
-            acceptOrderUseCase = AcceptOrderUseCase(repo, userProvider, applyUseCase)
+            refreshOrdersUseCase = RefreshOrdersUseCase(repo)
         )
     }
 

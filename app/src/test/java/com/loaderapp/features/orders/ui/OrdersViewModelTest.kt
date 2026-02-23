@@ -12,13 +12,11 @@ import com.loaderapp.features.orders.domain.Role
 import com.loaderapp.features.orders.domain.repository.OrdersRepository
 import com.loaderapp.features.orders.domain.session.CurrentUser
 import com.loaderapp.features.orders.domain.session.CurrentUserProvider
-import com.loaderapp.features.orders.domain.usecase.AcceptOrderUseCase
 import com.loaderapp.features.orders.domain.usecase.ApplyToOrderUseCase
 import com.loaderapp.features.orders.domain.usecase.CancelOrderUseCase
 import com.loaderapp.features.orders.domain.usecase.CompleteOrderUseCase
 import com.loaderapp.features.orders.domain.usecase.CreateOrderUseCase
 import com.loaderapp.features.orders.domain.usecase.ObserveOrderUiModelsUseCase
-import com.loaderapp.features.orders.domain.usecase.ObserveOrdersForRoleUseCase
 import com.loaderapp.features.orders.domain.usecase.RefreshOrdersUseCase
 import com.loaderapp.features.orders.domain.usecase.SelectApplicantUseCase
 import com.loaderapp.features.orders.domain.usecase.StartOrderUseCase
@@ -256,9 +254,7 @@ class OrdersViewModelTest {
         user: CurrentUser
     ): OrdersViewModel {
         val userProvider = StaticCurrentUserProvider(user)
-        val observeForRole = ObserveOrdersForRoleUseCase(repository, userProvider)
         val applyUseCase = ApplyToOrderUseCase(repository, userProvider)
-        @Suppress("DEPRECATION")
         val orchestrator = OrdersOrchestrator(
             createOrderUseCase = CreateOrderUseCase(repository, userProvider),
             applyToOrderUseCase = applyUseCase,
@@ -268,14 +264,12 @@ class OrdersViewModelTest {
             startOrderUseCase = StartOrderUseCase(repository, userProvider),
             cancelOrderUseCase = CancelOrderUseCase(repository, userProvider),
             completeOrderUseCase = CompleteOrderUseCase(repository, userProvider),
-            refreshOrdersUseCase = RefreshOrdersUseCase(repository),
-            acceptOrderUseCase = AcceptOrderUseCase(repository, userProvider, applyUseCase)
+            refreshOrdersUseCase = RefreshOrdersUseCase(repository)
         )
         return OrdersViewModel(
             observeOrderUiModels = ObserveOrderUiModelsUseCase(
                 repository = repository,
                 currentUserProvider = userProvider,
-                observeOrdersForRoleUseCase = observeForRole
             ),
             ordersOrchestrator = orchestrator
         )
