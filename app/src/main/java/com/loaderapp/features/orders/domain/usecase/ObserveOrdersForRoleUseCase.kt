@@ -18,9 +18,7 @@ class ObserveOrdersForRoleUseCase @Inject constructor(
     operator fun invoke(): Flow<List<Order>> {
         return currentUserProvider.observeCurrentUser()
             .flatMapLatest { user ->
-                ordersRepository.observeOrders().map { orders ->
-                    orders.filterForUser(user)
-                }
+                ordersRepository.observeOrders().map { orders -> orders.filterForUser(user) }
             }
     }
 }
@@ -30,11 +28,11 @@ private fun List<Order>.filterForUser(user: CurrentUser): List<Order> {
         Role.DISPATCHER -> filter { order -> order.createdByUserId == user.id }
         Role.LOADER -> filter { order ->
             when (order.status) {
-                OrderStatus.AVAILABLE -> order.acceptedByUserId == null
+                OrderStatus.STAFFING -> true
                 OrderStatus.IN_PROGRESS,
                 OrderStatus.COMPLETED,
                 OrderStatus.CANCELED,
-                OrderStatus.EXPIRED -> order.acceptedByUserId == user.id
+                OrderStatus.EXPIRED -> order.assignments.any { it.loaderId == user.id }
             }
         }
     }

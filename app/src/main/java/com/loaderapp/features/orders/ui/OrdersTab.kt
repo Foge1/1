@@ -10,7 +10,7 @@ enum class OrdersTab(val title: String) {
 }
 
 fun OrdersTab.matches(status: OrderStatus): Boolean = when (this) {
-    OrdersTab.Available -> status == OrderStatus.AVAILABLE
+    OrdersTab.Available -> status == OrderStatus.STAFFING
     OrdersTab.InProgress -> status == OrderStatus.IN_PROGRESS
     OrdersTab.History ->
         status == OrderStatus.COMPLETED ||

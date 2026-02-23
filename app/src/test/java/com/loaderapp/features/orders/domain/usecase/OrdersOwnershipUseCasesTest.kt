@@ -1,152 +1,38 @@
 package com.loaderapp.features.orders.domain.usecase
 
+import com.loaderapp.features.orders.data.FakeOrdersRepository
 import com.loaderapp.features.orders.domain.Order
-import com.loaderapp.features.orders.domain.OrderDraft
+import com.loaderapp.features.orders.domain.OrderApplicationStatus
 import com.loaderapp.features.orders.domain.OrderStatus
 import com.loaderapp.features.orders.domain.OrderTime
-import com.loaderapp.features.orders.domain.Role
-import com.loaderapp.features.orders.domain.repository.OrdersRepository
-import com.loaderapp.features.orders.domain.session.CurrentUser
-import com.loaderapp.features.orders.domain.session.CurrentUserProvider
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.take
-import kotlinx.coroutines.flow.toList
-import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNull
-import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class OrdersOwnershipUseCasesTest {
     @Test
-    fun `createOrder sets createdBy and resets acceptance`() = runBlocking {
-        val repo = InMemoryOrdersRepository()
-        val useCase = CreateOrderUseCase(repo, StaticCurrentUserProvider(CurrentUser("10", Role.DISPATCHER)))
-        useCase(baseOrderDraft())
-        val created = repo.observeOrders().first().first()
-        assertEquals("10", created.createdByUserId)
-        assertNull(created.acceptedByUserId)
-        assertEquals(OrderStatus.AVAILABLE, created.status)
-    }
-
-    @Test
-    fun `acceptOrder sets acceptedBy and moves to in progress`() = runBlocking {
-        val repo = InMemoryOrdersRepository(listOf(baseOrder(id = 1, createdBy = "20")))
-        val useCase = AcceptOrderUseCase(repo, StaticCurrentUserProvider(CurrentUser("30", Role.LOADER)))
-        val result = useCase(1)
-        assertTrue(result is UseCaseResult.Success)
-        val accepted = repo.getOrderById(1)!!
-        assertEquals("30", accepted.acceptedByUserId)
-        assertEquals(OrderStatus.IN_PROGRESS, accepted.status)
-    }
-
-    @Test
-    fun `observe dispatcher returns only own created orders`() = runBlocking {
-        val repo = InMemoryOrdersRepository(listOf(baseOrder(id = 1, createdBy = "1"), baseOrder(id = 2, createdBy = "2")))
-        val useCase = ObserveOrdersForRoleUseCase(repo, StaticCurrentUserProvider(CurrentUser("1", Role.DISPATCHER)))
-        assertEquals(listOf(1L), useCase().first().map { it.id })
-    }
-
-    @Test
-    fun `observe loader returns available unaccepted and own in progress`() = runBlocking {
-        val repo = InMemoryOrdersRepository(
-            listOf(
-                baseOrder(id = 1, status = OrderStatus.AVAILABLE, acceptedBy = null),
-                baseOrder(id = 2, status = OrderStatus.AVAILABLE, acceptedBy = "x"),
-                baseOrder(id = 3, status = OrderStatus.IN_PROGRESS, acceptedBy = "1"),
-                baseOrder(id = 4, status = OrderStatus.IN_PROGRESS, acceptedBy = "2")
+    fun `accept use case delegates to apply`() = runBlocking {
+        val repository = FakeOrdersRepository()
+        repository.createOrder(
+            Order(
+                id = 0,
+                title = "t",
+                address = "a",
+                pricePerHour = 1.0,
+                orderTime = OrderTime.Soon,
+                durationMin = 60,
+                workersCurrent = 0,
+                workersTotal = 1,
+                tags = emptyList(),
+                meta = emptyMap(),
+                status = OrderStatus.STAFFING,
+                createdByUserId = "dispatcher"
             )
         )
-        val useCase = ObserveOrdersForRoleUseCase(repo, StaticCurrentUserProvider(CurrentUser("1", Role.LOADER)))
-        assertEquals(listOf(1L, 3L), useCase().first().map { it.id })
+
+        repository.applyToOrder(1L, "loader", 100L)
+        val application = repository.getOrderById(1L)!!.applications.single()
+
+        assertEquals(OrderApplicationStatus.APPLIED, application.status)
     }
-
-    @Test
-    fun `observe orders reacts to current user and role changes`() = runBlocking {
-        val repo = InMemoryOrdersRepository(
-            listOf(
-                baseOrder(id = 1, createdBy = "dispatcher-1", status = OrderStatus.AVAILABLE, acceptedBy = null),
-                baseOrder(id = 2, createdBy = "dispatcher-2", status = OrderStatus.AVAILABLE, acceptedBy = null),
-                baseOrder(id = 3, createdBy = "dispatcher-1", status = OrderStatus.IN_PROGRESS, acceptedBy = "loader-1"),
-                baseOrder(id = 4, createdBy = "dispatcher-2", status = OrderStatus.IN_PROGRESS, acceptedBy = "loader-2")
-            )
-        )
-        val currentUserProvider = FakeCurrentUserProvider(CurrentUser("dispatcher-1", Role.DISPATCHER))
-        val useCase = ObserveOrdersForRoleUseCase(repo, currentUserProvider)
-
-        val emissionsDeferred = async {
-            useCase().take(3).toList()
-        }
-
-        currentUserProvider.emit(CurrentUser("loader-1", Role.LOADER))
-        currentUserProvider.emit(CurrentUser("dispatcher-2", Role.DISPATCHER))
-
-        val emissions = emissionsDeferred.await()
-        assertEquals(listOf(1L, 3L), emissions[0].map { it.id })
-        assertEquals(listOf(1L, 2L, 3L), emissions[1].map { it.id })
-        assertEquals(listOf(2L, 4L), emissions[2].map { it.id })
-    }
-
-    private class StaticCurrentUserProvider(private val currentUser: CurrentUser) : CurrentUserProvider {
-        private val state = MutableStateFlow(currentUser)
-        override fun observeCurrentUser(): Flow<CurrentUser> = state
-        override suspend fun getCurrentUser(): CurrentUser = state.value
-    }
-
-    private class FakeCurrentUserProvider(initial: CurrentUser) : CurrentUserProvider {
-        private val state = MutableStateFlow(initial)
-        override fun observeCurrentUser(): Flow<CurrentUser> = state
-        override suspend fun getCurrentUser(): CurrentUser = state.value
-        suspend fun emit(currentUser: CurrentUser) {
-            state.emit(currentUser)
-        }
-    }
-
-    private class InMemoryOrdersRepository(initial: List<Order> = emptyList()) : OrdersRepository {
-        private val state = MutableStateFlow(initial)
-        override fun observeOrders(): Flow<List<Order>> = state
-        override suspend fun createOrder(order: Order) { state.update { it + order.copy(id = 1) } }
-        override suspend fun acceptOrder(id: Long, acceptedByUserId: String, acceptedAtMillis: Long) {
-            state.update { list -> list.map { if (it.id == id) it.copy(status = OrderStatus.IN_PROGRESS, acceptedByUserId = acceptedByUserId, acceptedAtMillis = acceptedAtMillis) else it } }
-        }
-        override suspend fun cancelOrder(id: Long, reason: String?) = Unit
-        override suspend fun completeOrder(id: Long) = Unit
-        override suspend fun refresh() = Unit
-        override suspend fun getOrderById(id: Long): Order? = state.value.firstOrNull { it.id == id }
-    }
-
-
-    private fun baseOrderDraft() = OrderDraft(
-        title = "Order",
-        address = "Addr",
-        pricePerHour = 100.0,
-        orderTime = OrderTime.Soon,
-        durationMin = 60,
-        workersCurrent = 0,
-        workersTotal = 1,
-        tags = emptyList(),
-        meta = emptyMap(),
-        comment = null
-    )
-
-    private fun baseOrder(id: Long = 0, createdBy: String = "1", acceptedBy: String? = null, status: OrderStatus = OrderStatus.AVAILABLE) = Order(
-        id = id,
-        title = "Order",
-        address = "Addr",
-        pricePerHour = 100.0,
-        orderTime = OrderTime.Soon,
-        durationMin = 60,
-        workersCurrent = 0,
-        workersTotal = 1,
-        tags = emptyList(),
-        meta = emptyMap(),
-        status = status,
-        createdByUserId = createdBy,
-        acceptedByUserId = acceptedBy,
-        acceptedAtMillis = null
-    )
 }

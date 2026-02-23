@@ -70,7 +70,7 @@ class DispatcherViewModel @Inject constructor(
                     DispatcherStats(
                         completedOrders = orders.count { it.status == OrderStatus.COMPLETED },
                         activeOrders = orders.count {
-                            it.status == OrderStatus.AVAILABLE || it.status == OrderStatus.IN_PROGRESS
+                            it.status == OrderStatus.STAFFING || it.status == OrderStatus.IN_PROGRESS
                         }
                     )
                 )

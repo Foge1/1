@@ -51,7 +51,7 @@ object DatabaseModule {
             OrdersAppDatabase::class.java,
             "orders_feature_database"
         )
-            .fallbackToDestructiveMigration()
+            .addMigrations(OrdersAppDatabase.MIGRATION_2_3)
             .build()
     }
 

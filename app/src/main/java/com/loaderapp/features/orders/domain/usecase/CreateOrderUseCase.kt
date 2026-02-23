@@ -35,10 +35,8 @@ class CreateOrderUseCase @Inject constructor(
             tags = orderDraft.tags,
             meta = orderDraft.meta,
             comment = orderDraft.comment,
-            status = OrderStatus.AVAILABLE,
-            createdByUserId = currentUser.id,
-            acceptedByUserId = null,
-            acceptedAtMillis = null
+            status = OrderStatus.STAFFING,
+            createdByUserId = currentUser.id
         )
 
         return runCatching {

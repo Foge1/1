@@ -20,9 +20,7 @@ data class Order(
     val status: OrderStatus,
     val createdByUserId: String,
     val applications: List<OrderApplication> = emptyList(),
-    val assignments: List<OrderAssignment> = emptyList(),
-    val acceptedByUserId: String? = null,
-    val acceptedAtMillis: Long? = null
+    val assignments: List<OrderAssignment> = emptyList()
 ) {
     val dateTime: Long
         get() = when (val time = orderTime) {
@@ -30,7 +28,6 @@ data class Order(
             OrderTime.Soon -> meta[CREATED_AT_KEY]?.toLongOrNull() ?: System.currentTimeMillis()
         }
 
-    // TODO(step-2): Remove legacy acceptance fields after repository transaction flow migrates to applications/assignments.
     companion object {
         const val CREATED_AT_KEY = "createdAt"
         const val TIME_TYPE_KEY = "timeType"

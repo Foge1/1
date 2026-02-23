@@ -3,7 +3,6 @@ package com.loaderapp.features.orders.ui
 import com.loaderapp.domain.model.OrderModel
 import com.loaderapp.domain.model.OrderStatusModel
 import com.loaderapp.features.orders.domain.Order
-import com.loaderapp.features.orders.domain.OrderStateMachine
 import com.loaderapp.features.orders.domain.OrderStatus
 
 data class OrderUiModel(
@@ -15,12 +14,11 @@ data class OrderUiModel(
 )
 
 fun Order.toUiModel(): OrderUiModel {
-    val actions = OrderStateMachine.actionsFor(this)
-    return OrderUiModel(this, actions.canAccept, actions.canCancel, actions.canComplete, actions.canOpenChat)
+    return OrderUiModel(this, canAccept = false, canCancel = false, canComplete = false, canOpenChat = false)
 }
 
 fun OrderModel.toFeatureStatus(): OrderStatus = when (status) {
-    OrderStatusModel.AVAILABLE -> OrderStatus.AVAILABLE
+    OrderStatusModel.AVAILABLE -> OrderStatus.STAFFING
     OrderStatusModel.TAKEN, OrderStatusModel.IN_PROGRESS -> OrderStatus.IN_PROGRESS
     OrderStatusModel.COMPLETED -> OrderStatus.COMPLETED
     OrderStatusModel.CANCELLED -> OrderStatus.CANCELED
@@ -55,7 +53,7 @@ fun OrderUiModel.toLegacyOrderModel(): OrderModel {
 }
 
 private fun OrderStatus.toLegacyStatusModel(): OrderStatusModel = when (this) {
-    OrderStatus.AVAILABLE -> OrderStatusModel.AVAILABLE
+    OrderStatus.STAFFING -> OrderStatusModel.AVAILABLE
     OrderStatus.IN_PROGRESS -> OrderStatusModel.IN_PROGRESS
     OrderStatus.COMPLETED -> OrderStatusModel.COMPLETED
     OrderStatus.CANCELED,

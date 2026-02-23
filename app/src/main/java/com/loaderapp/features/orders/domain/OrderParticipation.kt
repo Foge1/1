@@ -16,7 +16,6 @@ data class OrderApplication(
 )
 
 enum class OrderAssignmentStatus {
-    PENDING,
     ACTIVE,
     COMPLETED,
     CANCELED

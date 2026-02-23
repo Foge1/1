@@ -2,6 +2,8 @@ package com.loaderapp.domain.usecase.chat
 
 import com.loaderapp.core.common.Result
 import com.loaderapp.features.orders.domain.Order
+import com.loaderapp.features.orders.domain.OrderAssignment
+import com.loaderapp.features.orders.domain.OrderAssignmentStatus
 import com.loaderapp.features.orders.domain.OrderStatus
 import com.loaderapp.features.orders.domain.OrderTime
 import com.loaderapp.features.orders.domain.repository.OrdersRepository
@@ -38,8 +40,9 @@ class CanAccessOrderChatUseCaseTest {
             comment = null,
             status = OrderStatus.IN_PROGRESS,
             createdByUserId = "dispatcher-1",
-            acceptedByUserId = "loader-1",
-            acceptedAtMillis = 10L
+            assignments = listOf(
+                OrderAssignment(7L, "loader-1", OrderAssignmentStatus.ACTIVE, 10L, 10L)
+            )
         )
         val useCase = CanAccessOrderChatUseCase(FakeOrdersRepository(order))
 
@@ -51,9 +54,15 @@ class CanAccessOrderChatUseCaseTest {
     private class FakeOrdersRepository(private val order: Order?) : OrdersRepository {
         override fun observeOrders(): Flow<List<Order>> = emptyFlow()
         override suspend fun createOrder(order: Order) = Unit
-        override suspend fun acceptOrder(id: Long, acceptedByUserId: String, acceptedAtMillis: Long) = Unit
+        override suspend fun applyToOrder(orderId: Long, loaderId: String, now: Long) = Unit
+        override suspend fun withdrawApplication(orderId: Long, loaderId: String) = Unit
+        override suspend fun selectApplicant(orderId: Long, loaderId: String) = Unit
+        override suspend fun unselectApplicant(orderId: Long, loaderId: String) = Unit
+        override suspend fun startOrder(orderId: Long, startedAtMillis: Long) = Unit
         override suspend fun cancelOrder(id: Long, reason: String?) = Unit
         override suspend fun completeOrder(id: Long) = Unit
+        override suspend fun hasActiveAssignment(loaderId: String): Boolean = false
+        override suspend fun countActiveAppliedApplications(loaderId: String): Int = 0
         override suspend fun refresh() = Unit
         override suspend fun getOrderById(id: Long): Order? = order?.takeIf { it.id == id }
     }
