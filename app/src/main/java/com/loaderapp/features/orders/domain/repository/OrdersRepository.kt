@@ -29,13 +29,4 @@ interface OrdersRepository {
     suspend fun hasActiveAssignment(loaderId: String): Boolean
     suspend fun countActiveAppliedApplications(loaderId: String): Int
 
-    // ── Deprecated compat ─────────────────────────────────────────────────────
-    @Deprecated(
-        message = "Use applyToOrder + selectApplicant + startOrder. Will be removed after Step 3.",
-        replaceWith = ReplaceWith("applyToOrder(id, acceptedByUserId, acceptedAtMillis)")
-    )
-    suspend fun acceptOrder(id: Long, acceptedByUserId: String, acceptedAtMillis: Long) {
-        // Default no-op shim; real impl overrides this.
-    }
 }
-

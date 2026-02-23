@@ -15,20 +15,21 @@ import org.junit.Test
 @Suppress("DEPRECATION")
 class FakeOrdersRepositoryTest {
 
-    private fun baseOrder(status: OrderStatus = OrderStatus.STAFFING) = Order(
+    private fun baseOrder(status: OrderStatus = OrderStatus.STAFFING, workersTotal: Int = 1) = Order(
         id = 0, title = "title", address = "address", pricePerHour = 100.0,
-        orderTime = OrderTime.Soon, durationMin = 60, workersCurrent = 0, workersTotal = 1,
+        orderTime = OrderTime.Soon, durationMin = 60, workersCurrent = 0, workersTotal = workersTotal,
         tags = emptyList(), meta = emptyMap(), status = status, createdByUserId = "dispatcher"
     )
 
     @Test
-    fun `startOrder creates ACTIVE assignments for SELECTED and rejects APPLIED`() = runBlocking {
+    fun `startOrder creates assignments only for SELECTED with correct timestamps and rejects APPLIED`() = runBlocking {
         val repo = FakeOrdersRepository()
         repo.createOrder(baseOrder())
         val orderId = repo.observeOrders().first().first().id
 
         repo.applyToOrder(orderId, "loader-1", 1000L)
         repo.applyToOrder(orderId, "loader-2", 1001L)
+        repo.applyToOrder(orderId, "loader-3", 1002L)
         repo.selectApplicant(orderId, "loader-1")
 
         repo.startOrder(orderId, startedAtMillis = 2000L)
@@ -36,12 +37,19 @@ class FakeOrdersRepositoryTest {
         val order = repo.getOrderById(orderId)!!
         assertEquals(OrderStatus.IN_PROGRESS, order.status)
 
-        val assignment = order.assignments.find { it.loaderId == "loader-1" }!!
-        assertEquals(OrderAssignmentStatus.ACTIVE, assignment.status)
-        assertEquals(2000L, assignment.startedAtMillis)
+        assertEquals(1, order.assignments.size)
+        val selectedAssignment = order.assignments.single()
+        assertEquals("loader-1", selectedAssignment.loaderId)
+        assertEquals(OrderAssignmentStatus.ACTIVE, selectedAssignment.status)
+        assertEquals(1000L, selectedAssignment.assignedAtMillis)
+        assertEquals(2000L, selectedAssignment.startedAtMillis)
 
-        val rejectedApp = order.applications.find { it.loaderId == "loader-2" }!!
-        assertEquals(OrderApplicationStatus.REJECTED, rejectedApp.status)
+        val selectedApp = order.applications.find { it.loaderId == "loader-1" }!!
+        assertEquals(OrderApplicationStatus.SELECTED, selectedApp.status)
+        val rejectedApp2 = order.applications.find { it.loaderId == "loader-2" }!!
+        val rejectedApp3 = order.applications.find { it.loaderId == "loader-3" }!!
+        assertEquals(OrderApplicationStatus.REJECTED, rejectedApp2.status)
+        assertEquals(OrderApplicationStatus.REJECTED, rejectedApp3.status)
     }
 
     @Test

@@ -32,8 +32,7 @@ private fun List<Order>.filterForUser(user: CurrentUser): List<Order> {
         Role.DISPATCHER -> filter { order -> order.createdByUserId == user.id }
         Role.LOADER -> filter { order ->
             when (order.status) {
-                OrderStatus.STAFFING,
-                OrderStatus.AVAILABLE -> true // loader sees all staffing orders
+                OrderStatus.STAFFING -> true // loader sees all staffing orders
                 OrderStatus.IN_PROGRESS,
                 OrderStatus.COMPLETED,
                 OrderStatus.CANCELED,

@@ -162,23 +162,6 @@ class OrdersOwnershipUseCasesTest {
         assertTrue(result is UseCaseResult.Failure)
     }
 
-    // ── Deprecated AcceptOrderUseCase shim ───────────────────────────────────
-
-    @Test
-    @Suppress("DEPRECATION")
-    fun `acceptOrder compat delegates to apply and sets status to in progress via apply`() = runBlocking {
-        val repo = InMemoryOrdersRepository(listOf(baseOrder(id = 1, createdBy = "d-1")))
-        val provider = StaticCurrentUserProvider(CurrentUser("loader-1", Role.LOADER))
-        val applyUseCase = ApplyToOrderUseCase(repo, provider)
-        val useCase = AcceptOrderUseCase(applyUseCase)
-
-        val result = useCase(1)
-
-        // ApplyToOrderUseCase only validates and calls repo.applyToOrder — doesn't change status
-        // so we verify at minimum it returns Success (no active assignment, STAFFING order)
-        assertTrue(result is UseCaseResult.Success)
-    }
-
     // ── ObserveOrdersForRoleUseCase ───────────────────────────────────────────
 
     @Test
@@ -253,19 +236,25 @@ class OrdersOwnershipUseCasesTest {
             state.update { it + order.copy(id = if (order.id == 0L) 1L else order.id, status = OrderStatus.STAFFING) }
         }
 
-        @Deprecated("compat")
-        override suspend fun acceptOrder(id: Long, acceptedByUserId: String, acceptedAtMillis: Long) {
-            state.update { list ->
-                @Suppress("DEPRECATION")
-                list.map { if (it.id == id) it.copy(status = OrderStatus.IN_PROGRESS, acceptedByUserId = acceptedByUserId) else it }
-            }
-        }
-
         override suspend fun cancelOrder(id: Long, reason: String?) = Unit
         override suspend fun completeOrder(id: Long) = Unit
         override suspend fun refresh() = Unit
         override suspend fun getOrderById(id: Long): Order? = state.value.firstOrNull { it.id == id }
-        override suspend fun applyToOrder(orderId: Long, loaderId: String, now: Long) = Unit
+        override suspend fun applyToOrder(orderId: Long, loaderId: String, now: Long) {
+            state.update { list ->
+                list.map { order ->
+                    if (order.id != orderId) order else {
+                        val newApp = OrderApplication(
+                            orderId = orderId,
+                            loaderId = loaderId,
+                            status = OrderApplicationStatus.APPLIED,
+                            appliedAtMillis = now
+                        )
+                        order.copy(applications = order.applications.filterNot { it.loaderId == loaderId } + newApp)
+                    }
+                }
+            }
+        }
         override suspend fun withdrawApplication(orderId: Long, loaderId: String) = Unit
         override suspend fun selectApplicant(orderId: Long, loaderId: String) = Unit
         override suspend fun unselectApplicant(orderId: Long, loaderId: String) = Unit

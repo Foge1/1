@@ -187,7 +187,7 @@ class OrdersRepositoryImpl @Inject constructor(
                     orderId = orderId,
                     loaderId = app.loaderId,
                     status = OrderAssignmentStatus.ACTIVE.name,
-                    assignedAtMillis = startedAtMillis,
+                    assignedAtMillis = app.appliedAtMillis,
                     startedAtMillis = startedAtMillis
                 )
             }
@@ -221,15 +221,6 @@ class OrdersRepositoryImpl @Inject constructor(
             status = OrderApplicationStatus.APPLIED.name
         )
 
-    // ── Deprecated compat ─────────────────────────────────────────────────────
-
-    @Deprecated("Use applyToOrder + selectApplicant + startOrder")
-    override suspend fun acceptOrder(id: Long, acceptedByUserId: String, acceptedAtMillis: Long) {
-        // Compat shim: apply → select → start in one shot so old call-sites still function.
-        applyToOrder(orderId = id, loaderId = acceptedByUserId, now = acceptedAtMillis)
-        selectApplicant(orderId = id, loaderId = acceptedByUserId)
-        startOrder(orderId = id, startedAtMillis = acceptedAtMillis)
-    }
 
     // ── Private ───────────────────────────────────────────────────────────────
 

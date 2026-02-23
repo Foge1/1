@@ -562,18 +562,4 @@ class OrderStateMachineTest {
         assertTrue(result is OrderTransitionResult.Failure)
     }
 
-    // ─── transition: deprecated ACCEPT ───────────────────────────────────────────
-
-    @Test
-    @Suppress("DEPRECATION")
-    fun `deprecated ACCEPT always returns Failure`() {
-        val result = OrderStateMachine.transition(
-            order = baseOrder(),
-            event = OrderEvent.ACCEPT,
-            actor = loaderActor,
-            now = 0L
-        )
-
-        assertTrue(result is OrderTransitionResult.Failure)
-    }
 }

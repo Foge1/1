@@ -184,7 +184,7 @@ class FakeOrdersRepository @Inject constructor() : OrdersRepository {
                     orderId = orderId,
                     loaderId = app.loaderId,
                     status = OrderAssignmentStatus.ACTIVE,
-                    assignedAtMillis = startedAtMillis,
+                    assignedAtMillis = app.appliedAtMillis,
                     startedAtMillis = startedAtMillis
                 )
             }
@@ -209,13 +209,6 @@ class FakeOrdersRepository @Inject constructor() : OrdersRepository {
 
     override suspend fun countActiveAppliedApplications(loaderId: String): Int =
         applications.value.count { it.loaderId == loaderId && it.status == OrderApplicationStatus.APPLIED }
-
-    @Deprecated("Use applyToOrder + selectApplicant + startOrder")
-    override suspend fun acceptOrder(id: Long, acceptedByUserId: String, acceptedAtMillis: Long) {
-        applyToOrder(orderId = id, loaderId = acceptedByUserId, now = acceptedAtMillis)
-        selectApplicant(orderId = id, loaderId = acceptedByUserId)
-        startOrder(orderId = id, startedAtMillis = acceptedAtMillis)
-    }
 
     // ── Private ───────────────────────────────────────────────────────────────
 

@@ -18,12 +18,5 @@ enum class OrderEvent {
 
     CANCEL,
     COMPLETE,
-    EXPIRE,
-
-    /**
-     * @Deprecated Use [APPLY] + [SELECT] + [START].
-     * Kept only so existing call-sites compile during migration.
-     */
-    @Deprecated("Use APPLY/SELECT/START flow. Will be removed.", ReplaceWith("APPLY"))
-    ACCEPT
+    EXPIRE
 }
