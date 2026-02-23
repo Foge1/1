@@ -7,6 +7,8 @@ import com.loaderapp.data.dao.ChatDao
 import com.loaderapp.data.dao.OrderDao
 import com.loaderapp.data.dao.OrderWorkerDao
 import com.loaderapp.data.dao.UserDao
+import com.loaderapp.features.orders.data.local.dao.ApplicationsDao
+import com.loaderapp.features.orders.data.local.dao.AssignmentsDao
 import com.loaderapp.features.orders.data.local.dao.OrdersDao
 import com.loaderapp.features.orders.data.local.db.AppDatabase as OrdersAppDatabase
 import com.loaderapp.features.orders.data.local.db.Migration2To3
@@ -60,6 +62,18 @@ object DatabaseModule {
     @Singleton
     fun provideOrdersDao(database: OrdersAppDatabase): OrdersDao {
         return database.ordersDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideApplicationsDao(database: OrdersAppDatabase): ApplicationsDao {
+        return database.applicationsDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideAssignmentsDao(database: OrdersAppDatabase): AssignmentsDao {
+        return database.assignmentsDao()
     }
 
     /**

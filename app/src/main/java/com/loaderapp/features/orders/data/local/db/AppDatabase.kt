@@ -3,6 +3,8 @@ package com.loaderapp.features.orders.data.local.db
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
+import com.loaderapp.features.orders.data.local.dao.ApplicationsDao
+import com.loaderapp.features.orders.data.local.dao.AssignmentsDao
 import com.loaderapp.features.orders.data.local.dao.OrdersDao
 import com.loaderapp.features.orders.data.local.entity.OrderApplicationEntity
 import com.loaderapp.features.orders.data.local.entity.OrderAssignmentEntity
@@ -21,5 +23,7 @@ import com.loaderapp.features.orders.data.local.entity.OrdersConverters
 @TypeConverters(OrdersConverters::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun ordersDao(): OrdersDao
+    abstract fun applicationsDao(): ApplicationsDao
+    abstract fun assignmentsDao(): AssignmentsDao
 }
 

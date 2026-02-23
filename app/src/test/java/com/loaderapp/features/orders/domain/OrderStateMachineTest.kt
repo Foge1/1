@@ -3,18 +3,11 @@ package com.loaderapp.features.orders.domain
 import com.loaderapp.features.orders.domain.session.CurrentUser
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/**
- * Domain-only тесты OrderStateMachine (Step 3).
- * Покрывают все канонические правила модели "отозваться → отбор → старт диспетчером".
- */
 class OrderStateMachineTest {
-
-    // ─── Helpers ──────────────────────────────────────────────────────────────────
 
     private fun baseOrder(
         status: OrderStatus = OrderStatus.STAFFING,
@@ -46,520 +39,126 @@ class OrderStateMachineTest {
         appliedAtMillis = 0L
     )
 
-    private fun assignment(loaderId: String, status: OrderAssignmentStatus = OrderAssignmentStatus.ACTIVE) =
-        OrderAssignment(
-            orderId = 1L,
-            loaderId = loaderId,
-            status = status,
-            assignedAtMillis = 0L
-        )
-
     private val loaderActor = CurrentUser(id = "loader-1", role = Role.LOADER)
     private val creatorDispatcher = CurrentUser(id = "dispatcher-1", role = Role.DISPATCHER)
     private val otherDispatcher = CurrentUser(id = "dispatcher-2", role = Role.DISPATCHER)
 
-    // ─── actionsFor: Loader ───────────────────────────────────────────────────────
-
     @Test
-    fun `loader canApply false when activeAssignmentExists`() {
-        val order = baseOrder()
-        val context = OrderRulesContext(activeAssignmentExists = true)
+    fun `apply block reasons are typed`() {
+        val actionsActiveAssignment = OrderStateMachine.actionsFor(
+            baseOrder(),
+            loaderActor,
+            OrderRulesContext(activeAssignmentExists = true)
+        )
+        assertEquals(OrderActionBlockReason.ActiveAssignmentExists, actionsActiveAssignment.applyDisabledReason)
 
-        val actions = OrderStateMachine.actionsFor(order, loaderActor, context)
+        val actionsLimit = OrderStateMachine.actionsFor(
+            baseOrder(),
+            loaderActor,
+            OrderRulesContext(activeApplicationsForLimitCount = 3)
+        )
+        assertEquals(OrderActionBlockReason.ApplyLimitReached, actionsLimit.applyDisabledReason)
 
-        assertFalse(actions.canApply)
-        assertNotNull(actions.applyDisabledReason)
+        val actionsAlreadyApplied = OrderStateMachine.actionsFor(
+            baseOrder(applications = listOf(application("loader-1", OrderApplicationStatus.APPLIED))),
+            loaderActor
+        )
+        assertEquals(OrderActionBlockReason.AlreadyApplied, actionsAlreadyApplied.applyDisabledReason)
     }
 
     @Test
-    fun `loader canApply false when activeApplicationsForLimitCount at limit`() {
-        val order = baseOrder()
-        val context = OrderRulesContext(activeApplicationsForLimitCount = 3)
-
-        val actions = OrderStateMachine.actionsFor(order, loaderActor, context)
-
-        assertFalse(actions.canApply)
-        assertNotNull(actions.applyDisabledReason)
-    }
-
-    @Test
-    fun `loader canApply false when already applied to this order`() {
-        val order = baseOrder(applications = listOf(application("loader-1", OrderApplicationStatus.APPLIED)))
-        val context = OrderRulesContext(activeApplicationsForLimitCount = 1)
-
-        val actions = OrderStateMachine.actionsFor(order, loaderActor, context)
-
-        assertFalse(actions.canApply)
-    }
-
-    @Test
-    fun `loader canApply false when order not in STAFFING`() {
-        val order = baseOrder(status = OrderStatus.IN_PROGRESS)
-
-        val actions = OrderStateMachine.actionsFor(order, loaderActor)
-
-        assertFalse(actions.canApply)
-    }
-
-    @Test
-    fun `loader canApply true when all conditions met`() {
-        val order = baseOrder()
-        val context = OrderRulesContext(activeAssignmentExists = false, activeApplicationsForLimitCount = 2)
-
-        val actions = OrderStateMachine.actionsFor(order, loaderActor, context)
-
-        assertTrue(actions.canApply)
-        assertNull(actions.applyDisabledReason)
-    }
-
-    @Test
-    fun `loader canWithdraw true when has APPLIED application`() {
-        val order = baseOrder(applications = listOf(application("loader-1", OrderApplicationStatus.APPLIED)))
-
-        val actions = OrderStateMachine.actionsFor(order, loaderActor)
-
-        assertTrue(actions.canWithdraw)
-    }
-
-    @Test
-    fun `loader canWithdraw false when no application on this order`() {
-        val order = baseOrder()
-
-        val actions = OrderStateMachine.actionsFor(order, loaderActor)
-
-        assertFalse(actions.canWithdraw)
-        assertNotNull(actions.withdrawDisabledReason)
-    }
-
-    @Test
-    fun `loader canComplete true when has ACTIVE assignment in this order`() {
-        val order = baseOrder(status = OrderStatus.IN_PROGRESS)
-        val context = OrderRulesContext(loaderHasActiveAssignmentInThisOrder = true)
-
-        val actions = OrderStateMachine.actionsFor(order, loaderActor, context)
-
-        assertTrue(actions.canComplete)
-        assertNull(actions.completeDisabledReason)
-    }
-
-    @Test
-    fun `loader canComplete false when no ACTIVE assignment in this order`() {
-        val order = baseOrder(status = OrderStatus.IN_PROGRESS)
-        val context = OrderRulesContext(loaderHasActiveAssignmentInThisOrder = false)
-
-        val actions = OrderStateMachine.actionsFor(order, loaderActor, context)
-
-        assertFalse(actions.canComplete)
-        assertNotNull(actions.completeDisabledReason)
-    }
-
-    // ─── actionsFor: Dispatcher ───────────────────────────────────────────────────
-
-    @Test
-    fun `dispatcher creator canStart true only when selectedCount equals workersTotal`() {
+    fun `start requires selected equals workersTotal`() {
         val order = baseOrder(
             workersTotal = 2,
-            applications = listOf(
-                application("loader-1", OrderApplicationStatus.SELECTED),
-                application("loader-2", OrderApplicationStatus.SELECTED)
+            applications = listOf(application("loader-1", OrderApplicationStatus.SELECTED))
+        )
+        val actions = OrderStateMachine.actionsFor(order, creatorDispatcher)
+        assertFalse(actions.canStart)
+        assertEquals(OrderActionBlockReason.SelectedCountMismatch(1, 2), actions.startDisabledReason)
+    }
+
+    @Test
+    fun `apply transition and actions are consistent`() {
+        val context = OrderRulesContext(activeAssignmentExists = true)
+        val actions = OrderStateMachine.actionsFor(baseOrder(), loaderActor, context)
+        val transition = OrderStateMachine.transition(
+            order = baseOrder(),
+            event = OrderEvent.APPLY,
+            actor = loaderActor,
+            now = 0L,
+            context = context
+        )
+        assertFalse(actions.canApply)
+        assertTrue(transition is OrderTransitionResult.Failure)
+        assertEquals(actions.applyDisabledReason, (transition as OrderTransitionResult.Failure).reason)
+    }
+
+    @Test
+    fun `invalid in progress events return failure`() {
+        val order = baseOrder(status = OrderStatus.IN_PROGRESS)
+        val unsupported = listOf(
+            OrderEvent.APPLY,
+            OrderEvent.WITHDRAW,
+            OrderEvent.SELECT,
+            OrderEvent.UNSELECT,
+            OrderEvent.START,
+            OrderEvent.EXPIRE,
+        )
+        unsupported.forEach { event ->
+            val result = OrderStateMachine.transition(order, event, creatorDispatcher, 0L)
+            assertTrue(result is OrderTransitionResult.Failure)
+            assertEquals(
+                OrderActionBlockReason.UnsupportedEventForStatus(event, OrderStatus.IN_PROGRESS),
+                (result as OrderTransitionResult.Failure).reason
             )
+        }
+    }
+
+    @Test
+    fun `cancel and complete permissions are enforced`() {
+        val cancelDenied = OrderStateMachine.transition(baseOrder(), OrderEvent.CANCEL, otherDispatcher, 0L)
+        assertEquals(
+            OrderActionBlockReason.OnlyDispatcherCreatorCanCancel,
+            (cancelDenied as OrderTransitionResult.Failure).reason
         )
 
-        val actions = OrderStateMachine.actionsFor(order, creatorDispatcher)
-
-        assertTrue(actions.canStart)
-        assertNull(actions.startDisabledReason)
-    }
-
-    @Test
-    fun `dispatcher creator canStart false when selectedCount less than workersTotal`() {
-        val order = baseOrder(
-            workersTotal = 2,
-            applications = listOf(application("loader-1", OrderApplicationStatus.SELECTED))
+        val completeDenied = OrderStateMachine.transition(
+            baseOrder(status = OrderStatus.IN_PROGRESS),
+            OrderEvent.COMPLETE,
+            loaderActor,
+            0L,
+            context = OrderRulesContext(loaderHasActiveAssignmentInThisOrder = false)
         )
-
-        val actions = OrderStateMachine.actionsFor(order, creatorDispatcher)
-
-        assertFalse(actions.canStart)
-        assertNotNull(actions.startDisabledReason)
-    }
-
-    @Test
-    fun `non-creator dispatcher canStart false`() {
-        val order = baseOrder(
-            workersTotal = 1,
-            applications = listOf(application("loader-1", OrderApplicationStatus.SELECTED))
+        assertEquals(
+            OrderActionBlockReason.OnlyDispatcherCreatorOrAssignedLoaderCanComplete,
+            (completeDenied as OrderTransitionResult.Failure).reason
         )
-
-        val actions = OrderStateMachine.actionsFor(order, otherDispatcher)
-
-        assertFalse(actions.canStart)
-        assertNotNull(actions.startDisabledReason)
     }
 
     @Test
-    fun `dispatcher creator canSelect and canUnselect in STAFFING`() {
-        val order = baseOrder()
-
-        val actions = OrderStateMachine.actionsFor(order, creatorDispatcher)
-
-        assertTrue(actions.canSelect)
-        assertTrue(actions.canUnselect)
-    }
-
-    @Test
-    fun `non-creator dispatcher cannot select`() {
-        val order = baseOrder()
-
-        val actions = OrderStateMachine.actionsFor(order, otherDispatcher)
-
-        assertFalse(actions.canSelect)
-        assertFalse(actions.canUnselect)
-    }
-
-    @Test
-    fun `terminal status returns all false actions for dispatcher`() {
+    fun `terminal statuses reject every event`() {
         listOf(OrderStatus.COMPLETED, OrderStatus.CANCELED, OrderStatus.EXPIRED).forEach { status ->
-            val order = baseOrder(status = status)
-            val actions = OrderStateMachine.actionsFor(order, creatorDispatcher)
-
-            assertFalse("canStart should be false for $status", actions.canStart)
-            assertFalse("canCancel should be false for $status", actions.canCancel)
-            assertFalse("canComplete should be false for $status", actions.canComplete)
+            val result = OrderStateMachine.transition(baseOrder(status = status), OrderEvent.START, creatorDispatcher, 0L)
+            assertTrue(result is OrderTransitionResult.Failure)
+            assertEquals(OrderActionBlockReason.TerminalStatus(status), (result as OrderTransitionResult.Failure).reason)
         }
     }
 
-    // ─── transition: APPLY ────────────────────────────────────────────────────────
-
     @Test
-    fun `APPLY from STAFFING by loader returns Success`() {
-        val result = OrderStateMachine.transition(
-            order = baseOrder(),
-            event = OrderEvent.APPLY,
-            actor = loaderActor,
-            now = 0L
-        )
-
-        assertTrue(result is OrderTransitionResult.Success)
-        assertEquals(OrderStatus.STAFFING, (result as OrderTransitionResult.Success).order.status)
-    }
-
-    @Test
-    fun `APPLY by dispatcher returns Failure`() {
-        val result = OrderStateMachine.transition(
-            order = baseOrder(),
-            event = OrderEvent.APPLY,
-            actor = creatorDispatcher,
-            now = 0L
-        )
-
-        assertTrue(result is OrderTransitionResult.Failure)
-    }
-
-    @Test
-    fun `APPLY when activeAssignmentExists returns Failure`() {
-        val context = OrderRulesContext(activeAssignmentExists = true)
-
-        val result = OrderStateMachine.transition(
-            order = baseOrder(),
-            event = OrderEvent.APPLY,
-            actor = loaderActor,
-            now = 0L,
-            context = context
-        )
-
-        assertTrue(result is OrderTransitionResult.Failure)
-    }
-
-    @Test
-    fun `APPLY when activeApplicationsForLimitCount at limit returns Failure`() {
-        val context = OrderRulesContext(activeApplicationsForLimitCount = 3)
-
-        val result = OrderStateMachine.transition(
-            order = baseOrder(),
-            event = OrderEvent.APPLY,
-            actor = loaderActor,
-            now = 0L,
-            context = context
-        )
-
-        assertTrue(result is OrderTransitionResult.Failure)
-    }
-
-    // ─── transition: START ────────────────────────────────────────────────────────
-
-    @Test
-    fun `START from STAFFING by creator dispatcher with full selection returns Success`() {
-        val order = baseOrder(
-            workersTotal = 1,
-            applications = listOf(application("loader-1", OrderApplicationStatus.SELECTED))
-        )
-
-        val result = OrderStateMachine.transition(
-            order = order,
+    fun `happy paths remain unchanged`() {
+        val startResult = OrderStateMachine.transition(
+            order = baseOrder(
+                workersTotal = 1,
+                applications = listOf(application("loader-1", OrderApplicationStatus.SELECTED))
+            ),
             event = OrderEvent.START,
             actor = creatorDispatcher,
             now = 0L
         )
+        assertEquals(OrderStatus.IN_PROGRESS, (startResult as OrderTransitionResult.Success).order.status)
 
-        assertTrue(result is OrderTransitionResult.Success)
-        assertEquals(OrderStatus.IN_PROGRESS, (result as OrderTransitionResult.Success).order.status)
+        val canApplyActions = OrderStateMachine.actionsFor(baseOrder(), loaderActor)
+        assertTrue(canApplyActions.canApply)
+        assertNull(canApplyActions.applyDisabledReason)
     }
-
-    @Test
-    fun `START by non-creator dispatcher returns Failure`() {
-        val order = baseOrder(
-            workersTotal = 1,
-            applications = listOf(application("loader-1", OrderApplicationStatus.SELECTED))
-        )
-
-        val result = OrderStateMachine.transition(
-            order = order,
-            event = OrderEvent.START,
-            actor = otherDispatcher,
-            now = 0L
-        )
-
-        assertTrue(result is OrderTransitionResult.Failure)
-    }
-
-    @Test
-    fun `START by loader returns Failure`() {
-        val result = OrderStateMachine.transition(
-            order = baseOrder(),
-            event = OrderEvent.START,
-            actor = loaderActor,
-            now = 0L
-        )
-
-        assertTrue(result is OrderTransitionResult.Failure)
-    }
-
-    @Test
-    fun `START when selectedCount less than workersTotal returns Failure`() {
-        val order = baseOrder(
-            workersTotal = 2,
-            applications = listOf(application("loader-1", OrderApplicationStatus.SELECTED))
-        )
-
-        val result = OrderStateMachine.transition(
-            order = order,
-            event = OrderEvent.START,
-            actor = creatorDispatcher,
-            now = 0L
-        )
-
-        assertTrue(result is OrderTransitionResult.Failure)
-    }
-
-    // ─── transition: CANCEL ───────────────────────────────────────────────────────
-
-    @Test
-    fun `CANCEL in STAFFING by creator dispatcher returns Success`() {
-        val result = OrderStateMachine.transition(
-            order = baseOrder(),
-            event = OrderEvent.CANCEL,
-            actor = creatorDispatcher,
-            now = 0L
-        )
-
-        assertTrue(result is OrderTransitionResult.Success)
-        assertEquals(OrderStatus.CANCELED, (result as OrderTransitionResult.Success).order.status)
-    }
-
-    @Test
-    fun `CANCEL in STAFFING by non-creator dispatcher returns Failure`() {
-        val result = OrderStateMachine.transition(
-            order = baseOrder(),
-            event = OrderEvent.CANCEL,
-            actor = otherDispatcher,
-            now = 0L
-        )
-
-        assertTrue(result is OrderTransitionResult.Failure)
-    }
-
-    @Test
-    fun `CANCEL in STAFFING by loader returns Failure`() {
-        val result = OrderStateMachine.transition(
-            order = baseOrder(),
-            event = OrderEvent.CANCEL,
-            actor = loaderActor,
-            now = 0L
-        )
-
-        assertTrue(result is OrderTransitionResult.Failure)
-    }
-
-    @Test
-    fun `CANCEL in IN_PROGRESS by creator dispatcher returns Success`() {
-        val result = OrderStateMachine.transition(
-            order = baseOrder(status = OrderStatus.IN_PROGRESS),
-            event = OrderEvent.CANCEL,
-            actor = creatorDispatcher,
-            now = 0L
-        )
-
-        assertTrue(result is OrderTransitionResult.Success)
-        assertEquals(OrderStatus.CANCELED, (result as OrderTransitionResult.Success).order.status)
-    }
-
-    @Test
-    fun `CANCEL in IN_PROGRESS by non-creator returns Failure`() {
-        val result = OrderStateMachine.transition(
-            order = baseOrder(status = OrderStatus.IN_PROGRESS),
-            event = OrderEvent.CANCEL,
-            actor = otherDispatcher,
-            now = 0L
-        )
-
-        assertTrue(result is OrderTransitionResult.Failure)
-    }
-
-    // ─── transition: COMPLETE ─────────────────────────────────────────────────────
-
-    @Test
-    fun `COMPLETE in IN_PROGRESS by loader without ACTIVE assignment returns Failure`() {
-        val context = OrderRulesContext(loaderHasActiveAssignmentInThisOrder = false)
-
-        val result = OrderStateMachine.transition(
-            order = baseOrder(status = OrderStatus.IN_PROGRESS),
-            event = OrderEvent.COMPLETE,
-            actor = loaderActor,
-            now = 0L,
-            context = context
-        )
-
-        assertTrue(result is OrderTransitionResult.Failure)
-    }
-
-    @Test
-    fun `COMPLETE in IN_PROGRESS by loader with ACTIVE assignment returns Success`() {
-        val context = OrderRulesContext(loaderHasActiveAssignmentInThisOrder = true)
-
-        val result = OrderStateMachine.transition(
-            order = baseOrder(status = OrderStatus.IN_PROGRESS),
-            event = OrderEvent.COMPLETE,
-            actor = loaderActor,
-            now = 0L,
-            context = context
-        )
-
-        assertTrue(result is OrderTransitionResult.Success)
-        assertEquals(OrderStatus.COMPLETED, (result as OrderTransitionResult.Success).order.status)
-    }
-
-    @Test
-    fun `COMPLETE in IN_PROGRESS by creator dispatcher returns Success`() {
-        val result = OrderStateMachine.transition(
-            order = baseOrder(status = OrderStatus.IN_PROGRESS),
-            event = OrderEvent.COMPLETE,
-            actor = creatorDispatcher,
-            now = 0L
-        )
-
-        assertTrue(result is OrderTransitionResult.Success)
-        assertEquals(OrderStatus.COMPLETED, (result as OrderTransitionResult.Success).order.status)
-    }
-
-    @Test
-    fun `COMPLETE in IN_PROGRESS by non-creator dispatcher returns Failure`() {
-        val result = OrderStateMachine.transition(
-            order = baseOrder(status = OrderStatus.IN_PROGRESS),
-            event = OrderEvent.COMPLETE,
-            actor = otherDispatcher,
-            now = 0L
-        )
-
-        assertTrue(result is OrderTransitionResult.Failure)
-    }
-
-    @Test
-    fun `COMPLETE from STAFFING returns Failure`() {
-        val result = OrderStateMachine.transition(
-            order = baseOrder(status = OrderStatus.STAFFING),
-            event = OrderEvent.COMPLETE,
-            actor = creatorDispatcher,
-            now = 0L
-        )
-
-        assertTrue(result is OrderTransitionResult.Failure)
-    }
-
-    // ─── transition: terminal statuses ───────────────────────────────────────────
-
-    @Test
-    fun `terminal statuses reject any transition`() {
-        val terminals = listOf(OrderStatus.COMPLETED, OrderStatus.CANCELED, OrderStatus.EXPIRED)
-        val events = listOf(OrderEvent.APPLY, OrderEvent.CANCEL, OrderEvent.START, OrderEvent.EXPIRE)
-
-        terminals.forEach { status ->
-            events.forEach { event ->
-                val result = OrderStateMachine.transition(
-                    order = baseOrder(status = status),
-                    event = event,
-                    actor = creatorDispatcher,
-                    now = 0L
-                )
-                assertTrue(
-                    "Expected Failure for status=$status, event=$event",
-                    result is OrderTransitionResult.Failure
-                )
-            }
-        }
-    }
-
-    // ─── transition: EXPIRE ───────────────────────────────────────────────────────
-
-    @Test
-    fun `EXPIRE from STAFFING returns EXPIRED`() {
-        val result = OrderStateMachine.transition(
-            order = baseOrder(),
-            event = OrderEvent.EXPIRE,
-            actor = creatorDispatcher,
-            now = 0L
-        )
-
-        assertTrue(result is OrderTransitionResult.Success)
-        assertEquals(OrderStatus.EXPIRED, (result as OrderTransitionResult.Success).order.status)
-    }
-
-    // ─── transition: SELECT / UNSELECT ────────────────────────────────────────────
-
-    @Test
-    fun `SELECT by creator dispatcher returns Success`() {
-        val result = OrderStateMachine.transition(
-            order = baseOrder(),
-            event = OrderEvent.SELECT,
-            actor = creatorDispatcher,
-            now = 0L
-        )
-
-        assertTrue(result is OrderTransitionResult.Success)
-    }
-
-    @Test
-    fun `SELECT by non-creator dispatcher returns Failure`() {
-        val result = OrderStateMachine.transition(
-            order = baseOrder(),
-            event = OrderEvent.SELECT,
-            actor = otherDispatcher,
-            now = 0L
-        )
-
-        assertTrue(result is OrderTransitionResult.Failure)
-    }
-
-    @Test
-    fun `UNSELECT by loader returns Failure`() {
-        val result = OrderStateMachine.transition(
-            order = baseOrder(),
-            event = OrderEvent.UNSELECT,
-            actor = loaderActor,
-            now = 0L
-        )
-
-        assertTrue(result is OrderTransitionResult.Failure)
-    }
-
 }

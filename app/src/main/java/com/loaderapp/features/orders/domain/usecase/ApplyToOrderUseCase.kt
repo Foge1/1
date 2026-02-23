@@ -3,6 +3,7 @@ package com.loaderapp.features.orders.domain.usecase
 import com.loaderapp.features.orders.domain.OrderRulesContext
 import com.loaderapp.features.orders.domain.OrderStateMachine
 import com.loaderapp.features.orders.domain.Role
+import com.loaderapp.features.orders.domain.toDisplayMessage
 import com.loaderapp.features.orders.domain.repository.OrdersRepository
 import com.loaderapp.features.orders.domain.session.CurrentUserProvider
 import javax.inject.Inject
@@ -43,7 +44,7 @@ class ApplyToOrderUseCase @Inject constructor(
 
         if (!actions.canApply) {
             return UseCaseResult.Failure(
-                actions.applyDisabledReason ?: "Нельзя откликнуться на этот заказ"
+                actions.applyDisabledReason?.toDisplayMessage() ?: "Нельзя откликнуться на этот заказ"
             )
         }
 

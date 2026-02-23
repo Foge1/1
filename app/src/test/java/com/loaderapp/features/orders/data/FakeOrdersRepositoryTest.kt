@@ -21,6 +21,44 @@ class FakeOrdersRepositoryTest {
     )
 
     @Test
+    fun `createOrder always normalizes status to STAFFING`() = runBlocking {
+        val repo = FakeOrdersRepository()
+        repo.createOrder(baseOrder(status = OrderStatus.IN_PROGRESS))
+
+        val order = repo.observeOrders().first().first()
+        assertEquals(OrderStatus.STAFFING, order.status)
+    }
+
+    @Test
+    fun `applyToOrder is idempotent and keeps first appliedAtMillis`() = runBlocking {
+        val repo = FakeOrdersRepository()
+        repo.createOrder(baseOrder(status = OrderStatus.STAFFING))
+        val orderId = repo.observeOrders().first().first().id
+
+        repo.applyToOrder(orderId, "loader-1", 1000L)
+        repo.applyToOrder(orderId, "loader-1", 2000L)
+
+        val order = repo.getOrderById(orderId)!!
+        assertEquals(1, order.applications.size)
+        assertEquals(1000L, order.applications.single().appliedAtMillis)
+    }
+
+    @Test
+    fun `applyToOrder is ignored when order is not STAFFING`() = runBlocking {
+        val repo = FakeOrdersRepository()
+        repo.createOrder(baseOrder(status = OrderStatus.IN_PROGRESS))
+        val orderId = repo.observeOrders().first().first().id
+
+        // force non-staffing as runtime state transition would do
+        repo.cancelOrder(orderId)
+
+        repo.applyToOrder(orderId, "loader-1", 1000L)
+
+        val order = repo.getOrderById(orderId)!!
+        assertTrue(order.applications.isEmpty())
+    }
+
+    @Test
     fun `startOrder creates assignments only for SELECTED with correct timestamps and rejects APPLIED`() = runBlocking {
         val repo = FakeOrdersRepository()
         repo.createOrder(baseOrder())
