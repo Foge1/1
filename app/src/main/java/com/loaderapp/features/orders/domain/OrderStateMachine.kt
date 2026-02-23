@@ -76,8 +76,6 @@ object OrderStateMachine {
         context: OrderRulesContext = OrderRulesContext()
     ): OrderTransitionResult = when (order.status) {
         OrderStatus.STAFFING -> transitionFromStaffing(order, event, actor, now, context)
-        @Suppress("DEPRECATION")
-        OrderStatus.AVAILABLE -> transitionFromStaffing(order, event, actor, now, context)
         OrderStatus.IN_PROGRESS -> transitionFromInProgress(order, event, actor, context)
         OrderStatus.COMPLETED,
         OrderStatus.CANCELED,
@@ -186,11 +184,6 @@ object OrderStateMachine {
             OrderStatus.COMPLETED,
             OrderStatus.CANCELED,
             OrderStatus.EXPIRED -> OrderActions()
-
-            @Suppress("DEPRECATION")
-            OrderStatus.AVAILABLE -> dispatcherActionsFor(
-                order.copy(status = OrderStatus.STAFFING), actor
-            )
         }
     }
 
@@ -277,9 +270,6 @@ object OrderStateMachine {
         OrderEvent.COMPLETE ->
             OrderTransitionResult.Failure("Нельзя завершить заказ из статуса ${order.status}")
 
-        @Suppress("DEPRECATION")
-        OrderEvent.ACCEPT ->
-            OrderTransitionResult.Failure("ACCEPT устарел — используйте APPLY + SELECT + START")
     }
 
     private fun transitionFromInProgress(
@@ -331,8 +321,5 @@ object OrderStateMachine {
         OrderEvent.EXPIRE ->
             OrderTransitionResult.Failure("Нельзя истечь заказ в статусе ${order.status}")
 
-        @Suppress("DEPRECATION")
-        OrderEvent.ACCEPT ->
-            OrderTransitionResult.Failure("ACCEPT устарел — используйте APPLY + SELECT + START")
     }
 }
