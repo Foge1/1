@@ -1,7 +1,7 @@
 package com.loaderapp.features.orders.domain
 
 enum class OrderStatus {
-    AVAILABLE,
+    STAFFING,
     IN_PROGRESS,
     COMPLETED,
     CANCELED,

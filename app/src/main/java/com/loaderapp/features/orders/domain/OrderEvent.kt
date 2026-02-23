@@ -1,7 +1,11 @@
 package com.loaderapp.features.orders.domain
 
 enum class OrderEvent {
-    ACCEPT,
+    APPLY,
+    WITHDRAW,
+    SELECT,
+    UNSELECT,
+    START,
     CANCEL,
     COMPLETE,
     EXPIRE
