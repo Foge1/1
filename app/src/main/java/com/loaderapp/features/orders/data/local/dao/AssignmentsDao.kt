@@ -23,4 +23,8 @@ interface AssignmentsDao {
 
     @Query("SELECT COUNT(*) FROM order_assignments WHERE loaderId = :loaderId AND status = :status")
     suspend fun countAssignmentsByLoaderAndStatus(loaderId: String, status: String): Int
+
+
+    @Query("SELECT COUNT(*) FROM order_assignments WHERE orderId = :orderId AND loaderId = :loaderId AND status IN (:statuses)")
+    suspend fun countAssignmentsByOrderLoaderAndStatuses(orderId: Long, loaderId: String, statuses: List<String>): Int
 }

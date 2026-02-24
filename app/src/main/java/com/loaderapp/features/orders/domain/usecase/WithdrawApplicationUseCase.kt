@@ -16,7 +16,8 @@ import javax.inject.Inject
  */
 class WithdrawApplicationUseCase @Inject constructor(
     private val repository: OrdersRepository,
-    private val currentUserProvider: CurrentUserProvider
+    private val currentUserProvider: CurrentUserProvider,
+    private val stateMachine: OrderStateMachine
 ) {
     suspend operator fun invoke(orderId: Long): UseCaseResult<Unit> {
         val actor = currentUserProvider.getCurrentUser()
@@ -28,7 +29,7 @@ class WithdrawApplicationUseCase @Inject constructor(
         val order = repository.getOrderById(orderId)
             ?: return UseCaseResult.Failure("Заказ не найден")
 
-        val actions = OrderStateMachine.actionsFor(order, actor, OrderRulesContext())
+        val actions = stateMachine.actionsFor(order, actor, OrderRulesContext())
 
         if (!actions.canWithdraw) {
             return UseCaseResult.Failure(

@@ -1,5 +1,8 @@
 package com.loaderapp.features.orders.domain.usecase
 
+import com.loaderapp.features.orders.domain.OrderStateMachine
+import com.loaderapp.features.orders.domain.OrdersLimits
+
 import com.loaderapp.features.orders.domain.Order
 import com.loaderapp.features.orders.domain.OrderApplication
 import com.loaderapp.features.orders.domain.OrderApplicationStatus
@@ -43,7 +46,7 @@ class OrdersOwnershipUseCasesTest {
     @Test
     fun `apply succeeds for loader on STAFFING order with no active assignment`() = runBlocking {
         val repo = InMemoryOrdersRepository(listOf(baseOrder(id = 1, status = OrderStatus.STAFFING)))
-        val useCase = ApplyToOrderUseCase(repo, StaticCurrentUserProvider(CurrentUser("loader-1", Role.LOADER)))
+        val useCase = ApplyToOrderUseCase(repo, StaticCurrentUserProvider(CurrentUser("loader-1", Role.LOADER)), OrderStateMachine(OrdersLimits()))
 
         val result = useCase(orderId = 1)
 
@@ -56,7 +59,7 @@ class OrdersOwnershipUseCasesTest {
             orders = listOf(baseOrder(id = 1, status = OrderStatus.STAFFING)),
             hasActiveAssignment = true
         )
-        val useCase = ApplyToOrderUseCase(repo, StaticCurrentUserProvider(CurrentUser("loader-1", Role.LOADER)))
+        val useCase = ApplyToOrderUseCase(repo, StaticCurrentUserProvider(CurrentUser("loader-1", Role.LOADER)), OrderStateMachine(OrdersLimits()))
 
         val result = useCase(orderId = 1)
 
@@ -69,7 +72,7 @@ class OrdersOwnershipUseCasesTest {
             orders = listOf(baseOrder(id = 1, status = OrderStatus.STAFFING)),
             activeApplicationsForLimitCount = 3
         )
-        val useCase = ApplyToOrderUseCase(repo, StaticCurrentUserProvider(CurrentUser("loader-1", Role.LOADER)))
+        val useCase = ApplyToOrderUseCase(repo, StaticCurrentUserProvider(CurrentUser("loader-1", Role.LOADER)), OrderStateMachine(OrdersLimits()))
 
         val result = useCase(orderId = 1)
 
@@ -79,7 +82,7 @@ class OrdersOwnershipUseCasesTest {
     @Test
     fun `apply fails for dispatcher`() = runBlocking {
         val repo = InMemoryOrdersRepository(listOf(baseOrder(id = 1, status = OrderStatus.STAFFING)))
-        val useCase = ApplyToOrderUseCase(repo, StaticCurrentUserProvider(CurrentUser("d-1", Role.DISPATCHER)))
+        val useCase = ApplyToOrderUseCase(repo, StaticCurrentUserProvider(CurrentUser("d-1", Role.DISPATCHER)), OrderStateMachine(OrdersLimits()))
 
         val result = useCase(orderId = 1)
 
@@ -91,7 +94,7 @@ class OrdersOwnershipUseCasesTest {
     @Test
     fun `select succeeds for dispatcher creator`() = runBlocking {
         val repo = InMemoryOrdersRepository(listOf(baseOrder(id = 1, createdBy = "d-1", status = OrderStatus.STAFFING)))
-        val useCase = SelectApplicantUseCase(repo, StaticCurrentUserProvider(CurrentUser("d-1", Role.DISPATCHER)))
+        val useCase = SelectApplicantUseCase(repo, StaticCurrentUserProvider(CurrentUser("d-1", Role.DISPATCHER)), OrderStateMachine(OrdersLimits()))
 
         val result = useCase(orderId = 1, loaderId = "loader-x")
 
@@ -101,7 +104,7 @@ class OrdersOwnershipUseCasesTest {
     @Test
     fun `select fails for non-creator dispatcher`() = runBlocking {
         val repo = InMemoryOrdersRepository(listOf(baseOrder(id = 1, createdBy = "d-other", status = OrderStatus.STAFFING)))
-        val useCase = SelectApplicantUseCase(repo, StaticCurrentUserProvider(CurrentUser("d-1", Role.DISPATCHER)))
+        val useCase = SelectApplicantUseCase(repo, StaticCurrentUserProvider(CurrentUser("d-1", Role.DISPATCHER)), OrderStateMachine(OrdersLimits()))
 
         val result = useCase(orderId = 1, loaderId = "loader-x")
 
@@ -111,7 +114,7 @@ class OrdersOwnershipUseCasesTest {
     @Test
     fun `unselect fails for loader`() = runBlocking {
         val repo = InMemoryOrdersRepository(listOf(baseOrder(id = 1, createdBy = "d-1", status = OrderStatus.STAFFING)))
-        val useCase = UnselectApplicantUseCase(repo, StaticCurrentUserProvider(CurrentUser("loader-1", Role.LOADER)))
+        val useCase = UnselectApplicantUseCase(repo, StaticCurrentUserProvider(CurrentUser("loader-1", Role.LOADER)), OrderStateMachine(OrdersLimits()))
 
         val result = useCase(orderId = 1, loaderId = "loader-1")
 
@@ -128,7 +131,7 @@ class OrdersOwnershipUseCasesTest {
         val repo = InMemoryOrdersRepository(
             listOf(baseOrder(id = 1, createdBy = "d-1", status = OrderStatus.STAFFING, workersTotal = 1, applications = apps))
         )
-        val useCase = StartOrderUseCase(repo, StaticCurrentUserProvider(CurrentUser("d-1", Role.DISPATCHER)))
+        val useCase = StartOrderUseCase(repo, StaticCurrentUserProvider(CurrentUser("d-1", Role.DISPATCHER)), OrderStateMachine(OrdersLimits()))
 
         val result = useCase(orderId = 1)
 
@@ -140,7 +143,7 @@ class OrdersOwnershipUseCasesTest {
         val repo = InMemoryOrdersRepository(
             listOf(baseOrder(id = 1, createdBy = "d-1", status = OrderStatus.STAFFING, workersTotal = 2, applications = emptyList()))
         )
-        val useCase = StartOrderUseCase(repo, StaticCurrentUserProvider(CurrentUser("d-1", Role.DISPATCHER)))
+        val useCase = StartOrderUseCase(repo, StaticCurrentUserProvider(CurrentUser("d-1", Role.DISPATCHER)), OrderStateMachine(OrdersLimits()))
 
         val result = useCase(orderId = 1)
 
@@ -155,7 +158,7 @@ class OrdersOwnershipUseCasesTest {
         val repo = InMemoryOrdersRepository(
             listOf(baseOrder(id = 1, createdBy = "d-1", status = OrderStatus.STAFFING, workersTotal = 1, applications = apps))
         )
-        val useCase = StartOrderUseCase(repo, StaticCurrentUserProvider(CurrentUser("loader-1", Role.LOADER)))
+        val useCase = StartOrderUseCase(repo, StaticCurrentUserProvider(CurrentUser("loader-1", Role.LOADER)), OrderStateMachine(OrdersLimits()))
 
         val result = useCase(orderId = 1)
 
@@ -268,6 +271,7 @@ class OrdersOwnershipUseCasesTest {
         override suspend fun unselectApplicant(orderId: Long, loaderId: String) = Unit
         override suspend fun startOrder(orderId: Long, startedAtMillis: Long) = Unit
         override suspend fun hasActiveAssignment(loaderId: String): Boolean = hasActiveAssignment
+        override suspend fun hasActiveAssignmentInOrder(orderId: Long, loaderId: String): Boolean = false
         override suspend fun countActiveApplicationsForLimit(loaderId: String): Int = activeApplicationsForLimitCount
     }
 

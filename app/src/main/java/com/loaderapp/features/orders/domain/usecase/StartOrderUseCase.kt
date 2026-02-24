@@ -16,7 +16,8 @@ import javax.inject.Inject
  */
 class StartOrderUseCase @Inject constructor(
     private val repository: OrdersRepository,
-    private val currentUserProvider: CurrentUserProvider
+    private val currentUserProvider: CurrentUserProvider,
+    private val stateMachine: OrderStateMachine
 ) {
     suspend operator fun invoke(orderId: Long, now: Long = System.currentTimeMillis()): UseCaseResult<Unit> {
         val actor = currentUserProvider.getCurrentUser()
@@ -28,7 +29,7 @@ class StartOrderUseCase @Inject constructor(
         val order = repository.getOrderById(orderId)
             ?: return UseCaseResult.Failure("Заказ не найден")
 
-        val actions = OrderStateMachine.actionsFor(order, actor)
+        val actions = stateMachine.actionsFor(order, actor)
 
         if (!actions.canStart) {
             return UseCaseResult.Failure(

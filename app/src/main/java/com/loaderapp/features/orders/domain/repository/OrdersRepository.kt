@@ -27,6 +27,7 @@ interface OrdersRepository {
 
     // ── Invariant helpers ─────────────────────────────────────────────────────
     suspend fun hasActiveAssignment(loaderId: String): Boolean
+    suspend fun hasActiveAssignmentInOrder(orderId: Long, loaderId: String): Boolean
     suspend fun countActiveApplicationsForLimit(loaderId: String): Int
 
 }

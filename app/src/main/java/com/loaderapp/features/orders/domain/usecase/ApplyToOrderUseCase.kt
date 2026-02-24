@@ -18,11 +18,12 @@ import javax.inject.Inject
  *  - Заказ должен быть в статусе STAFFING.
  *  - Грузчик ещё не откликнулся / не выбран в этот заказ.
  *
- * Мутации репозитория выполняются только после успешной проверки [OrderStateMachine.actionsFor].
+ * Мутации репозитория выполняются только после успешной проверки [stateMachine.actionsFor].
  */
 class ApplyToOrderUseCase @Inject constructor(
     private val repository: OrdersRepository,
-    private val currentUserProvider: CurrentUserProvider
+    private val currentUserProvider: CurrentUserProvider,
+    private val stateMachine: OrderStateMachine
 ) {
     suspend operator fun invoke(orderId: Long, now: Long = System.currentTimeMillis()): UseCaseResult<Unit> {
         val actor = currentUserProvider.getCurrentUser()
@@ -37,10 +38,10 @@ class ApplyToOrderUseCase @Inject constructor(
         val context = OrderRulesContext(
             activeAssignmentExists = repository.hasActiveAssignment(actor.id),
             activeApplicationsForLimitCount = repository.countActiveApplicationsForLimit(actor.id),
-            loaderHasActiveAssignmentInThisOrder = false
+            loaderHasActiveAssignmentInThisOrder = repository.hasActiveAssignmentInOrder(orderId, actor.id)
         )
 
-        val actions = OrderStateMachine.actionsFor(order, actor, context)
+        val actions = stateMachine.actionsFor(order, actor, context)
 
         if (!actions.canApply) {
             return UseCaseResult.Failure(

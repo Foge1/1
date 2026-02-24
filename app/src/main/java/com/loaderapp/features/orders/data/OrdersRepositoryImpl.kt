@@ -5,9 +5,10 @@ import androidx.room.withTransaction
 import com.loaderapp.features.orders.data.local.dao.ApplicationsDao
 import com.loaderapp.features.orders.data.local.dao.AssignmentsDao
 import com.loaderapp.features.orders.data.local.dao.OrdersDao
-import com.loaderapp.features.orders.data.local.db.AppDatabase
+import com.loaderapp.features.orders.data.local.db.OrdersDatabase
 import com.loaderapp.features.orders.data.local.entity.OrderApplicationEntity
 import com.loaderapp.features.orders.data.local.entity.OrderAssignmentEntity
+import com.loaderapp.features.orders.data.mappers.OrdersGraphMapper
 import com.loaderapp.features.orders.data.mappers.toDomain
 import com.loaderapp.features.orders.data.mappers.toEntity
 import com.loaderapp.features.orders.data.mappers.toPersistedValue
@@ -23,10 +24,11 @@ import kotlinx.coroutines.flow.combine
 
 @Singleton
 class OrdersRepositoryImpl @Inject constructor(
-    private val db: AppDatabase,
+    private val db: OrdersDatabase,
     private val ordersDao: OrdersDao,
     private val applicationsDao: ApplicationsDao,
     private val assignmentsDao: AssignmentsDao,
+    private val ordersGraphMapper: OrdersGraphMapper,
 ) : OrdersRepository {
 
     override fun observeOrders(): Flow<List<Order>> =
@@ -35,14 +37,7 @@ class OrdersRepositoryImpl @Inject constructor(
             applicationsDao.observeApplications(),
             assignmentsDao.observeAssignments()
         ) { orderEntities, appEntities, assignmentEntities ->
-            val appsByOrder = appEntities.groupBy { it.orderId }
-            val assignsByOrder = assignmentEntities.groupBy { it.orderId }
-
-            orderEntities.map { entity ->
-                val apps = appsByOrder[entity.id]?.map { it.toDomain() } ?: emptyList()
-                val assignments = assignsByOrder[entity.id]?.map { it.toDomain() } ?: emptyList()
-                entity.toDomain(applications = apps, assignments = assignments)
-            }
+            ordersGraphMapper.toDomainOrders(orderEntities, appEntities, assignmentEntities)
         }
 
     override suspend fun createOrder(order: Order) {
@@ -200,6 +195,13 @@ class OrdersRepositoryImpl @Inject constructor(
             status = OrderAssignmentStatus.ACTIVE
         ) > 0
 
+    override suspend fun hasActiveAssignmentInOrder(orderId: Long, loaderId: String): Boolean =
+        assignmentsDao.countAssignmentsByOrderLoaderAndStatuses(
+            orderId = orderId,
+            loaderId = loaderId,
+            statuses = listOf(OrderAssignmentStatus.ACTIVE)
+        ) > 0
+
     override suspend fun countActiveApplicationsForLimit(loaderId: String): Int =
         applicationsDao.countApplicationsByLoaderAndStatuses(
             loaderId = loaderId,
@@ -250,3 +252,14 @@ private suspend fun AssignmentsDao.countAssignmentsByLoaderAndStatus(
     loaderId: String,
     status: OrderAssignmentStatus
 ): Int = countAssignmentsByLoaderAndStatus(loaderId = loaderId, status = status.toPersistedValue())
+
+
+private suspend fun AssignmentsDao.countAssignmentsByOrderLoaderAndStatuses(
+    orderId: Long,
+    loaderId: String,
+    statuses: List<OrderAssignmentStatus>
+): Int = countAssignmentsByOrderLoaderAndStatuses(
+    orderId = orderId,
+    loaderId = loaderId,
+    statuses = statuses.map { it.toPersistedValue() }
+)

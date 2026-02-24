@@ -1,5 +1,8 @@
 package com.loaderapp.features.orders.domain
 
+import com.loaderapp.features.orders.domain.OrderStateMachine
+import com.loaderapp.features.orders.domain.OrdersLimits
+
 import com.loaderapp.features.orders.domain.repository.OrdersRepository
 import com.loaderapp.features.orders.domain.session.CurrentUser
 import com.loaderapp.features.orders.domain.session.CurrentUserProvider
@@ -234,16 +237,17 @@ class OrdersOrchestratorTest {
 
     private fun buildOrchestrator(repo: OrdersRepository, user: CurrentUser): OrdersOrchestrator {
         val userProvider = StaticCurrentUserProvider(user)
-        val applyUseCase = ApplyToOrderUseCase(repo, userProvider)
+        val stateMachine = OrderStateMachine(OrdersLimits())
+        val applyUseCase = ApplyToOrderUseCase(repo, userProvider, stateMachine)
         return OrdersOrchestrator(
             createOrderUseCase = CreateOrderUseCase(repo, userProvider),
             applyToOrderUseCase = applyUseCase,
-            withdrawApplicationUseCase = WithdrawApplicationUseCase(repo, userProvider),
-            selectApplicantUseCase = SelectApplicantUseCase(repo, userProvider),
-            unselectApplicantUseCase = UnselectApplicantUseCase(repo, userProvider),
-            startOrderUseCase = StartOrderUseCase(repo, userProvider),
-            cancelOrderUseCase = CancelOrderUseCase(repo, userProvider),
-            completeOrderUseCase = CompleteOrderUseCase(repo, userProvider),
+            withdrawApplicationUseCase = WithdrawApplicationUseCase(repo, userProvider, stateMachine),
+            selectApplicantUseCase = SelectApplicantUseCase(repo, userProvider, stateMachine),
+            unselectApplicantUseCase = UnselectApplicantUseCase(repo, userProvider, stateMachine),
+            startOrderUseCase = StartOrderUseCase(repo, userProvider, stateMachine),
+            cancelOrderUseCase = CancelOrderUseCase(repo, userProvider, stateMachine),
+            completeOrderUseCase = CompleteOrderUseCase(repo, userProvider, stateMachine),
             refreshOrdersUseCase = RefreshOrdersUseCase(repo)
         )
     }
@@ -279,6 +283,7 @@ class OrdersOrchestratorTest {
         override suspend fun unselectApplicant(orderId: Long, loaderId: String) = Unit
         override suspend fun startOrder(orderId: Long, startedAtMillis: Long) = Unit
         override suspend fun hasActiveAssignment(loaderId: String): Boolean = hasActiveAssignment
+        override suspend fun hasActiveAssignmentInOrder(orderId: Long, loaderId: String): Boolean = false
         override suspend fun countActiveApplicationsForLimit(loaderId: String): Int = activeApplicationsForLimitCount
 
         private fun mutate(id: Long, transform: (Order) -> Order) {

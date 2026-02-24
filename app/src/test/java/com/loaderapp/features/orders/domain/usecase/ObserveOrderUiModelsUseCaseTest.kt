@@ -1,5 +1,8 @@
 package com.loaderapp.features.orders.domain.usecase
 
+import com.loaderapp.features.orders.domain.OrderStateMachine
+import com.loaderapp.features.orders.domain.OrdersLimits
+
 import com.loaderapp.features.orders.domain.Order
 import com.loaderapp.features.orders.domain.OrderApplication
 import com.loaderapp.features.orders.domain.OrderStatus
@@ -31,7 +34,7 @@ class ObserveOrderUiModelsUseCaseTest {
             activeApplicationsForLimitCount = 0
         )
         val currentUserProvider = StaticCurrentUserProvider(CurrentUser("loader-1", Role.LOADER))
-        val useCase = ObserveOrderUiModelsUseCase(repo, currentUserProvider)
+        val useCase = ObserveOrderUiModelsUseCase(repo, currentUserProvider, OrderStateMachine(OrdersLimits()))
 
         val models = useCase().first()
 
@@ -48,7 +51,7 @@ class ObserveOrderUiModelsUseCaseTest {
             activeApplicationsForLimitCount = 3
         )
         val currentUserProvider = StaticCurrentUserProvider(CurrentUser("loader-1", Role.LOADER))
-        val useCase = ObserveOrderUiModelsUseCase(repo, currentUserProvider)
+        val useCase = ObserveOrderUiModelsUseCase(repo, currentUserProvider, OrderStateMachine(OrdersLimits()))
 
         val models = useCase().first()
 
@@ -63,7 +66,7 @@ class ObserveOrderUiModelsUseCaseTest {
             orders = listOf(order(id = 1L, status = OrderStatus.STAFFING))
         )
         val currentUserProvider = StaticCurrentUserProvider(CurrentUser("loader-1", Role.LOADER))
-        val useCase = ObserveOrderUiModelsUseCase(repo, currentUserProvider)
+        val useCase = ObserveOrderUiModelsUseCase(repo, currentUserProvider, OrderStateMachine(OrdersLimits()))
 
         val emissionsDeferred = async { useCase().take(2).toList() }
         repo.emitOrders(
@@ -112,6 +115,7 @@ class ObserveOrderUiModelsUseCaseTest {
         override suspend fun unselectApplicant(orderId: Long, loaderId: String) = Unit
         override suspend fun startOrder(orderId: Long, startedAtMillis: Long) = Unit
         override suspend fun hasActiveAssignment(loaderId: String): Boolean = hasActiveAssignment
+        override suspend fun hasActiveAssignmentInOrder(orderId: Long, loaderId: String): Boolean = false
         override suspend fun countActiveApplicationsForLimit(loaderId: String): Int = activeApplicationsForLimitCount
     }
 

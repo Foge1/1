@@ -208,6 +208,11 @@ class FakeOrdersRepository @Inject constructor() : OrdersRepository {
     override suspend fun hasActiveAssignment(loaderId: String): Boolean =
         assignments.value.any { it.loaderId == loaderId && it.status == OrderAssignmentStatus.ACTIVE }
 
+    override suspend fun hasActiveAssignmentInOrder(orderId: Long, loaderId: String): Boolean =
+        assignments.value.any {
+            it.orderId == orderId && it.loaderId == loaderId && it.status == OrderAssignmentStatus.ACTIVE
+        }
+
     override suspend fun countActiveApplicationsForLimit(loaderId: String): Int =
         applications.value.count {
             it.loaderId == loaderId &&

@@ -22,6 +22,7 @@ import kotlinx.coroutines.flow.mapLatest
 class ObserveOrderUiModelsUseCase @Inject constructor(
     private val repository: OrdersRepository,
     private val currentUserProvider: CurrentUserProvider,
+    private val stateMachine: OrderStateMachine,
 ) {
     operator fun invoke(): Flow<List<OrderUiModel>> =
         combine(
@@ -50,7 +51,7 @@ class ObserveOrderUiModelsUseCase @Inject constructor(
             assignments.any { it.loaderId == actor.id && it.status == OrderAssignmentStatus.ACTIVE }
 
         val context = baseContext.copy(loaderHasActiveAssignmentInThisOrder = hasAssignmentHere)
-        val actions: OrderActions = OrderStateMachine.actionsFor(this, actor, context)
+        val actions: OrderActions = stateMachine.actionsFor(this, actor, context)
 
         return OrderUiModel(
             order = this,

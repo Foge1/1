@@ -21,7 +21,7 @@ import com.loaderapp.features.orders.data.local.entity.OrdersConverters
     exportSchema = false
 )
 @TypeConverters(OrdersConverters::class)
-abstract class AppDatabase : RoomDatabase() {
+abstract class OrdersDatabase : RoomDatabase() {
     abstract fun ordersDao(): OrdersDao
     abstract fun applicationsDao(): ApplicationsDao
     abstract fun assignmentsDao(): AssignmentsDao

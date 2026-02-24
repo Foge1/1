@@ -12,6 +12,7 @@ sealed interface OrderActionBlockReason {
     data class ActionAllowedOnlyInStatuses(val required: Set<OrderStatus>) : OrderActionBlockReason
 
     data object ActiveAssignmentExists : OrderActionBlockReason
+    data object AlreadyAssignedToOrder : OrderActionBlockReason
     data object ApplyLimitReached : OrderActionBlockReason
     data object AlreadyApplied : OrderActionBlockReason
     data object AlreadySelected : OrderActionBlockReason
@@ -39,6 +40,7 @@ fun OrderActionBlockReason.toDisplayMessage(): String = when (this) {
         "Действие доступно только в статусах: ${required.joinToString { it.name }}"
 
     OrderActionBlockReason.ActiveAssignmentExists -> "У вас уже есть активный заказ"
+    OrderActionBlockReason.AlreadyAssignedToOrder -> "Вы уже назначены в этот заказ"
     OrderActionBlockReason.ApplyLimitReached -> "Достигнут лимит активных откликов (3)"
     OrderActionBlockReason.AlreadyApplied -> "Вы уже откликнулись на этот заказ"
     OrderActionBlockReason.AlreadySelected -> "Вы уже выбраны в этот заказ"

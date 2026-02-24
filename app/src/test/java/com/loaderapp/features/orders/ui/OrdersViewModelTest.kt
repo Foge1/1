@@ -1,5 +1,8 @@
 package com.loaderapp.features.orders.ui
 
+import com.loaderapp.features.orders.domain.OrderStateMachine
+import com.loaderapp.features.orders.domain.OrdersLimits
+
 import com.loaderapp.features.orders.domain.Order
 import com.loaderapp.features.orders.domain.OrderApplication
 import com.loaderapp.features.orders.domain.OrderApplicationStatus
@@ -254,22 +257,24 @@ class OrdersViewModelTest {
         user: CurrentUser
     ): OrdersViewModel {
         val userProvider = StaticCurrentUserProvider(user)
-        val applyUseCase = ApplyToOrderUseCase(repository, userProvider)
+        val stateMachine = OrderStateMachine(OrdersLimits())
+        val applyUseCase = ApplyToOrderUseCase(repository, userProvider, stateMachine)
         val orchestrator = OrdersOrchestrator(
             createOrderUseCase = CreateOrderUseCase(repository, userProvider),
             applyToOrderUseCase = applyUseCase,
-            withdrawApplicationUseCase = WithdrawApplicationUseCase(repository, userProvider),
-            selectApplicantUseCase = SelectApplicantUseCase(repository, userProvider),
-            unselectApplicantUseCase = UnselectApplicantUseCase(repository, userProvider),
-            startOrderUseCase = StartOrderUseCase(repository, userProvider),
-            cancelOrderUseCase = CancelOrderUseCase(repository, userProvider),
-            completeOrderUseCase = CompleteOrderUseCase(repository, userProvider),
+            withdrawApplicationUseCase = WithdrawApplicationUseCase(repository, userProvider, stateMachine),
+            selectApplicantUseCase = SelectApplicantUseCase(repository, userProvider, stateMachine),
+            unselectApplicantUseCase = UnselectApplicantUseCase(repository, userProvider, stateMachine),
+            startOrderUseCase = StartOrderUseCase(repository, userProvider, stateMachine),
+            cancelOrderUseCase = CancelOrderUseCase(repository, userProvider, stateMachine),
+            completeOrderUseCase = CompleteOrderUseCase(repository, userProvider, stateMachine),
             refreshOrdersUseCase = RefreshOrdersUseCase(repository)
         )
         return OrdersViewModel(
             observeOrderUiModels = ObserveOrderUiModelsUseCase(
                 repository = repository,
                 currentUserProvider = userProvider,
+                stateMachine = stateMachine,
             ),
             ordersOrchestrator = orchestrator
         )
@@ -312,6 +317,7 @@ class OrdersViewModelTest {
         override suspend fun startOrder(orderId: Long, startedAtMillis: Long) = Unit
 
         override suspend fun hasActiveAssignment(loaderId: String): Boolean = hasActiveAssignment
+        override suspend fun hasActiveAssignmentInOrder(orderId: Long, loaderId: String): Boolean = false
         override suspend fun countActiveApplicationsForLimit(loaderId: String): Int = activeApplicationsForLimitCount
 
         override suspend fun cancelOrder(id: Long, reason: String?) {

@@ -23,7 +23,8 @@ import javax.inject.Inject
  */
 class CompleteOrderUseCase @Inject constructor(
     private val repository: OrdersRepository,
-    private val currentUserProvider: CurrentUserProvider
+    private val currentUserProvider: CurrentUserProvider,
+    private val stateMachine: OrderStateMachine
 ) {
     suspend operator fun invoke(orderId: Long): UseCaseResult<Unit> {
         val actor = currentUserProvider.getCurrentUser()
@@ -39,7 +40,7 @@ class CompleteOrderUseCase @Inject constructor(
             loaderHasActiveAssignmentInThisOrder = loaderHasActiveAssignment
         )
 
-        val transitionResult = OrderStateMachine.transition(
+        val transitionResult = stateMachine.transition(
             order = order,
             event = OrderEvent.COMPLETE,
             actor = actor,
