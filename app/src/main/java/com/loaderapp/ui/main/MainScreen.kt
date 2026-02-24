@@ -45,11 +45,11 @@ private data class TabConfig(val route: String, val item: BottomNavItem)
 private val FULLSCREEN_ROUTES: Set<String> = setOf(Route.CreateOrder.route)
 
 @Composable
-private fun tabsForRole(role: UserRoleModel): List<TabConfig> {
+private fun tabsForRole(role: UserRoleModel, responsesBadgeCount: Int): List<TabConfig> {
     val homeIcon = if (role == UserRoleModel.DISPATCHER) Icons.Default.Dashboard
     else Icons.Default.LocalShipping
     val middleTab = if (role == UserRoleModel.DISPATCHER) {
-        TabConfig(Route.Responses.route, BottomNavItem(Icons.Default.History, "Отклики"))
+        TabConfig(Route.Responses.route, BottomNavItem(Icons.Default.History, "Отклики", badgeCount = responsesBadgeCount))
     } else {
         TabConfig(Route.History.route, BottomNavItem(Icons.Default.History, "История"))
     }
@@ -71,9 +71,12 @@ fun MainScreen(
     val user = sessionState.user ?: return
 
     val navController = rememberNavController()
+
+    val dispatcherOrdersVm: OrdersViewModel? = if (user.role == UserRoleModel.DISPATCHER) hiltViewModel() else null
+    val dispatcherOrdersState by dispatcherOrdersVm?.uiState?.collectAsState() ?: remember { mutableStateOf(null) }
     val navBackStack  by navController.currentBackStackEntryAsState()
     val currentRoute  = navBackStack?.destination?.route
-    val tabs          = tabsForRole(user.role)
+    val tabs          = tabsForRole(user.role, dispatcherOrdersState?.responsesBadgeCount ?: 0)
 
     val isFullscreen  = currentRoute in FULLSCREEN_ROUTES
     val selectedIndex = tabs.indexOfFirst { it.route == currentRoute }.coerceAtLeast(0)
@@ -120,10 +123,9 @@ fun MainScreen(
                     // Оба экрана — и лоадера, и диспетчера — работают
                     // через единый OrdersViewModel (новая модель).
                     // ObserveOrderUiModelsUseCase сам фильтрует заказы по роли актора.
-                    val ordersVm: OrdersViewModel = hiltViewModel()
-
                     when (user.role) {
                         UserRoleModel.DISPATCHER -> {
+                            val ordersVm = dispatcherOrdersVm ?: hiltViewModel<OrdersViewModel>()
                             DispatcherScreen(
                                 viewModel = ordersVm,
                                 onOrderClick = { orderId -> onOrderClick(orderId, true) },
@@ -137,6 +139,7 @@ fun MainScreen(
                             )
                         }
                         UserRoleModel.LOADER -> {
+                            val ordersVm: OrdersViewModel = hiltViewModel()
                             LoaderScreen(
                                 viewModel    = ordersVm,
                                 onOrderClick = { orderId -> onOrderClick(orderId, false) }
