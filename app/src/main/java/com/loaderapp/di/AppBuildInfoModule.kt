@@ -1,7 +1,7 @@
 package com.loaderapp.di
 
 import com.loaderapp.core.common.AppBuildInfo
-import com.loaderapp.core.common.AppBuildInfoImpl
+import com.loaderapp.appinfo.AppBuildInfoImpl
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
