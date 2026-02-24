@@ -7,6 +7,7 @@ import com.loaderapp.features.orders.domain.session.CurrentUserProvider
 import javax.inject.Inject
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 
 /**
@@ -22,8 +23,12 @@ internal class ObserveOrdersForRoleUseCase @Inject constructor(
     operator fun invoke(): Flow<List<Order>> =
         currentUserProvider.observeCurrentUser()
             .flatMapLatest { user ->
-                ordersRepository.observeOrders().map { orders ->
-                    orders.filterForUser(user)
+                if (user == null) {
+                    flowOf(emptyList())
+                } else {
+                    ordersRepository.observeOrders().map { orders ->
+                        orders.filterForUser(user)
+                    }
                 }
             }
 }

@@ -25,7 +25,7 @@ class CancelOrderUseCase @Inject constructor(
             return UseCaseResult.Failure("Причина отмены не может быть пустой строкой")
         }
 
-        val actor = currentUserProvider.getCurrentUser()
+        val actor = currentUserProvider.requireCurrentUserOnce()
         val order = repository.getOrderById(orderId)
             ?: return UseCaseResult.Failure("Заказ не найден")
 

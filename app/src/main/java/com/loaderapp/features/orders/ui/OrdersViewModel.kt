@@ -2,6 +2,7 @@ package com.loaderapp.features.orders.ui
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.loaderapp.features.orders.domain.usecase.ObserveOrderUiModelsResult
 import com.loaderapp.features.orders.domain.usecase.ObserveOrderUiModelsUseCase
 import com.loaderapp.features.orders.domain.usecase.UseCaseResult
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -44,22 +45,39 @@ class OrdersViewModel @Inject constructor(
 
     private fun observeOrders() {
         viewModelScope.launch {
-            observeOrderUiModels().collect { uiModels ->
+            observeOrderUiModels().collect { result ->
                 _uiState.update { state ->
-                    state.copy(
-                        loading = false,
-                        refreshing = false,
-                        errorMessage = null,
-                        availableOrders = uiModels.filter {
-                            OrdersTab.Available.matches(it.order.status)
-                        },
-                        inProgressOrders = uiModels.filter {
-                            OrdersTab.InProgress.matches(it.order.status)
-                        },
-                        historyOrders = uiModels.filter {
-                            OrdersTab.History.matches(it.order.status)
+                    when (result) {
+                        ObserveOrderUiModelsResult.NotSelected -> {
+                            state.copy(
+                                loading = false,
+                                refreshing = false,
+                                errorMessage = null,
+                                requiresUserSelection = true,
+                                availableOrders = emptyList(),
+                                inProgressOrders = emptyList(),
+                                historyOrders = emptyList()
+                            )
                         }
-                    )
+
+                        is ObserveOrderUiModelsResult.Selected -> {
+                            state.copy(
+                                loading = false,
+                                refreshing = false,
+                                errorMessage = null,
+                                requiresUserSelection = false,
+                                availableOrders = result.orders.filter {
+                                    OrdersTab.Available.matches(it.order.status)
+                                },
+                                inProgressOrders = result.orders.filter {
+                                    OrdersTab.InProgress.matches(it.order.status)
+                                },
+                                historyOrders = result.orders.filter {
+                                    OrdersTab.History.matches(it.order.status)
+                                }
+                            )
+                        }
+                    }
                 }
             }
         }

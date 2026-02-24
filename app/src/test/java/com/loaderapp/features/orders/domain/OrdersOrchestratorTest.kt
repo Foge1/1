@@ -255,8 +255,9 @@ class OrdersOrchestratorTest {
     // ── Test doubles ─────────────────────────────────────────────────────────
 
     private class StaticCurrentUserProvider(private val user: CurrentUser) : CurrentUserProvider {
-        override fun observeCurrentUser(): Flow<CurrentUser> = flowOf(user)
-        override suspend fun getCurrentUser(): CurrentUser = user
+        override fun observeCurrentUser(): Flow<CurrentUser?> = flowOf(user)
+        override suspend fun getCurrentUserOrNull(): CurrentUser? = user
+        override suspend fun requireCurrentUserOnce(): CurrentUser = user
     }
 
     private class InMemoryOrdersRepository(

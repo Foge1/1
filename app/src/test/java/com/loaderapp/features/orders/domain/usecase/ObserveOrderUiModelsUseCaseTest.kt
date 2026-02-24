@@ -1,12 +1,11 @@
 package com.loaderapp.features.orders.domain.usecase
 
-import com.loaderapp.features.orders.domain.OrderStateMachine
-import com.loaderapp.features.orders.domain.OrdersLimits
-
 import com.loaderapp.features.orders.domain.Order
 import com.loaderapp.features.orders.domain.OrderApplication
+import com.loaderapp.features.orders.domain.OrderStateMachine
 import com.loaderapp.features.orders.domain.OrderStatus
 import com.loaderapp.features.orders.domain.OrderTime
+import com.loaderapp.features.orders.domain.OrdersLimits
 import com.loaderapp.features.orders.domain.Role
 import com.loaderapp.features.orders.domain.repository.OrdersRepository
 import com.loaderapp.features.orders.domain.session.CurrentUser
@@ -36,7 +35,8 @@ class ObserveOrderUiModelsUseCaseTest {
         val currentUserProvider = StaticCurrentUserProvider(CurrentUser("loader-1", Role.LOADER))
         val useCase = ObserveOrderUiModelsUseCase(repo, currentUserProvider, OrderStateMachine(OrdersLimits()))
 
-        val models = useCase().first()
+        val result = useCase().first() as ObserveOrderUiModelsResult.Selected
+        val models = result.orders
 
         assertEquals(1, models.size)
         assertTrue(!models.first().canApply)
@@ -53,7 +53,8 @@ class ObserveOrderUiModelsUseCaseTest {
         val currentUserProvider = StaticCurrentUserProvider(CurrentUser("loader-1", Role.LOADER))
         val useCase = ObserveOrderUiModelsUseCase(repo, currentUserProvider, OrderStateMachine(OrdersLimits()))
 
-        val models = useCase().first()
+        val result = useCase().first() as ObserveOrderUiModelsResult.Selected
+        val models = result.orders
 
         assertEquals(1, models.size)
         assertTrue(!models.first().canApply)
@@ -76,16 +77,17 @@ class ObserveOrderUiModelsUseCaseTest {
             )
         )
 
-        val emissions = emissionsDeferred.await()
+        val emissions = emissionsDeferred.await().map { (it as ObserveOrderUiModelsResult.Selected).orders }
         assertEquals(1, emissions[0].size)
         assertEquals(2, emissions[1].size)
         assertEquals(listOf(1L, 2L), emissions[1].map { it.order.id })
     }
 
     private class StaticCurrentUserProvider(currentUser: CurrentUser) : CurrentUserProvider {
-        private val state = MutableStateFlow(currentUser)
-        override fun observeCurrentUser(): Flow<CurrentUser> = state
-        override suspend fun getCurrentUser(): CurrentUser = state.value
+        private val state = MutableStateFlow<CurrentUser?>(currentUser)
+        override fun observeCurrentUser(): Flow<CurrentUser?> = state
+        override suspend fun getCurrentUserOrNull(): CurrentUser? = state.value
+        override suspend fun requireCurrentUserOnce(): CurrentUser = state.value ?: error("Current user is not selected")
     }
 
     private class InMemoryOrdersRepository(

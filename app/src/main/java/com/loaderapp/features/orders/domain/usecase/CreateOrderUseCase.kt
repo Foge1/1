@@ -22,7 +22,7 @@ class CreateOrderUseCase @Inject constructor(
             return UseCaseResult.Failure("Некорректное количество занятых сотрудников")
         }
 
-        val currentUser = currentUserProvider.getCurrentUser()
+        val currentUser = currentUserProvider.requireCurrentUserOnce()
         val order = Order(
             id = 0,
             title = orderDraft.title,

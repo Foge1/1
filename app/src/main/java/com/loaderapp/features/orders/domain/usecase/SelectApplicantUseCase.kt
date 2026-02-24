@@ -17,7 +17,7 @@ class SelectApplicantUseCase @Inject constructor(
     private val stateMachine: OrderStateMachine
 ) {
     suspend operator fun invoke(orderId: Long, loaderId: String): UseCaseResult<Unit> {
-        val actor = currentUserProvider.getCurrentUser()
+        val actor = currentUserProvider.requireCurrentUserOnce()
 
         if (actor.role != Role.DISPATCHER) {
             return UseCaseResult.Failure("Только диспетчер может выбирать грузчиков")

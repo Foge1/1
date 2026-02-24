@@ -1,6 +1,7 @@
 package com.loaderapp.features.orders.data.session
 
 import com.loaderapp.data.preferences.UserPreferences
+import com.loaderapp.domain.model.UserModel
 import com.loaderapp.domain.model.UserRoleModel
 import com.loaderapp.domain.repository.UserRepository
 import com.loaderapp.features.orders.domain.Role
@@ -12,34 +13,57 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 
 @Singleton
-class CurrentUserProviderImpl @Inject constructor(
-    private val userPreferences: UserPreferences,
-    private val userRepository: UserRepository
+class CurrentUserProviderImpl private constructor(
+    private val currentUserIdFlow: Flow<Long?>,
+    private val observeUserById: (Long) -> Flow<UserModel?>
 ) : CurrentUserProvider {
 
-    override fun observeCurrentUser(): Flow<CurrentUser> {
-        return userPreferences.currentUserId
+    @Inject
+    constructor(
+        userPreferences: UserPreferences,
+        userRepository: UserRepository
+    ) : this(
+        currentUserIdFlow = userPreferences.currentUserId,
+        observeUserById = userRepository::getUserByIdFlow
+    )
+
+    override fun observeCurrentUser(): Flow<CurrentUser?> {
+        return currentUserIdFlow
             .distinctUntilChanged()
-            .map { userId ->
-                userId ?: error("Current user is not selected")
-            }
             .flatMapLatest { userId ->
-                userRepository.getUserByIdFlow(userId)
-                    .map { user ->
-                        val resolvedUser = user ?: error("Current user not found: $userId")
-                        CurrentUser(
-                            id = resolvedUser.id.toString(),
-                            role = resolvedUser.role.toFeatureRole()
-                        )
-                    }
+                if (userId == null) {
+                    flowOf(null)
+                } else {
+                    observeUserById(userId)
+                        .map { user ->
+                            user?.let {
+                                CurrentUser(
+                                    id = it.id.toString(),
+                                    role = it.role.toFeatureRole()
+                                )
+                            }
+                        }
+                }
             }
             .distinctUntilChanged()
     }
 
-    override suspend fun getCurrentUser(): CurrentUser = observeCurrentUser().first()
+    override suspend fun getCurrentUserOrNull(): CurrentUser? = observeCurrentUser().first()
+
+    override suspend fun requireCurrentUserOnce(): CurrentUser {
+        return getCurrentUserOrNull() ?: error("Current user is not selected")
+    }
+
+    companion object {
+        internal fun createForTests(
+            currentUserIdFlow: Flow<Long?>,
+            observeUserById: (Long) -> Flow<UserModel?>
+        ): CurrentUserProviderImpl = CurrentUserProviderImpl(currentUserIdFlow, observeUserById)
+    }
 }
 
 private fun UserRoleModel.toFeatureRole(): Role = when (this) {

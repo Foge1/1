@@ -158,6 +158,21 @@ class OrdersViewModelTest {
         assertTrue(viewModel.uiState.value.availableOrders.isEmpty())
     }
 
+
+    @Test
+    fun `not selected user updates ui state instead of crash`() = runTest {
+        val repository = TestOrdersRepository(
+            orders = listOf(testOrder(id = 1L, status = OrderStatus.STAFFING))
+        )
+        val viewModel = buildViewModel(repository, NullableCurrentUserProvider(null))
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertTrue(state.requiresUserSelection)
+        assertTrue(state.availableOrders.isEmpty())
+        assertFalse(state.loading)
+    }
+
     // ── Refresh ───────────────────────────────────────────────────────────────
 
     @Test
@@ -255,8 +270,12 @@ class OrdersViewModelTest {
     private fun TestScope.buildViewModel(
         repository: TestOrdersRepository,
         user: CurrentUser
+    ): OrdersViewModel = buildViewModel(repository, StaticCurrentUserProvider(user))
+
+    private fun TestScope.buildViewModel(
+        repository: TestOrdersRepository,
+        userProvider: CurrentUserProvider
     ): OrdersViewModel {
-        val userProvider = StaticCurrentUserProvider(user)
         val stateMachine = OrderStateMachine(OrdersLimits())
         val applyUseCase = ApplyToOrderUseCase(repository, userProvider, stateMachine)
         val orchestrator = OrdersOrchestrator(
@@ -287,8 +306,16 @@ class OrdersViewModelTest {
     // ── Test doubles ──────────────────────────────────────────────────────────
 
     private class StaticCurrentUserProvider(private val user: CurrentUser) : CurrentUserProvider {
-        override fun observeCurrentUser(): Flow<CurrentUser> = flowOf(user)
-        override suspend fun getCurrentUser(): CurrentUser = user
+        override fun observeCurrentUser(): Flow<CurrentUser?> = flowOf(user)
+        override suspend fun getCurrentUserOrNull(): CurrentUser? = user
+        override suspend fun requireCurrentUserOnce(): CurrentUser = user
+    }
+
+    private class NullableCurrentUserProvider(initial: CurrentUser?) : CurrentUserProvider {
+        private val state = MutableStateFlow(initial)
+        override fun observeCurrentUser(): Flow<CurrentUser?> = state
+        override suspend fun getCurrentUserOrNull(): CurrentUser? = state.value
+        override suspend fun requireCurrentUserOnce(): CurrentUser = state.value ?: error("Current user is not selected")
     }
 
     private class TestOrdersRepository(

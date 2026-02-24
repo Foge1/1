@@ -99,7 +99,7 @@ class CreateOrderViewModel @Inject constructor(
         }
 
         launchSafe {
-            val currentUser = currentUserProvider.getCurrentUser()
+            val currentUser = currentUserProvider.requireCurrentUserOnce()
 
             val orderDraft = OrderDraft(
                 title = cargoDescription.trim().ifBlank { "Заказ" },

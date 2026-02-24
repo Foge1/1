@@ -20,7 +20,7 @@ class StartOrderUseCase @Inject constructor(
     private val stateMachine: OrderStateMachine
 ) {
     suspend operator fun invoke(orderId: Long, now: Long = System.currentTimeMillis()): UseCaseResult<Unit> {
-        val actor = currentUserProvider.getCurrentUser()
+        val actor = currentUserProvider.requireCurrentUserOnce()
 
         if (actor.role != Role.DISPATCHER) {
             return UseCaseResult.Failure("Только диспетчер может запустить заказ")
