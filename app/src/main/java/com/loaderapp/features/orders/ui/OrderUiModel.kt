@@ -7,6 +7,7 @@ import com.loaderapp.features.orders.domain.OrderActionBlockReason
 import com.loaderapp.features.orders.domain.OrderApplication
 import com.loaderapp.features.orders.domain.OrderApplicationStatus
 import com.loaderapp.features.orders.domain.OrderStatus
+import com.loaderapp.features.orders.domain.OrderTime
 import com.loaderapp.features.orders.domain.Role
 import com.loaderapp.features.orders.domain.toDisplayMessage
 
@@ -88,7 +89,8 @@ fun Order.toOrderModel(): OrderModel {
         workerId = null,
         dispatcherId = meta[DISPATCHER_ID_KEY]?.toLongOrNull() ?: 0L,
         workerRating = null,
-        comment = comment.orEmpty()
+        comment = comment.orEmpty(),
+        isAsap = orderTime is OrderTime.Soon
     )
 }
 

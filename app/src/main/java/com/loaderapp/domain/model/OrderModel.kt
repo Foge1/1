@@ -19,7 +19,8 @@ data class OrderModel(
     val workerId: Long?,
     val dispatcherId: Long,
     val workerRating: Float?,
-    val comment: String
+    val comment: String,
+    val isAsap: Boolean = false
 ) {
     /**
      * Вычисляемое свойство: общая стоимость заказа
