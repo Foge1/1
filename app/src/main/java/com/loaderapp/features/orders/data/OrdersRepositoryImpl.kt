@@ -203,9 +203,10 @@ class OrdersRepositoryImpl @Inject constructor(
         ) > 0
 
     override suspend fun countActiveApplicationsForLimit(loaderId: String): Int =
-        applicationsDao.countApplicationsByLoaderAndStatuses(
+        applicationsDao.countActiveApplicationsForLimit(
             loaderId = loaderId,
-            statuses = listOf(OrderApplicationStatus.APPLIED, OrderApplicationStatus.SELECTED)
+            applicationStatuses = listOf(OrderApplicationStatus.APPLIED, OrderApplicationStatus.SELECTED),
+            activeOrderStatuses = OrderStatus.ACTIVE_FOR_APPLICATION_LIMIT.toList()
         )
 
     private fun log(message: String) {
@@ -243,6 +244,16 @@ private suspend fun ApplicationsDao.countApplicationsByLoaderAndStatuses(
     loaderId: String,
     statuses: List<OrderApplicationStatus>
 ): Int = countApplicationsByLoaderAndStatuses(loaderId, statuses.map { it.toPersistedValue() })
+
+private suspend fun ApplicationsDao.countActiveApplicationsForLimit(
+    loaderId: String,
+    applicationStatuses: List<OrderApplicationStatus>,
+    activeOrderStatuses: List<OrderStatus>
+): Int = countActiveApplicationsForLimit(
+    loaderId = loaderId,
+    applicationStatuses = applicationStatuses.map { it.toPersistedValue() },
+    activeOrderStatuses = activeOrderStatuses.map { it.toPersistedValue() }
+)
 
 private suspend fun AssignmentsDao.updateAssignmentsStatusByOrder(orderId: Long, newStatus: OrderAssignmentStatus) {
     updateAssignmentsStatusByOrder(orderId = orderId, newStatus = newStatus.toPersistedValue())

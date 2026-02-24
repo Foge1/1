@@ -96,6 +96,29 @@ class OrdersRepositoryImplRefreshTest {
         assertEquals(OrderApplicationStatus.REJECTED.name, dao.getApplication(1L, "loader-a")!!.status)
         assertEquals(OrderApplicationStatus.SELECTED.name, dao.getApplication(1L, "loader-b")!!.status)
     }
+
+    @Test
+    fun `InMemoryApplicationsDao countActiveApplicationsForLimit ignores closed orders`() = runBlocking {
+        val ordersDao = InMemoryOrdersDao().apply {
+            insertOrder(orderEntity(1L, OrderStatus.STAFFING.name, "soon", null))
+            insertOrder(orderEntity(2L, OrderStatus.IN_PROGRESS.name, "soon", null))
+            insertOrder(orderEntity(3L, OrderStatus.COMPLETED.name, "soon", null))
+            insertOrder(orderEntity(4L, OrderStatus.CANCELED.name, "soon", null))
+        }
+        val applicationsDao = InMemoryApplicationsDao { ordersDao.getOrders() }
+        applicationsDao.upsertApplication(OrderApplicationEntity(1L, "loader-1", OrderApplicationStatus.APPLIED.name, 1L, null))
+        applicationsDao.upsertApplication(OrderApplicationEntity(2L, "loader-1", OrderApplicationStatus.SELECTED.name, 2L, null))
+        applicationsDao.upsertApplication(OrderApplicationEntity(3L, "loader-1", OrderApplicationStatus.APPLIED.name, 3L, null))
+        applicationsDao.upsertApplication(OrderApplicationEntity(4L, "loader-1", OrderApplicationStatus.APPLIED.name, 4L, null))
+
+        val count = applicationsDao.countActiveApplicationsForLimit(
+            loaderId = "loader-1",
+            applicationStatuses = listOf(OrderApplicationStatus.APPLIED.name, OrderApplicationStatus.SELECTED.name),
+            activeOrderStatuses = OrderStatus.ACTIVE_FOR_APPLICATION_LIMIT.map { it.name }
+        )
+
+        assertEquals(2, count)
+    }
 }
 
 private fun orderEntity(id: Long, status: String, orderTimeType: String, exactMillis: Long?): OrderEntity =
@@ -161,7 +184,9 @@ internal class InMemoryOrdersDao : OrdersDao {
     }
 }
 
-internal class InMemoryApplicationsDao : ApplicationsDao {
+internal class InMemoryApplicationsDao(
+    private val ordersProvider: suspend () -> List<OrderEntity> = { emptyList() }
+) : ApplicationsDao {
     private val apps = MutableStateFlow<List<OrderApplicationEntity>>(emptyList())
 
     override fun observeApplications(): Flow<List<OrderApplicationEntity>> = apps
@@ -192,6 +217,24 @@ internal class InMemoryApplicationsDao : ApplicationsDao {
 
     override suspend fun countApplicationsByLoaderAndStatuses(loaderId: String, statuses: List<String>): Int =
         apps.value.count { it.loaderId == loaderId && it.status in statuses }
+
+    override suspend fun countActiveApplicationsForLimit(
+        loaderId: String,
+        applicationStatuses: List<String>,
+        activeOrderStatuses: List<String>
+    ): Int {
+        val activeOrderIds = ordersProvider()
+            .asSequence()
+            .filter { it.status in activeOrderStatuses }
+            .map { it.id }
+            .toSet()
+
+        return apps.value.count {
+            it.loaderId == loaderId &&
+                it.status in applicationStatuses &&
+                it.orderId in activeOrderIds
+        }
+    }
 }
 
 internal class InMemoryAssignmentsDao : AssignmentsDao {

@@ -191,9 +191,13 @@ class FakeOrdersRepository : OrdersRepository {
         }
 
     override suspend fun countActiveApplicationsForLimit(loaderId: String): Int =
-        applications.value.count {
-            it.loaderId == loaderId &&
-                (it.status == OrderApplicationStatus.APPLIED || it.status == OrderApplicationStatus.SELECTED)
+        applications.value.count { application ->
+            val hasActiveStatus = application.status == OrderApplicationStatus.APPLIED ||
+                application.status == OrderApplicationStatus.SELECTED
+            val orderStatus = orders.value.firstOrNull { it.id == application.orderId }?.status
+            application.loaderId == loaderId &&
+                hasActiveStatus &&
+                orderStatus in OrderStatus.ACTIVE_FOR_APPLICATION_LIMIT
         }
 
     // ── Private ───────────────────────────────────────────────────────────────

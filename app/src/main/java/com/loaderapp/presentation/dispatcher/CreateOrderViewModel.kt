@@ -32,7 +32,7 @@ class CreateOrderViewModel @Inject constructor(
     fun onDayOptionSelected(option: OrderDayOption) {
         val current = _uiState.value
         if (option == OrderDayOption.SOON) {
-            _uiState.value = current.copy(selectedDayOption = option, isSoon = true)
+            _uiState.value = current.copy(selectedDayOption = option)
             return
         }
         val resolvedDate = when (option) {
@@ -41,15 +41,14 @@ class CreateOrderViewModel @Inject constructor(
             OrderDayOption.OTHER_DATE -> current.selectedDateMillis
             OrderDayOption.SOON -> current.selectedDateMillis
         }
-        _uiState.value = current.copy(selectedDayOption = option, selectedDateMillis = resolvedDate, isSoon = false)
+        _uiState.value = current.copy(selectedDayOption = option, selectedDateMillis = resolvedDate)
         validateAndAutoAdjustTime()
     }
 
     fun onDateSelected(dateMillis: Long) {
         _uiState.value = _uiState.value.copy(
             selectedDateMillis = dateMillis,
-            selectedDayOption = resolveDayOption(dateMillis),
-            isSoon = false
+            selectedDayOption = resolveDayOption(dateMillis)
         )
         validateAndAutoAdjustTime()
     }
@@ -89,7 +88,7 @@ class CreateOrderViewModel @Inject constructor(
         val now = System.currentTimeMillis()
         val exactDateTime = buildDateTimeMillis(state.selectedDateMillis, state.selectedHour, state.selectedMinute)
         val normalizedOrderTime = when {
-            state.isSoon -> OrderTime.Soon
+            state.selectedDayOption == OrderDayOption.SOON -> OrderTime.Soon
             exactDateTime <= now -> {
                 showSnackbar("Нельзя выбрать прошедшее или текущее время")
                 return
@@ -132,21 +131,17 @@ class CreateOrderViewModel @Inject constructor(
 
     private fun validateAndAutoAdjustTime() {
         val state = _uiState.value
-        if (state.isSoon) return
+        if (state.selectedDayOption == OrderDayOption.SOON) return
         val now = System.currentTimeMillis()
         val selectedDateTime = buildDateTimeMillis(state.selectedDateMillis, state.selectedHour, state.selectedMinute)
-        when {
-            selectedDateTime <= now -> {
-                val safe = defaultExactDateTime()
-                _uiState.value = state.copy(
-                    selectedDateMillis = safe.first,
-                    selectedHour = safe.second,
-                    selectedMinute = safe.third
-                )
-            }
-            selectedDateTime < now + MIN_EXACT_DELAY_MS -> {
-                _uiState.value = state.copy(selectedDayOption = OrderDayOption.SOON, isSoon = true)
-            }
+        if (selectedDateTime <= now) {
+            val safe = defaultExactDateTime()
+            _uiState.value = state.copy(
+                selectedDateMillis = safe.first,
+                selectedHour = safe.second,
+                selectedMinute = safe.third,
+                selectedDayOption = resolveDayOption(safe.first)
+            )
         }
     }
 
@@ -216,9 +211,11 @@ data class CreateOrderUiState(
     val selectedDateMillis: Long,
     val selectedHour: Int,
     val selectedMinute: Int,
-    val estimatedHours: Int,
-    val isSoon: Boolean = false
+    val estimatedHours: Int
 )
+
+val CreateOrderUiState.isSoon: Boolean
+    get() = selectedDayOption == OrderDayOption.SOON
 
 enum class OrderDayOption {
     TODAY,
