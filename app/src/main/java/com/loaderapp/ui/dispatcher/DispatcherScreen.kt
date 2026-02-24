@@ -13,21 +13,16 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Assignment
-import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.WorkOff
 import androidx.compose.material.icons.outlined.Cancel
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExtendedFloatingActionButton
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.SnackbarHost
@@ -51,8 +46,10 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.text.input.TextFieldValue
 import com.loaderapp.features.orders.ui.OrderUiModel
+import com.loaderapp.features.orders.ui.HistoryOrderUiModel
 import com.loaderapp.features.orders.ui.OrdersTab
 import com.loaderapp.features.orders.ui.OrdersViewModel
+import com.loaderapp.features.orders.ui.toHistoryOrderUiModel
 import com.loaderapp.features.orders.ui.toLegacyOrderModel
 import com.loaderapp.ui.components.AppScaffold
 import com.loaderapp.ui.components.EmptyStateView
@@ -60,8 +57,9 @@ import com.loaderapp.ui.components.FadingEdgeLazyColumn
 import com.loaderapp.ui.components.LoadingView
 import com.loaderapp.ui.components.LocalTopBarHeightPx
 import com.loaderapp.ui.components.OrderCard
-import com.loaderapp.ui.components.SwipeableTabs
-import com.loaderapp.ui.components.TabItem
+import com.loaderapp.ui.components.HistoryScreen
+import com.loaderapp.ui.components.OrdersSegmentedTabs
+import com.loaderapp.ui.components.OrdersTabCounts
 import com.loaderapp.ui.main.LocalBottomNavHeight
 
 /**
@@ -81,11 +79,7 @@ fun DispatcherScreen(
         viewModel.snackbarMessage.collect { snackbarHostState.showSnackbar(it) }
     }
 
-    val tabs = listOf(
-        TabItem(label = OrdersTab.Available.title, badgeCount = state.availableOrders.size),
-        TabItem(label = OrdersTab.InProgress.title, badgeCount = state.inProgressOrders.size),
-        TabItem(label = OrdersTab.History.title, badgeCount = 0)
-    )
+    var selectedTab by rememberSaveable { mutableStateOf(OrdersTab.Available) }
 
     AppScaffold(title = "Диспетчер") {
         val topBarHeightPx = LocalTopBarHeightPx.current
@@ -96,11 +90,17 @@ fun DispatcherScreen(
         if (state.loading) {
             LoadingView()
         } else {
-            SwipeableTabs(
-                tabs = tabs,
+            OrdersSegmentedTabs(
+                selected = selectedTab,
+                onSelect = { selectedTab = it },
+                counts = OrdersTabCounts(
+                    available = state.availableOrders.size,
+                    inProgress = state.inProgressOrders.size,
+                    history = state.historyOrders.size
+                ),
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(top = topBarHeight + 8.dp)
+                    .padding(top = topBarHeight + 8.dp / 2)
             ) { page ->
                 when (page) {
                     0 -> DispatcherOrdersPage(
@@ -136,10 +136,9 @@ fun DispatcherScreen(
                         }
                     )
                     2 -> DispatcherHistoryPage(
-                        state = state.history,
+                        items = state.historyOrders.map { it.toHistoryOrderUiModel() },
                         bottomNavHeight = bottomNavHeight,
-                        onOrderClick = onOrderClick,
-                        onQueryChange = viewModel::onHistoryQueryChanged
+                        onOrderClick = onOrderClick
                     )
                 }
             }
@@ -266,80 +265,21 @@ private fun CancelConfirmDialog(onConfirm: () -> Unit, onDismiss: () -> Unit) {
 
 @Composable
 private fun DispatcherHistoryPage(
-    state: com.loaderapp.features.orders.ui.DispatcherHistoryUiState,
+    items: List<HistoryOrderUiModel>,
     bottomNavHeight: Dp,
     onOrderClick: (Long) -> Unit,
-    onQueryChange: (String) -> Unit
 ) {
     var localQuery by rememberSaveable(stateSaver = TextFieldValue.Saver) {
-        mutableStateOf(TextFieldValue(state.query))
+        mutableStateOf(TextFieldValue(""))
     }
 
-    LaunchedEffect(state.query) {
-        if (state.query.isEmpty() && localQuery.text.isNotEmpty()) {
-            localQuery = TextFieldValue("")
-        }
-    }
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(horizontal = 16.dp)
-    ) {
-        OutlinedTextField(
-            value = localQuery,
-            onValueChange = { newValue: TextFieldValue ->
-                localQuery = newValue
-                onQueryChange(newValue.text)
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 8.dp),
-            singleLine = true,
-            label = { Text("Поиск по истории") }
-        )
-
-        if (state.sections.isEmpty()) {
-            EmptyStateView(
-                icon = Icons.Default.History,
-                title = "История пуста",
-                message = "Нет заказов, подходящих под фильтр"
-            )
-            return
-        }
-
-        FadingEdgeLazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            topFadeHeight = 0.dp,
-            bottomFadeHeight = 36.dp,
-            contentPadding = PaddingValues(top = 12.dp, bottom = bottomNavHeight + 80.dp)
-        ) {
-            itemsIndexed(state.sections, key = { _, section -> section.key }) { index, section ->
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(section.title, style = MaterialTheme.typography.titleSmall)
-                    Text(section.count.toString(), style = MaterialTheme.typography.labelMedium)
-                }
-                Spacer(Modifier.height(8.dp))
-                section.items.forEach { item ->
-                    OrderCard(
-                        order = item.order.toLegacyOrderModel(),
-                        onClick = { onOrderClick(item.order.order.id) }
-                    )
-                    Spacer(Modifier.height(10.dp))
-                }
-                if (index < state.sections.lastIndex) {
-                    HorizontalDivider(
-                        modifier = Modifier.padding(vertical = 8.dp),
-                        color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
-                    )
-                }
-            }
-        }
-    }
+    HistoryScreen(
+        items = items,
+        query = localQuery,
+        onQueryChange = { localQuery = it },
+        onOrderClick = onOrderClick,
+        bottomPadding = bottomNavHeight + 80.dp
+    )
 }
 
 // ── Orders list scaffold ──────────────────────────────────────────────────────
