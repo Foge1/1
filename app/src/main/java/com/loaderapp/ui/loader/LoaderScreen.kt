@@ -15,7 +15,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.SearchOff
 import androidx.compose.material.icons.filled.WorkOff
 import androidx.compose.material.icons.outlined.Cancel
@@ -34,29 +33,37 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.loaderapp.R
 import com.loaderapp.features.orders.domain.OrderApplicationStatus
 import com.loaderapp.features.orders.ui.OrderUiModel
+import com.loaderapp.features.orders.ui.HistoryOrderUiModel
 import com.loaderapp.features.orders.ui.OrdersTab
 import com.loaderapp.features.orders.ui.OrdersViewModel
+import com.loaderapp.features.orders.ui.toHistoryOrderUiModel
 import com.loaderapp.features.orders.ui.toLegacyOrderModel
 import com.loaderapp.ui.components.AppScaffold
 import com.loaderapp.ui.components.EmptyStateView
 import com.loaderapp.ui.components.FadingEdgeLazyColumn
+import com.loaderapp.ui.components.HistoryScreen
 import com.loaderapp.ui.components.LoadingView
 import com.loaderapp.ui.components.LocalTopBarHeightPx
+import com.loaderapp.ui.components.OrdersSegmentedTabs
+import com.loaderapp.ui.components.OrdersTabCounts
 import com.loaderapp.ui.components.OrderCard
-import com.loaderapp.ui.components.SwipeableTabs
-import com.loaderapp.ui.components.TabItem
 import com.loaderapp.ui.main.LocalBottomNavHeight
 
 @Composable
@@ -71,11 +78,7 @@ fun LoaderScreen(
         viewModel.snackbarMessage.collect { snackbarHostState.showSnackbar(it) }
     }
 
-    val tabs = listOf(
-        TabItem(label = OrdersTab.Available.title, badgeCount = state.availableOrders.size),
-        TabItem(label = OrdersTab.InProgress.title, badgeCount = state.inProgressOrders.size),
-        TabItem(label = OrdersTab.History.title, badgeCount = state.historyOrders.size)
-    )
+    var selectedTab by rememberSaveable { mutableStateOf(OrdersTab.Available) }
 
     AppScaffold(title = "Заказы") {
         val topBarHeightPx = LocalTopBarHeightPx.current
@@ -86,11 +89,17 @@ fun LoaderScreen(
         if (state.loading) {
             LoadingView()
         } else {
-            SwipeableTabs(
-                tabs = tabs,
+            OrdersSegmentedTabs(
+                selected = selectedTab,
+                onSelect = { selectedTab = it },
+                counts = OrdersTabCounts(
+                    available = state.availableOrders.size,
+                    inProgress = state.inProgressOrders.size,
+                    history = state.historyOrders.size
+                ),
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(top = topBarHeight + dimensionResource(id = R.dimen.order_spacing_8))
+                    .padding(top = topBarHeight + dimensionResource(id = R.dimen.order_spacing_8) / 2)
             ) { page ->
                 when (page) {
                     0 -> OrdersListPage(
@@ -132,15 +141,10 @@ fun LoaderScreen(
                             }
                         }
                     )
-                    2 -> OrdersListPage(
-                        orders = state.historyOrders,
+                    2 -> LoaderHistoryPage(
+                        items = state.historyOrders.map { it.toHistoryOrderUiModel() },
                         bottomNavHeight = bottomNavHeight,
-                        emptyTitle = "История пуста",
-                        emptyMessage = "Завершённые и отменённые заказы появятся здесь",
-                        emptyIcon = Icons.Default.History,
-                        pendingActions = state.pendingActions,
-                        onOrderClick = onOrderClick,
-                        actionSlot = { }
+                        onOrderClick = onOrderClick
                     )
                 }
             }
@@ -152,6 +156,25 @@ fun LoaderScreen(
                 .padding(bottom = bottomNavHeight + dimensionResource(id = R.dimen.order_spacing_8))
         )
     }
+}
+
+@Composable
+private fun LoaderHistoryPage(
+    items: List<HistoryOrderUiModel>,
+    bottomNavHeight: Dp,
+    onOrderClick: (Long) -> Unit,
+) {
+    var historyQuery by rememberSaveable(stateSaver = TextFieldValue.Saver) {
+        mutableStateOf(TextFieldValue(""))
+    }
+
+    HistoryScreen(
+        items = items,
+        query = historyQuery,
+        onQueryChange = { historyQuery = it },
+        onOrderClick = onOrderClick,
+        bottomPadding = bottomNavHeight + 72.dp,
+    )
 }
 
 // ── Available-tab action area ─────────────────────────────────────────────────

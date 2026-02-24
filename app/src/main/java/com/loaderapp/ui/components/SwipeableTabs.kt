@@ -65,21 +65,34 @@ data class TabItem(
 fun SwipeableTabs(
     tabs: List<TabItem>,
     modifier: Modifier = Modifier,
+    initialPage: Int = 0,
+    onPageChanged: (Int) -> Unit = {},
+    tabsToPagerSpacing: Dp = 8.dp,
+    tabVerticalPadding: Dp = 10.dp,
+    tabHorizontalPadding: Dp = 8.dp,
+    tabRowHorizontalPadding: Dp = 16.dp,
     content: @Composable (pageIndex: Int) -> Unit
 ) {
-    val pagerState = rememberPagerState(pageCount = { tabs.size })
+    val pagerState = rememberPagerState(initialPage = initialPage, pageCount = { tabs.size })
     val scope      = rememberCoroutineScope()
+
+    LaunchedEffect(pagerState.currentPage) {
+        onPageChanged(pagerState.currentPage)
+    }
 
     Column(modifier = modifier) {
         PillTabRow(
             tabs          = tabs,
             pagerState    = pagerState,
+            tabVerticalPadding = tabVerticalPadding,
+            tabHorizontalPadding = tabHorizontalPadding,
+            tabRowHorizontalPadding = tabRowHorizontalPadding,
             onTabSelected = { index ->
                 scope.launch { pagerState.animateScrollToPage(index) }
             }
         )
 
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(tabsToPagerSpacing))
 
         // HorizontalPager с двусторонним fade через единый drawWithContent.
         // Применяем fade к самому Pager — у него есть реальный контент в буфере,
@@ -126,7 +139,10 @@ fun PillTabRow(
     onTabSelected: (Int) -> Unit,
     modifier: Modifier = Modifier,
     trackCornerRadius: Dp = 50.dp,
-    indicatorPadding: Dp = 4.dp
+    indicatorPadding: Dp = 4.dp,
+    tabVerticalPadding: Dp = 10.dp,
+    tabHorizontalPadding: Dp = 8.dp,
+    tabRowHorizontalPadding: Dp = 16.dp,
 ) {
     val primary       = MaterialTheme.colorScheme.primary
     val trackColor    = primary.copy(alpha = 0.10f)
@@ -136,7 +152,7 @@ fun PillTabRow(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp)
+            .padding(horizontal = tabRowHorizontalPadding)
             .clip(RoundedCornerShape(trackCornerRadius))
             .drawBehind {
                 // Трек
@@ -183,7 +199,9 @@ fun PillTabRow(
                     },
                     onClick  = { onTabSelected(index) },
                     modifier = Modifier.weight(1f),
-                    primary  = primary
+                    primary  = primary,
+                    verticalPadding = tabVerticalPadding,
+                    horizontalPadding = tabHorizontalPadding
                 )
             }
         }
@@ -214,7 +232,9 @@ private fun PillTab(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     primary: Color = MaterialTheme.colorScheme.primary,
-    unselectedColor: Color = MaterialTheme.colorScheme.onSurfaceVariant
+    unselectedColor: Color = MaterialTheme.colorScheme.onSurfaceVariant,
+    verticalPadding: Dp = 10.dp,
+    horizontalPadding: Dp = 8.dp
 ) {
     // Плавная интерполяция цвета текста синхронно со свайпом
     val textColor  = lerp(unselectedColor, primary, selectionFraction)
@@ -233,7 +253,7 @@ private fun PillTab(
                 indication        = null,
                 onClick           = onClick
             )
-            .padding(vertical = 10.dp, horizontal = 8.dp),
+            .padding(vertical = verticalPadding, horizontal = horizontalPadding),
         horizontalArrangement = Arrangement.Center,
         verticalAlignment     = Alignment.CenterVertically
     ) {
