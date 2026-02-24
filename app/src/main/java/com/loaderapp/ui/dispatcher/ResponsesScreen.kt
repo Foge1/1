@@ -44,6 +44,7 @@ import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -53,12 +54,15 @@ import com.loaderapp.features.orders.ui.ResponsesViewModel
 import com.loaderapp.ui.components.AppScaffold
 import com.loaderapp.ui.components.EmptyStateView
 import com.loaderapp.ui.components.LoadingView
+import com.loaderapp.ui.components.LocalTopBarHeightPx
 import com.loaderapp.ui.main.LocalBottomNavHeight
 
 @Composable
 fun ResponsesScreen(viewModel: ResponsesViewModel) {
     val state by viewModel.uiState.collectAsState()
     val bottomNavHeight = LocalBottomNavHeight.current
+    val topBarHeightPx = LocalTopBarHeightPx.current
+    val topBarHeight = with(LocalDensity.current) { topBarHeightPx.toDp() }
     val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(Unit) {
@@ -66,52 +70,60 @@ fun ResponsesScreen(viewModel: ResponsesViewModel) {
     }
 
     AppScaffold(title = "Отклики") {
-        when {
-            state.loading -> LoadingView()
-            state.items.isEmpty() -> EmptyStateView(
-                icon = Icons.Outlined.Person,
-                title = "Нет откликов",
-                message = "Когда грузчики откликнутся — они появятся здесь"
-            )
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(top = topBarHeight + 8.dp)
+        ) {
+            Spacer(modifier = Modifier.height(4.dp))
 
-            else -> {
-                val expandedMap = rememberSaveable(
-                    saver = listSaver(
-                        save = { state ->
-                            state.entries.flatMap { entry ->
-                                listOf(entry.key, if (entry.value) 1L else 0L)
-                            }
-                        },
-                        restore = { restored ->
-                            mutableStateMapOf<Long, Boolean>().apply {
-                                restored.chunked(2).forEach { (orderId, expandedFlag) ->
-                                    put(orderId, expandedFlag == 1L)
+            when {
+                state.loading -> LoadingView()
+                state.items.isEmpty() -> EmptyStateView(
+                    icon = Icons.Outlined.Person,
+                    title = "Нет откликов",
+                    message = "Когда грузчики откликнутся — они появятся здесь"
+                )
+
+                else -> {
+                    val expandedMap = rememberSaveable(
+                        saver = listSaver(
+                            save = { state ->
+                                state.entries.flatMap { entry ->
+                                    listOf(entry.key, if (entry.value) 1L else 0L)
+                                }
+                            },
+                            restore = { restored ->
+                                mutableStateMapOf<Long, Boolean>().apply {
+                                    restored.chunked(2).forEach { (orderId, expandedFlag) ->
+                                        put(orderId, expandedFlag == 1L)
+                                    }
                                 }
                             }
-                        }
-                    )
-                ) { mutableStateMapOf<Long, Boolean>() }
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(
-                        start = 16.dp,
-                        end = 16.dp,
-                        top = 8.dp,
-                        bottom = bottomNavHeight + 16.dp
-                    ),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    items(state.items, key = { it.orderId }) { item ->
-                        ResponseOrderCard(
-                            item = item,
-                            expanded = expandedMap[item.orderId] ?: false,
-                            onExpandedChange = { expandedMap[item.orderId] = it },
-                            pending = state.pendingActions.contains(item.orderId),
-                            onToggle = { loaderId, isSelected ->
-                                viewModel.onToggleApplicant(item.orderId, loaderId, isSelected)
-                            },
-                            onStart = { viewModel.onStartClicked(item.orderId) }
                         )
+                    ) { mutableStateMapOf<Long, Boolean>() }
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(
+                            start = 16.dp,
+                            end = 16.dp,
+                            top = 0.dp,
+                            bottom = bottomNavHeight + 16.dp
+                        ),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        items(state.items, key = { it.orderId }) { item ->
+                            ResponseOrderCard(
+                                item = item,
+                                expanded = expandedMap[item.orderId] ?: false,
+                                onExpandedChange = { expandedMap[item.orderId] = it },
+                                pending = state.pendingActions.contains(item.orderId),
+                                onToggle = { loaderId, isSelected ->
+                                    viewModel.onToggleApplicant(item.orderId, loaderId, isSelected)
+                                },
+                                onStart = { viewModel.onStartClicked(item.orderId) }
+                            )
+                        }
                     }
                 }
             }

@@ -62,6 +62,7 @@ import com.loaderapp.ui.components.HistoryScreen
 import com.loaderapp.ui.components.LoadingView
 import com.loaderapp.ui.components.LocalTopBarHeightPx
 import com.loaderapp.ui.components.OrdersSegmentedTabs
+import com.loaderapp.ui.components.OrdersHeaderDimens
 import com.loaderapp.ui.components.OrdersTabCounts
 import com.loaderapp.ui.components.OrderCard
 import com.loaderapp.ui.main.LocalBottomNavHeight
@@ -99,7 +100,7 @@ fun LoaderScreen(
                 ),
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(top = topBarHeight + dimensionResource(id = R.dimen.order_spacing_8) / 2)
+                    .padding(top = topBarHeight + OrdersHeaderDimens.tabsTopPadding)
             ) { page ->
                 when (page) {
                     0 -> OrdersListPage(

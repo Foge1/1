@@ -46,9 +46,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.loaderapp.domain.model.OrderModel
 import com.loaderapp.domain.model.OrderStatusModel
+import com.loaderapp.ui.common.DateLabelFormatter
 import com.loaderapp.ui.theme.LoaderAppTheme
-import java.text.SimpleDateFormat
-import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
@@ -167,7 +166,7 @@ fun OrderDateTimeRow(order: OrderModel) {
                 tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Text(
-                text = formatOrderTime(order.dateTime),
+                text = formatOrderTime(order),
                 style = orderDateTextStyle(),
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -426,39 +425,10 @@ private fun orderActionTextStyle(): TextStyle = MaterialTheme.typography.titleSm
     letterSpacing = 0.2.sp
 )
 
-fun formatOrderDate(timestamp: Long): String = SimpleDateFormat("dd MMM", Locale("ru")).format(Date(timestamp))
+fun formatOrderDate(timestamp: Long): String = DateLabelFormatter.dateLabel(timestampMillis = timestamp)
 
-fun formatOrderTime(timestamp: Long): String {
-    val now = System.currentTimeMillis()
-    val nearFutureThreshold = now + 60 * 60 * 1000L
-    return if (timestamp in now..nearFutureThreshold) {
-        "Ближайшее время"
-    } else {
-        SimpleDateFormat("HH:mm", Locale("ru")).format(Date(timestamp))
-    }
-}
-
-fun formatOrderDateTime(timestamp: Long): String {
-    val locale = Locale("ru")
-    val now = Calendar.getInstance()
-    val target = Calendar.getInstance().apply { timeInMillis = timestamp }
-
-    return when {
-        isSameDay(now, target) -> "Сегодня ${SimpleDateFormat("HH:mm", locale).format(Date(timestamp))}"
-        isSameDay((now.clone() as Calendar).apply { add(Calendar.DAY_OF_YEAR, 1) }, target) ->
-            "Завтра ${SimpleDateFormat("HH:mm", locale).format(Date(timestamp))}"
-
-        isSameDay((now.clone() as Calendar).apply { add(Calendar.DAY_OF_YEAR, 2) }, target) ->
-            SimpleDateFormat("dd MMM HH:mm", locale).format(Date(timestamp))
-
-        else -> SimpleDateFormat("dd.MM.yyyy HH:mm", locale).format(Date(timestamp))
-    }
-}
-
-private fun isSameDay(first: Calendar, second: Calendar): Boolean =
-    first.get(Calendar.ERA) == second.get(Calendar.ERA) &&
-        first.get(Calendar.YEAR) == second.get(Calendar.YEAR) &&
-        first.get(Calendar.DAY_OF_YEAR) == second.get(Calendar.DAY_OF_YEAR)
+fun formatOrderTime(order: OrderModel): String =
+    if (order.isAsap) "Ближайшее время" else java.text.SimpleDateFormat("HH:mm", Locale("ru")).format(Date(order.dateTime))
 
 @Composable
 fun OrderMetaChips(order: OrderModel, workerCount: Int? = null) = OrderMetaRow(order, workerCount)
