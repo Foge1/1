@@ -1,6 +1,5 @@
 package com.loaderapp.features.orders.ui
 
-import android.util.Log
 import com.loaderapp.features.orders.domain.usecase.ApplyToOrderUseCase
 import com.loaderapp.features.orders.domain.usecase.CancelOrderUseCase
 import com.loaderapp.features.orders.domain.usecase.CompleteOrderUseCase
@@ -11,6 +10,7 @@ import com.loaderapp.features.orders.domain.usecase.StartOrderUseCase
 import com.loaderapp.features.orders.domain.usecase.UnselectApplicantUseCase
 import com.loaderapp.features.orders.domain.usecase.UseCaseResult
 import com.loaderapp.features.orders.domain.usecase.WithdrawApplicationUseCase
+import com.loaderapp.core.logging.AppLogger
 import javax.inject.Inject
 
 class OrdersOrchestrator @Inject constructor(
@@ -22,7 +22,8 @@ class OrdersOrchestrator @Inject constructor(
     private val startOrderUseCase: StartOrderUseCase,
     private val cancelOrderUseCase: CancelOrderUseCase,
     private val completeOrderUseCase: CompleteOrderUseCase,
-    private val refreshOrdersUseCase: RefreshOrdersUseCase
+    private val refreshOrdersUseCase: RefreshOrdersUseCase,
+    private val appLogger: AppLogger
 ) {
 
     suspend fun execute(command: OrdersCommand): UseCaseResult<Unit> {
@@ -48,7 +49,7 @@ class OrdersOrchestrator @Inject constructor(
     }
 
     private fun log(message: String) {
-        runCatching { Log.d(TAG, message) }
+        appLogger.d(TAG, message)
     }
 
     private companion object {

@@ -17,7 +17,7 @@ import com.loaderapp.data.model.User
 @Database(
     entities = [Order::class, User::class, OrderWorker::class, ChatMessage::class],
     version = 5,
-    exportSchema = false
+    exportSchema = true
 )
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {

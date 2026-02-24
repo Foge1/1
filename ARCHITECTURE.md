@@ -27,7 +27,7 @@ com.loaderapp/
 │       └── UiState.kt             ← Sealed class для состояния UI
 │
 ├── data/                          ← Data Layer (Room, DataStore, Mapper-ы)
-│   ├── AppDatabase.kt             ← Room database (version 5, fallbackToDestructive)
+│   ├── AppDatabase.kt             ← Room database (version 5, schema-export enabled)
 │   ├── Converters.kt              ← TypeConverters для Room
 │   ├── dao/                       ← DAO-интерфейсы Room
 │   │   ├── OrderDao.kt
@@ -114,6 +114,22 @@ com.loaderapp/
     ├── splash/SplashScreen.kt
     └── theme/                     ← Color, Type, Shape, Theme
 ```
+
+---
+
+## Storage/Room decision
+
+В проекте осознанно используются **2 отдельные Room-базы**:
+
+1. `loader_app_database` (`com.loaderapp.data.AppDatabase`, version 5) — legacy-данные приложения: пользователи, чат, базовые заказы и связи.
+2. `orders_feature_database` (`com.loaderapp.features.orders.data.local.db.OrdersDatabase`, version 3) — изолированный storage новой Orders-фичи (orders/applications/assignments + собственные миграции).
+
+Почему это допустимо в Фазе 1:
+- Границы ответственности не пересекаются напрямую по таблицам, что снижает риск регрессий при эволюции новой Orders-фичи.
+- Можно независимо версионировать и тестировать миграции в feature-DB.
+- Полный merge storage-слоёв отложен: это отдельная продуктовая/архитектурная задача, не входящая в стабилизационную фазу.
+
+Риск, закрытый в этой фазе: destructive migration не используется, схема экспортируется в `app/schemas`, миграции регистрируются явно.
 
 ---
 

@@ -1,9 +1,9 @@
 package com.loaderapp.presentation.order
 
-import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import com.loaderapp.core.common.UiState
+import com.loaderapp.core.logging.AppLogger
 import com.loaderapp.domain.model.OrderModel
 import com.loaderapp.domain.usecase.order.GetWorkerCountParams
 import com.loaderapp.domain.usecase.order.GetWorkerCountUseCase
@@ -25,7 +25,8 @@ import kotlinx.coroutines.flow.onEach
 class OrderDetailViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val ordersRepository: OrdersRepository,
-    private val getWorkerCountUseCase: GetWorkerCountUseCase
+    private val getWorkerCountUseCase: GetWorkerCountUseCase,
+    private val appLogger: AppLogger
 ) : BaseViewModel() {
 
     private val orderId: Long = savedStateHandle.get<Any?>(NavArgs.ORDER_ID)
@@ -39,7 +40,7 @@ class OrderDetailViewModel @Inject constructor(
     val workerCount: StateFlow<Int> = _workerCount.asStateFlow()
 
     init {
-        Log.d(LOG_TAG, "load orderId=$orderId")
+        appLogger.d(LOG_TAG, "load orderId=$orderId")
         observeOrder()
         observeWorkerCount()
     }
@@ -48,7 +49,7 @@ class OrderDetailViewModel @Inject constructor(
         ordersRepository.observeOrders()
             .map { orders -> orders.firstOrNull { it.id == orderId } }
             .onEach { order ->
-                Log.d(LOG_TAG, "load orderId=$orderId, found=${order != null}")
+                appLogger.d(LOG_TAG, "load orderId=$orderId, found=${order != null}")
                 _orderState.value = order
                     ?.toLegacyOrderModel()
                     ?.let { UiState.Success(it) }

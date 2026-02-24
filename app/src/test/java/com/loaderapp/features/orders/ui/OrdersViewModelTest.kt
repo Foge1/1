@@ -1,5 +1,6 @@
 package com.loaderapp.features.orders.ui
 
+import com.loaderapp.core.logging.AppLogger
 import com.loaderapp.features.orders.domain.OrderStateMachine
 import com.loaderapp.features.orders.domain.OrdersLimits
 
@@ -346,7 +347,8 @@ class OrdersViewModelTest {
             startOrderUseCase = StartOrderUseCase(repository, userProvider, stateMachine),
             cancelOrderUseCase = CancelOrderUseCase(repository, userProvider, stateMachine),
             completeOrderUseCase = CompleteOrderUseCase(repository, userProvider, stateMachine),
-            refreshOrdersUseCase = RefreshOrdersUseCase(repository)
+            refreshOrdersUseCase = RefreshOrdersUseCase(repository),
+            appLogger = TestAppLogger
         )
         return OrdersViewModel(
             observeOrderUiModels = ObserveOrderUiModelsUseCase(
@@ -474,4 +476,9 @@ class OrdersViewModelTest {
         applications = applications,
         assignments = assignments
     )
+}
+
+
+private object TestAppLogger : AppLogger {
+    override fun d(tag: String, message: String) = Unit
 }

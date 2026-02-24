@@ -6,3 +6,21 @@ plugins {
     id 'com.google.dagger.hilt.android' version '2.48' apply false
 }
 
+ext {
+    versions = [
+            coreKtx              : '1.12.0',
+            lifecycle            : '2.6.2',
+            activityCompose      : '1.8.1',
+            composeBom           : '2024.06.00',
+            navigationCompose    : '2.7.7',
+            room                 : '2.6.0',
+            coroutines           : '1.7.3',
+            datastore            : '1.0.0',
+            hilt                 : '2.48',
+            hiltNavigationCompose: '1.1.0',
+            desugar              : '2.1.5',
+            junit4               : '4.13.2',
+            androidxJunit        : '1.1.5',
+            espresso             : '3.5.1'
+    ]
+}
