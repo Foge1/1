@@ -8,5 +8,7 @@ data class OrdersUiState(
     val refreshing: Boolean = false,
     val errorMessage: String? = null,
     val pendingActions: Set<Long> = emptySet(),
-    val requiresUserSelection: Boolean = false
+    val requiresUserSelection: Boolean = false,
+    val responsesBadgeCount: Int = 0,
+    val history: DispatcherHistoryUiState = DispatcherHistoryUiState()
 )
