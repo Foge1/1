@@ -1,6 +1,6 @@
 package com.loaderapp.di.logging
 
-import com.loaderapp.BuildConfig
+import com.loaderapp.core.common.AppBuildInfo
 import com.loaderapp.core.logging.AppLogger
 import com.loaderapp.core.logging.LogcatAppLogger
 import com.loaderapp.core.logging.NoOpAppLogger
@@ -16,7 +16,7 @@ object LoggingModule {
 
     @Provides
     @Singleton
-    fun provideAppLogger(): AppLogger {
-        return if (BuildConfig.DEBUG) LogcatAppLogger() else NoOpAppLogger()
+    fun provideAppLogger(buildInfo: AppBuildInfo): AppLogger {
+        return if (buildInfo.isDebug) LogcatAppLogger() else NoOpAppLogger()
     }
 }
