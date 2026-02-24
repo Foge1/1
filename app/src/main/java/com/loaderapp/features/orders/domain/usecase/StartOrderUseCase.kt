@@ -2,6 +2,7 @@ package com.loaderapp.features.orders.domain.usecase
 
 import com.loaderapp.features.orders.domain.OrderStateMachine
 import com.loaderapp.features.orders.domain.Role
+import com.loaderapp.features.orders.domain.toDisplayMessage
 import com.loaderapp.features.orders.domain.repository.OrdersRepository
 import com.loaderapp.features.orders.domain.session.CurrentUserProvider
 import javax.inject.Inject
@@ -15,7 +16,8 @@ import javax.inject.Inject
  */
 class StartOrderUseCase @Inject constructor(
     private val repository: OrdersRepository,
-    private val currentUserProvider: CurrentUserProvider
+    private val currentUserProvider: CurrentUserProvider,
+    private val stateMachine: OrderStateMachine
 ) {
     suspend operator fun invoke(orderId: Long, now: Long = System.currentTimeMillis()): UseCaseResult<Unit> {
         val actor = currentUserProvider.getCurrentUser()
@@ -27,11 +29,11 @@ class StartOrderUseCase @Inject constructor(
         val order = repository.getOrderById(orderId)
             ?: return UseCaseResult.Failure("Заказ не найден")
 
-        val actions = OrderStateMachine.actionsFor(order, actor)
+        val actions = stateMachine.actionsFor(order, actor)
 
         if (!actions.canStart) {
             return UseCaseResult.Failure(
-                actions.startDisabledReason ?: "Невозможно запустить заказ"
+                actions.startDisabledReason?.toDisplayMessage() ?: "Невозможно запустить заказ"
             )
         }
 

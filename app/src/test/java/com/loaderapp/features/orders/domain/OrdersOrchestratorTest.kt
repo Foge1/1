@@ -1,9 +1,11 @@
 package com.loaderapp.features.orders.domain
 
+import com.loaderapp.features.orders.domain.OrderStateMachine
+import com.loaderapp.features.orders.domain.OrdersLimits
+
 import com.loaderapp.features.orders.domain.repository.OrdersRepository
 import com.loaderapp.features.orders.domain.session.CurrentUser
 import com.loaderapp.features.orders.domain.session.CurrentUserProvider
-import com.loaderapp.features.orders.domain.usecase.AcceptOrderUseCase
 import com.loaderapp.features.orders.domain.usecase.ApplyToOrderUseCase
 import com.loaderapp.features.orders.domain.usecase.CancelOrderUseCase
 import com.loaderapp.features.orders.domain.usecase.CompleteOrderUseCase
@@ -56,7 +58,7 @@ class OrdersOrchestratorTest {
     fun `Apply fails when loader has reached applied count limit`() = runBlocking {
         val repo = InMemoryOrdersRepository(
             orders = listOf(testOrder(id = 1L, status = OrderStatus.STAFFING)),
-            activeAppliedCount = 3
+            activeApplicationsForLimitCount = 3
         )
         val orchestrator = buildOrchestrator(repo, loaderUser)
 
@@ -231,39 +233,22 @@ class OrdersOrchestratorTest {
         assertTrue(result is UseCaseResult.Success)
     }
 
-    // ── Deprecated Accept shim ────────────────────────────────────────────────
-
-    @Test
-    @Suppress("DEPRECATION")
-    fun `Accept (deprecated) delegates to Apply and fails when order is terminal`() = runBlocking {
-        val repo = InMemoryOrdersRepository(
-            orders = listOf(testOrder(id = 7L, status = OrderStatus.COMPLETED))
-        )
-        val orchestrator = buildOrchestrator(repo, loaderUser)
-
-        val result = orchestrator.execute(OrdersCommand.Accept(orderId = 7L))
-
-        // Fails because COMPLETED order is not STAFFING → canApply = false
-        assertTrue(result is UseCaseResult.Failure)
-    }
-
     // ── Builder helpers ───────────────────────────────────────────────────────
 
     private fun buildOrchestrator(repo: OrdersRepository, user: CurrentUser): OrdersOrchestrator {
         val userProvider = StaticCurrentUserProvider(user)
-        val applyUseCase = ApplyToOrderUseCase(repo, userProvider)
-        @Suppress("DEPRECATION")
+        val stateMachine = OrderStateMachine(OrdersLimits())
+        val applyUseCase = ApplyToOrderUseCase(repo, userProvider, stateMachine)
         return OrdersOrchestrator(
             createOrderUseCase = CreateOrderUseCase(repo, userProvider),
             applyToOrderUseCase = applyUseCase,
-            withdrawApplicationUseCase = WithdrawApplicationUseCase(repo, userProvider),
-            selectApplicantUseCase = SelectApplicantUseCase(repo, userProvider),
-            unselectApplicantUseCase = UnselectApplicantUseCase(repo, userProvider),
-            startOrderUseCase = StartOrderUseCase(repo, userProvider),
-            cancelOrderUseCase = CancelOrderUseCase(repo, userProvider),
-            completeOrderUseCase = CompleteOrderUseCase(repo, userProvider),
-            refreshOrdersUseCase = RefreshOrdersUseCase(repo),
-            acceptOrderUseCase = AcceptOrderUseCase(applyUseCase)
+            withdrawApplicationUseCase = WithdrawApplicationUseCase(repo, userProvider, stateMachine),
+            selectApplicantUseCase = SelectApplicantUseCase(repo, userProvider, stateMachine),
+            unselectApplicantUseCase = UnselectApplicantUseCase(repo, userProvider, stateMachine),
+            startOrderUseCase = StartOrderUseCase(repo, userProvider, stateMachine),
+            cancelOrderUseCase = CancelOrderUseCase(repo, userProvider, stateMachine),
+            completeOrderUseCase = CompleteOrderUseCase(repo, userProvider, stateMachine),
+            refreshOrdersUseCase = RefreshOrdersUseCase(repo)
         )
     }
 
@@ -277,10 +262,10 @@ class OrdersOrchestratorTest {
     private class InMemoryOrdersRepository(
         private val orders: MutableList<Order> = mutableListOf(),
         private val hasActiveAssignment: Boolean = false,
-        private val activeAppliedCount: Int = 0
+        private val activeApplicationsForLimitCount: Int = 0
     ) : OrdersRepository {
-        constructor(orders: List<Order>, hasActiveAssignment: Boolean = false, activeAppliedCount: Int = 0)
-            : this(orders.toMutableList(), hasActiveAssignment, activeAppliedCount)
+        constructor(orders: List<Order>, hasActiveAssignment: Boolean = false, activeApplicationsForLimitCount: Int = 0)
+            : this(orders.toMutableList(), hasActiveAssignment, activeApplicationsForLimitCount)
 
         override fun observeOrders(): Flow<List<Order>> = emptyFlow()
 
@@ -298,7 +283,8 @@ class OrdersOrchestratorTest {
         override suspend fun unselectApplicant(orderId: Long, loaderId: String) = Unit
         override suspend fun startOrder(orderId: Long, startedAtMillis: Long) = Unit
         override suspend fun hasActiveAssignment(loaderId: String): Boolean = hasActiveAssignment
-        override suspend fun countActiveAppliedApplications(loaderId: String): Int = activeAppliedCount
+        override suspend fun hasActiveAssignmentInOrder(orderId: Long, loaderId: String): Boolean = false
+        override suspend fun countActiveApplicationsForLimit(loaderId: String): Int = activeApplicationsForLimitCount
 
         private fun mutate(id: Long, transform: (Order) -> Order) {
             val i = orders.indexOfFirst { it.id == id }

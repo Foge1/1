@@ -1,11 +1,12 @@
 package com.loaderapp.presentation.dispatcher
 
 import com.loaderapp.domain.model.OrderRules
-import com.loaderapp.features.orders.domain.usecase.CreateOrderUseCase
-import com.loaderapp.features.orders.domain.usecase.UseCaseResult
 import com.loaderapp.features.orders.domain.Order
 import com.loaderapp.features.orders.domain.OrderDraft
 import com.loaderapp.features.orders.domain.OrderTime
+import com.loaderapp.features.orders.domain.session.CurrentUserProvider
+import com.loaderapp.features.orders.domain.usecase.CreateOrderUseCase
+import com.loaderapp.features.orders.domain.usecase.UseCaseResult
 import com.loaderapp.presentation.base.BaseViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.util.Calendar
@@ -18,7 +19,8 @@ import kotlinx.coroutines.flow.receiveAsFlow
 
 @HiltViewModel
 class CreateOrderViewModel @Inject constructor(
-    private val createOrderUseCase: CreateOrderUseCase
+    private val createOrderUseCase: CreateOrderUseCase,
+    private val currentUserProvider: CurrentUserProvider,
 ) : BaseViewModel() {
 
     private val _navigationEvent = Channel<NavigationEvent>(Channel.BUFFERED)
@@ -71,8 +73,11 @@ class CreateOrderViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Создать заказ. Идентификатор диспетчера-создателя берётся из [CurrentUserProvider]:
+     * ViewModel сама знает контекст сессии и не требует его от UI.
+     */
     fun createOrder(
-        dispatcherId: Long,
         address: String,
         cargoDescription: String,
         pricePerHour: Double,
@@ -93,33 +98,34 @@ class CreateOrderViewModel @Inject constructor(
             else -> OrderTime.Exact(exactDateTime)
         }
 
-        val orderDraft = OrderDraft(
-            title = cargoDescription.trim().ifBlank { "Заказ" },
-            address = address.trim(),
-            pricePerHour = pricePerHour,
-            orderTime = normalizedOrderTime,
-            durationMin = state.estimatedHours.coerceIn(OrderRules.MIN_ESTIMATED_HOURS, OrderRules.MAX_ESTIMATED_HOURS) * 60,
-            workersCurrent = 0,
-            workersTotal = requiredWorkers,
-            tags = listOf(cargoDescription.trim()).filter { it.isNotBlank() },
-            meta = mapOf(
-                "dispatcherId" to dispatcherId.toString(),
-                "minWorkerRating" to minWorkerRating.coerceIn(0f, 5f).toString(),
-                Order.CREATED_AT_KEY to now.toString(),
-                Order.TIME_TYPE_KEY to if (normalizedOrderTime == OrderTime.Soon) Order.TIME_TYPE_SOON else "exact"
-            ),
-            comment = comment.trim()
-        )
-
         launchSafe {
+            val currentUser = currentUserProvider.getCurrentUser()
+
+            val orderDraft = OrderDraft(
+                title = cargoDescription.trim().ifBlank { "Заказ" },
+                address = address.trim(),
+                pricePerHour = pricePerHour,
+                orderTime = normalizedOrderTime,
+                durationMin = state.estimatedHours
+                    .coerceIn(OrderRules.MIN_ESTIMATED_HOURS, OrderRules.MAX_ESTIMATED_HOURS) * 60,
+                workersCurrent = 0,
+                workersTotal = requiredWorkers,
+                tags = listOf(cargoDescription.trim()).filter { it.isNotBlank() },
+                meta = mapOf(
+                    "dispatcherId" to currentUser.id,
+                    "minWorkerRating" to minWorkerRating.coerceIn(0f, 5f).toString(),
+                    Order.CREATED_AT_KEY to now.toString(),
+                    Order.TIME_TYPE_KEY to if (normalizedOrderTime == OrderTime.Soon) Order.TIME_TYPE_SOON else "exact"
+                ),
+                comment = comment.trim()
+            )
+
             when (val result = createOrderUseCase(orderDraft)) {
                 is UseCaseResult.Success -> {
                     showSnackbar("Заказ создан успешно")
                     _navigationEvent.send(NavigationEvent.NavigateUp)
                 }
-                is UseCaseResult.Failure -> {
-                    showSnackbar(result.reason)
-                }
+                is UseCaseResult.Failure -> showSnackbar(result.reason)
             }
         }
     }
@@ -155,29 +161,26 @@ class CreateOrderViewModel @Inject constructor(
         }
     }
 
-    private fun nowAtDayOffset(offset: Int): Long {
-        return Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, offset) }.timeInMillis
-    }
+    private fun nowAtDayOffset(offset: Int): Long =
+        Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, offset) }.timeInMillis
 
-    private fun normalizeToStartOfDay(timeMillis: Long): Long {
-        return Calendar.getInstance().apply {
+    private fun normalizeToStartOfDay(timeMillis: Long): Long =
+        Calendar.getInstance().apply {
             timeInMillis = timeMillis
             set(Calendar.HOUR_OF_DAY, 0)
             set(Calendar.MINUTE, 0)
             set(Calendar.SECOND, 0)
             set(Calendar.MILLISECOND, 0)
         }.timeInMillis
-    }
 
-    private fun buildDateTimeMillis(dateMillis: Long, hour: Int, minute: Int): Long {
-        return Calendar.getInstance().apply {
+    private fun buildDateTimeMillis(dateMillis: Long, hour: Int, minute: Int): Long =
+        Calendar.getInstance().apply {
             timeInMillis = dateMillis
             set(Calendar.HOUR_OF_DAY, hour)
             set(Calendar.MINUTE, minute)
             set(Calendar.SECOND, 0)
             set(Calendar.MILLISECOND, 0)
         }.timeInMillis
-    }
 
     private fun defaultState(): CreateOrderUiState {
         val exact = defaultExactDateTime()

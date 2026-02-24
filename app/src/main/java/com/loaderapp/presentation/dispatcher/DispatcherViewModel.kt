@@ -5,7 +5,7 @@ import com.loaderapp.core.common.UiState
 import com.loaderapp.domain.model.OrderModel
 import com.loaderapp.domain.model.OrderRules
 import com.loaderapp.domain.usecase.order.DispatcherStats
-import com.loaderapp.features.orders.data.OrdersRepository
+import com.loaderapp.features.orders.domain.repository.OrdersRepository
 import com.loaderapp.features.orders.domain.Order
 import com.loaderapp.features.orders.domain.OrderDraft
 import com.loaderapp.features.orders.domain.OrderStatus
@@ -70,8 +70,7 @@ class DispatcherViewModel @Inject constructor(
                     DispatcherStats(
                         completedOrders = orders.count { it.status == OrderStatus.COMPLETED },
                         activeOrders = orders.count {
-                            @Suppress("DEPRECATION")
-                            it.status == OrderStatus.STAFFING || it.status == OrderStatus.AVAILABLE || it.status == OrderStatus.IN_PROGRESS
+                            it.status == OrderStatus.STAFFING || it.status == OrderStatus.IN_PROGRESS
                         }
                     )
                 )

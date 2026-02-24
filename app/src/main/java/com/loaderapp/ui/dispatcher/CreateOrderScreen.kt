@@ -38,7 +38,6 @@ import java.util.Locale
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CreateOrderScreen(
-    dispatcherId: Long,
     onBack: () -> Unit,
     viewModel: CreateOrderViewModel = hiltViewModel()
 ) {
@@ -223,7 +222,6 @@ fun CreateOrderScreen(
                     if (validate()) {
                         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                         viewModel.createOrder(
-                            dispatcherId = dispatcherId,
                             address = address,
                             cargoDescription = cargo,
                             pricePerHour = price.toDouble(),

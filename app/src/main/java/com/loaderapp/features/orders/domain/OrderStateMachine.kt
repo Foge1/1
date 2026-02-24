@@ -1,184 +1,80 @@
 package com.loaderapp.features.orders.domain
 
 import com.loaderapp.features.orders.domain.session.CurrentUser
+import javax.inject.Inject
 
-/**
- * Контекст, необходимый для вычисления доступных действий.
- *
- * @param activeAssignmentExists                 true если у актора уже есть ACTIVE assignment в другом заказе.
- * @param activeAppliedCount                     количество откликов со статусом APPLIED у актора по всем заказам.
- * @param loaderHasActiveAssignmentInThisOrder   true если у актора есть ACTIVE assignment именно в этом заказе.
- */
 data class OrderRulesContext(
     val activeAssignmentExists: Boolean = false,
-    val activeAppliedCount: Int = 0,
+    val activeApplicationsForLimitCount: Int = 0,
     val loaderHasActiveAssignmentInThisOrder: Boolean = false
 )
 
-/**
- * Набор доступных действий + причины недоступности.
- *
- * canXxx == true  →  кнопка активна.
- * xxxDisabledReason != null  →  действие заблокировано (текст для UI).
- */
 data class OrderActions(
-    // Loader
     val canApply: Boolean = false,
-    val applyDisabledReason: String? = null,
+    val applyDisabledReason: OrderActionBlockReason? = null,
     val canWithdraw: Boolean = false,
-    val withdrawDisabledReason: String? = null,
-
-    // Dispatcher
+    val withdrawDisabledReason: OrderActionBlockReason? = null,
     val canSelect: Boolean = false,
     val canUnselect: Boolean = false,
     val canStart: Boolean = false,
-    val startDisabledReason: String? = null,
+    val startDisabledReason: OrderActionBlockReason? = null,
     val canCancel: Boolean = false,
-    val cancelDisabledReason: String? = null,
+    val cancelDisabledReason: OrderActionBlockReason? = null,
     val canComplete: Boolean = false,
-    val completeDisabledReason: String? = null,
-
+    val completeDisabledReason: OrderActionBlockReason? = null,
     val canOpenChat: Boolean = false
 )
 
-/** Максимальное количество одновременных активных откликов грузчика. */
-private const val MAX_ACTIVE_APPLICATIONS = 3
+data class OrdersLimits(val maxActiveApplications: Int = 3)
 
-object OrderStateMachine {
+class OrderStateMachine @Inject constructor(
+    private val limits: OrdersLimits
+) {
 
-    // ─── Public API ──────────────────────────────────────────────────────────────
-
-    /**
-     * Возвращает набор действий, доступных [actor]-у для данного [order].
-     * [context] содержит данные о состоянии грузчика за пределами этого заказа.
-     */
     fun actionsFor(
         order: Order,
         actor: CurrentUser,
         context: OrderRulesContext = OrderRulesContext()
     ): OrderActions = when (actor.role) {
-        Role.LOADER -> loaderActionsFor(order, actor, context)
-        Role.DISPATCHER -> dispatcherActionsFor(order, actor)
-    }
-
-    /**
-     * Валидирует переход и возвращает Success/Failure.
-     * НЕ изменяет репозиторий/БД.
-     *
-     * APPLY / WITHDRAW / SELECT / UNSELECT не меняют order.status —
-     * фактические изменения application-записей выполняются в UseCase (Step 4+).
-     */
-    fun transition(
-        order: Order,
-        event: OrderEvent,
-        actor: CurrentUser,
-        now: Long,
-        context: OrderRulesContext = OrderRulesContext()
-    ): OrderTransitionResult = when (order.status) {
-        OrderStatus.STAFFING -> transitionFromStaffing(order, event, actor, now, context)
-        @Suppress("DEPRECATION")
-        OrderStatus.AVAILABLE -> transitionFromStaffing(order, event, actor, now, context)
-        OrderStatus.IN_PROGRESS -> transitionFromInProgress(order, event, actor, context)
-        OrderStatus.COMPLETED,
-        OrderStatus.CANCELED,
-        OrderStatus.EXPIRED -> OrderTransitionResult.Failure(
-            "Переход невозможен: заказ в терминальном статусе ${order.status}"
-        )
-    }
-
-    // ─── Actions ─────────────────────────────────────────────────────────────────
-
-    private fun loaderActionsFor(
-        order: Order,
-        actor: CurrentUser,
-        context: OrderRulesContext
-    ): OrderActions {
-        val alreadyApplied = order.applications.any {
-            it.loaderId == actor.id && it.status == OrderApplicationStatus.APPLIED
-        }
-        val alreadySelected = order.applications.any {
-            it.loaderId == actor.id && it.status == OrderApplicationStatus.SELECTED
-        }
-        val hasActiveApplication = alreadyApplied || alreadySelected
-
-        val applyDisabledReason: String? = when {
-            order.status != OrderStatus.STAFFING ->
-                "Заказ не принимает отклики (статус: ${order.status})"
-            context.activeAssignmentExists ->
-                "У вас уже есть активный заказ"
-            context.activeAppliedCount >= MAX_ACTIVE_APPLICATIONS ->
-                "Достигнут лимит откликов ($MAX_ACTIVE_APPLICATIONS)"
-            alreadyApplied -> "Вы уже откликнулись на этот заказ"
-            alreadySelected -> "Вы уже выбраны в этот заказ"
-            else -> null
+        Role.LOADER -> {
+            val apply = decisionFor(order, OrderEvent.APPLY, actor, context)
+            val withdraw = decisionFor(order, OrderEvent.WITHDRAW, actor, context)
+            val complete = decisionFor(order, OrderEvent.COMPLETE, actor, context)
+            OrderActions(
+                canApply = apply.isAllowed,
+                applyDisabledReason = apply.reason,
+                canWithdraw = withdraw.isAllowed,
+                withdrawDisabledReason = withdraw.reason,
+                canComplete = complete.isAllowed,
+                completeDisabledReason = complete.reason,
+                canOpenChat = canOpenChat(order, actor, context)
+            )
         }
 
-        val withdrawDisabledReason: String? = when {
-            order.status != OrderStatus.STAFFING -> "Заказ не в статусе набора"
-            !hasActiveApplication -> "У вас нет активного отклика на этот заказ"
-            else -> null
-        }
-
-        val isInProgress = order.status == OrderStatus.IN_PROGRESS
-        val canComplete = isInProgress && context.loaderHasActiveAssignmentInThisOrder
-        val completeDisabledReason: String? = when {
-            !isInProgress -> "Заказ не выполняется"
-            !context.loaderHasActiveAssignmentInThisOrder -> "Вы не назначены на этот заказ"
-            else -> null
-        }
-
-        return OrderActions(
-            canApply = applyDisabledReason == null,
-            applyDisabledReason = applyDisabledReason,
-            canWithdraw = withdrawDisabledReason == null,
-            withdrawDisabledReason = withdrawDisabledReason,
-            canComplete = canComplete,
-            completeDisabledReason = completeDisabledReason,
-            canOpenChat = isInProgress && context.loaderHasActiveAssignmentInThisOrder
-        )
-    }
-
-    private fun dispatcherActionsFor(
-        order: Order,
-        actor: CurrentUser
-    ): OrderActions {
-        val isCreator = actor.id == order.createdByUserId
-
-        return when (order.status) {
+        Role.DISPATCHER -> when (order.status) {
             OrderStatus.STAFFING -> {
-                val selectedCount = order.applications.count {
-                    it.status == OrderApplicationStatus.SELECTED
-                }
-                val startDisabledReason: String? = when {
-                    !isCreator -> "Только создатель заказа может его запустить"
-                    selectedCount != order.workersTotal ->
-                        "Выбрано $selectedCount из ${order.workersTotal} грузчиков"
-                    else -> null
-                }
-                val cancelDisabledReason: String? =
-                    if (!isCreator) "Только создатель заказа может его отменить" else null
-
+                val select = decisionFor(order, OrderEvent.SELECT, actor, context)
+                val unselect = decisionFor(order, OrderEvent.UNSELECT, actor, context)
+                val start = decisionFor(order, OrderEvent.START, actor, context)
+                val cancel = decisionFor(order, OrderEvent.CANCEL, actor, context)
                 OrderActions(
-                    canSelect = isCreator,
-                    canUnselect = isCreator,
-                    canStart = startDisabledReason == null,
-                    startDisabledReason = startDisabledReason,
-                    canCancel = cancelDisabledReason == null,
-                    cancelDisabledReason = cancelDisabledReason
+                    canSelect = select.isAllowed,
+                    canUnselect = unselect.isAllowed,
+                    canStart = start.isAllowed,
+                    startDisabledReason = start.reason,
+                    canCancel = cancel.isAllowed,
+                    cancelDisabledReason = cancel.reason
                 )
             }
 
             OrderStatus.IN_PROGRESS -> {
-                val cancelDisabledReason: String? =
-                    if (!isCreator) "Только создатель заказа может его отменить" else null
-                val completeDisabledReason: String? =
-                    if (!isCreator) "Только создатель заказа может завершить его" else null
-
+                val cancel = decisionFor(order, OrderEvent.CANCEL, actor, context)
+                val complete = decisionFor(order, OrderEvent.COMPLETE, actor, context)
                 OrderActions(
-                    canCancel = cancelDisabledReason == null,
-                    cancelDisabledReason = cancelDisabledReason,
-                    canComplete = completeDisabledReason == null,
-                    completeDisabledReason = completeDisabledReason,
+                    canCancel = cancel.isAllowed,
+                    cancelDisabledReason = cancel.reason,
+                    canComplete = complete.isAllowed,
+                    completeDisabledReason = complete.reason,
                     canOpenChat = true
                 )
             }
@@ -186,153 +82,171 @@ object OrderStateMachine {
             OrderStatus.COMPLETED,
             OrderStatus.CANCELED,
             OrderStatus.EXPIRED -> OrderActions()
-
-            @Suppress("DEPRECATION")
-            OrderStatus.AVAILABLE -> dispatcherActionsFor(
-                order.copy(status = OrderStatus.STAFFING), actor
-            )
         }
     }
 
-    // ─── Transitions ─────────────────────────────────────────────────────────────
-
-    private fun transitionFromStaffing(
+    fun transition(
         order: Order,
         event: OrderEvent,
         actor: CurrentUser,
         now: Long,
-        context: OrderRulesContext
-    ): OrderTransitionResult = when (event) {
-
-        OrderEvent.APPLY -> {
-            when {
-                actor.role != Role.LOADER ->
-                    OrderTransitionResult.Failure("Только грузчик может откликнуться на заказ")
-                context.activeAssignmentExists ->
-                    OrderTransitionResult.Failure("У грузчика уже есть активный заказ")
-                context.activeAppliedCount >= MAX_ACTIVE_APPLICATIONS ->
-                    OrderTransitionResult.Failure(
-                        "Достигнут лимит активных откликов ($MAX_ACTIVE_APPLICATIONS)"
-                    )
-                else -> OrderTransitionResult.Success(order) // статус не меняется; applications — в UseCase
-            }
+        context: OrderRulesContext = OrderRulesContext()
+    ): OrderTransitionResult {
+        val decision = decisionFor(order, event, actor, context)
+        if (!decision.isAllowed) {
+            return OrderTransitionResult.Failure(decision.reason!!)
         }
 
-        OrderEvent.WITHDRAW -> {
-            if (actor.role != Role.LOADER) {
-                OrderTransitionResult.Failure("Только грузчик может отозвать отклик")
-            } else {
-                OrderTransitionResult.Success(order) // статус не меняется; applications — в UseCase
-            }
+        val nextOrder = when (event) {
+            OrderEvent.START -> order.copy(status = OrderStatus.IN_PROGRESS)
+            OrderEvent.CANCEL -> order.copy(status = OrderStatus.CANCELED)
+            OrderEvent.COMPLETE -> order.copy(status = OrderStatus.COMPLETED)
+            OrderEvent.EXPIRE -> order.copy(status = OrderStatus.EXPIRED)
+            OrderEvent.APPLY,
+            OrderEvent.WITHDRAW,
+            OrderEvent.SELECT,
+            OrderEvent.UNSELECT -> order
         }
-
-        OrderEvent.SELECT -> {
-            if (actor.role != Role.DISPATCHER || actor.id != order.createdByUserId) {
-                OrderTransitionResult.Failure("Только диспетчер-создатель может выбирать грузчиков")
-            } else {
-                OrderTransitionResult.Success(order)
-            }
-        }
-
-        OrderEvent.UNSELECT -> {
-            if (actor.role != Role.DISPATCHER || actor.id != order.createdByUserId) {
-                OrderTransitionResult.Failure("Только диспетчер-создатель может снимать выбор")
-            } else {
-                OrderTransitionResult.Success(order)
-            }
-        }
-
-        OrderEvent.START -> {
-            when {
-                actor.role != Role.DISPATCHER ->
-                    OrderTransitionResult.Failure("Только диспетчер может запустить заказ")
-                actor.id != order.createdByUserId ->
-                    OrderTransitionResult.Failure("Только диспетчер-создатель может запустить заказ")
-                else -> {
-                    val selectedCount = order.applications.count {
-                        it.status == OrderApplicationStatus.SELECTED
-                    }
-                    if (selectedCount != order.workersTotal) {
-                        OrderTransitionResult.Failure(
-                            "Невозможно запустить: выбрано $selectedCount из ${order.workersTotal} грузчиков"
-                        )
-                    } else {
-                        OrderTransitionResult.Success(order.copy(status = OrderStatus.IN_PROGRESS))
-                    }
-                }
-            }
-        }
-
-        OrderEvent.CANCEL -> {
-            if (actor.id != order.createdByUserId) {
-                OrderTransitionResult.Failure("Только диспетчер-создатель может отменить заказ")
-            } else {
-                OrderTransitionResult.Success(order.copy(status = OrderStatus.CANCELED))
-            }
-        }
-
-        OrderEvent.EXPIRE ->
-            OrderTransitionResult.Success(order.copy(status = OrderStatus.EXPIRED))
-
-        OrderEvent.COMPLETE ->
-            OrderTransitionResult.Failure("Нельзя завершить заказ из статуса ${order.status}")
-
-        @Suppress("DEPRECATION")
-        OrderEvent.ACCEPT ->
-            OrderTransitionResult.Failure("ACCEPT устарел — используйте APPLY + SELECT + START")
+        return OrderTransitionResult.Success(nextOrder)
     }
 
-    private fun transitionFromInProgress(
+    private fun decisionFor(
         order: Order,
         event: OrderEvent,
         actor: CurrentUser,
         context: OrderRulesContext
-    ): OrderTransitionResult = when (event) {
-
-        OrderEvent.COMPLETE -> {
-            val allowed = when (actor.role) {
-                Role.DISPATCHER -> actor.id == order.createdByUserId
-                Role.LOADER -> context.loaderHasActiveAssignmentInThisOrder
-            }
-            if (allowed) {
-                OrderTransitionResult.Success(order.copy(status = OrderStatus.COMPLETED))
-            } else {
-                OrderTransitionResult.Failure(
-                    "Завершить заказ может только диспетчер-создатель или грузчик с активным назначением"
-                )
-            }
+    ): Decision {
+        if (order.status in setOf(OrderStatus.COMPLETED, OrderStatus.CANCELED, OrderStatus.EXPIRED)) {
+            return Decision.denied(OrderActionBlockReason.TerminalStatus(order.status))
         }
 
-        OrderEvent.CANCEL -> {
-            if (actor.id != order.createdByUserId) {
-                OrderTransitionResult.Failure(
-                    "Только диспетчер-создатель может отменить заказ в процессе выполнения"
-                )
-            } else {
-                OrderTransitionResult.Success(order.copy(status = OrderStatus.CANCELED))
-            }
+        return when (event) {
+            OrderEvent.APPLY -> canApply(order, actor, context)
+            OrderEvent.WITHDRAW -> canWithdraw(order, actor, context)
+            OrderEvent.SELECT -> canSelect(order, actor)
+            OrderEvent.UNSELECT -> canUnselect(order, actor)
+            OrderEvent.START -> canStart(order, actor)
+            OrderEvent.CANCEL -> canCancel(order, actor)
+            OrderEvent.COMPLETE -> canComplete(order, actor, context)
+            OrderEvent.EXPIRE -> canExpire(order)
+        }
+    }
+
+    private fun canApply(order: Order, actor: CurrentUser, context: OrderRulesContext): Decision {
+        if (order.status != OrderStatus.STAFFING) {
+            return Decision.denied(OrderActionBlockReason.ActionAllowedOnlyInStatus(OrderStatus.STAFFING))
+        }
+        if (actor.role != Role.LOADER) return Decision.denied(OrderActionBlockReason.OnlyLoaderCanApply)
+
+        val alreadyApplied = order.applications.any {
+            it.loaderId == actor.id && it.status == OrderApplicationStatus.APPLIED
+        }
+        val alreadySelected = order.applications.any {
+            it.loaderId == actor.id && it.status == OrderApplicationStatus.SELECTED
         }
 
-        OrderEvent.APPLY ->
-            OrderTransitionResult.Failure("Нельзя откликнуться: заказ в статусе ${order.status}")
+        val reason = when {
+            context.loaderHasActiveAssignmentInThisOrder -> OrderActionBlockReason.AlreadyAssignedToOrder
+            context.activeAssignmentExists -> OrderActionBlockReason.ActiveAssignmentExists
+            context.activeApplicationsForLimitCount >= limits.maxActiveApplications -> OrderActionBlockReason.ApplyLimitReached
+            alreadyApplied -> OrderActionBlockReason.AlreadyApplied
+            alreadySelected -> OrderActionBlockReason.AlreadySelected
+            else -> null
+        }
+        return if (reason == null) Decision.allowed() else Decision.denied(reason)
+    }
 
-        OrderEvent.WITHDRAW ->
-            OrderTransitionResult.Failure("Нельзя отозвать отклик: заказ в статусе ${order.status}")
+    private fun canWithdraw(order: Order, actor: CurrentUser, context: OrderRulesContext): Decision {
+        if (order.status != OrderStatus.STAFFING) {
+            return Decision.denied(OrderActionBlockReason.ActionAllowedOnlyInStatus(OrderStatus.STAFFING))
+        }
+        if (actor.role != Role.LOADER) return Decision.denied(OrderActionBlockReason.OnlyLoaderCanWithdraw)
 
-        OrderEvent.SELECT ->
-            OrderTransitionResult.Failure("Нельзя выбрать грузчика: заказ в статусе ${order.status}")
+        val hasActiveApplication = order.applications.any {
+            it.loaderId == actor.id && it.status in setOf(OrderApplicationStatus.APPLIED, OrderApplicationStatus.SELECTED)
+        }
 
-        OrderEvent.UNSELECT ->
-            OrderTransitionResult.Failure("Нельзя снять выбор: заказ в статусе ${order.status}")
+        return if (hasActiveApplication) Decision.allowed()
+        else Decision.denied(OrderActionBlockReason.NoActiveApplicationToWithdraw)
+    }
 
-        OrderEvent.START ->
-            OrderTransitionResult.Failure("Заказ уже запущен")
+    private fun canSelect(order: Order, actor: CurrentUser): Decision {
+        if (order.status != OrderStatus.STAFFING) {
+            return Decision.denied(OrderActionBlockReason.UnsupportedEventForStatus(OrderEvent.SELECT, order.status))
+        }
+        if (actor.role != Role.DISPATCHER || actor.id != order.createdByUserId) {
+            return Decision.denied(OrderActionBlockReason.OnlyDispatcherCreatorCanManageStaffing)
+        }
+        return Decision.allowed()
+    }
 
-        OrderEvent.EXPIRE ->
-            OrderTransitionResult.Failure("Нельзя истечь заказ в статусе ${order.status}")
+    private fun canUnselect(order: Order, actor: CurrentUser): Decision {
+        if (order.status != OrderStatus.STAFFING) {
+            return Decision.denied(OrderActionBlockReason.UnsupportedEventForStatus(OrderEvent.UNSELECT, order.status))
+        }
+        if (actor.role != Role.DISPATCHER || actor.id != order.createdByUserId) {
+            return Decision.denied(OrderActionBlockReason.OnlyDispatcherCreatorCanManageStaffing)
+        }
+        return Decision.allowed()
+    }
 
-        @Suppress("DEPRECATION")
-        OrderEvent.ACCEPT ->
-            OrderTransitionResult.Failure("ACCEPT устарел — используйте APPLY + SELECT + START")
+    private fun canStart(order: Order, actor: CurrentUser): Decision {
+        if (order.status != OrderStatus.STAFFING) {
+            return Decision.denied(OrderActionBlockReason.UnsupportedEventForStatus(OrderEvent.START, order.status))
+        }
+        if (actor.role != Role.DISPATCHER) return Decision.denied(OrderActionBlockReason.OnlyDispatcherCanStart)
+        if (actor.id != order.createdByUserId) {
+            return Decision.denied(OrderActionBlockReason.OnlyDispatcherCreatorCanManageStaffing)
+        }
+
+        val selectedCount = order.applications.count { it.status == OrderApplicationStatus.SELECTED }
+        return if (selectedCount == order.workersTotal) {
+            Decision.allowed()
+        } else {
+            Decision.denied(OrderActionBlockReason.SelectedCountMismatch(selectedCount, order.workersTotal))
+        }
+    }
+
+    private fun canCancel(order: Order, actor: CurrentUser): Decision {
+        if (order.status !in setOf(OrderStatus.STAFFING, OrderStatus.IN_PROGRESS)) {
+            return Decision.denied(OrderActionBlockReason.UnsupportedEventForStatus(OrderEvent.CANCEL, order.status))
+        }
+        if (actor.role != Role.DISPATCHER || actor.id != order.createdByUserId) {
+            return Decision.denied(OrderActionBlockReason.OnlyDispatcherCreatorCanCancel)
+        }
+        return Decision.allowed()
+    }
+
+    private fun canComplete(order: Order, actor: CurrentUser, context: OrderRulesContext): Decision {
+        if (order.status != OrderStatus.IN_PROGRESS) {
+            return Decision.denied(OrderActionBlockReason.ActionAllowedOnlyInStatus(OrderStatus.IN_PROGRESS))
+        }
+        val allowed = when (actor.role) {
+            Role.DISPATCHER -> actor.id == order.createdByUserId
+            Role.LOADER -> context.loaderHasActiveAssignmentInThisOrder
+        }
+        return if (allowed) Decision.allowed()
+        else Decision.denied(OrderActionBlockReason.OnlyDispatcherCreatorOrAssignedLoaderCanComplete)
+    }
+
+    private fun canExpire(order: Order): Decision {
+        return if (order.status == OrderStatus.STAFFING) Decision.allowed()
+        else Decision.denied(OrderActionBlockReason.UnsupportedEventForStatus(OrderEvent.EXPIRE, order.status))
+    }
+
+    private fun canOpenChat(order: Order, actor: CurrentUser, context: OrderRulesContext): Boolean =
+        when (actor.role) {
+            Role.DISPATCHER -> order.status == OrderStatus.IN_PROGRESS && actor.id == order.createdByUserId
+            Role.LOADER -> order.status == OrderStatus.IN_PROGRESS && context.loaderHasActiveAssignmentInThisOrder
+        }
+
+    private data class Decision(
+        val isAllowed: Boolean,
+        val reason: OrderActionBlockReason?
+    ) {
+        companion object {
+            fun allowed() = Decision(true, null)
+            fun denied(reason: OrderActionBlockReason) = Decision(false, reason)
+        }
     }
 }

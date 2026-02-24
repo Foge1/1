@@ -6,6 +6,7 @@ import com.loaderapp.features.orders.domain.OrderRulesContext
 import com.loaderapp.features.orders.domain.OrderStateMachine
 import com.loaderapp.features.orders.domain.OrderTransitionResult
 import com.loaderapp.features.orders.domain.Role
+import com.loaderapp.features.orders.domain.toDisplayMessage
 import com.loaderapp.features.orders.domain.repository.OrdersRepository
 import com.loaderapp.features.orders.domain.session.CurrentUserProvider
 import javax.inject.Inject
@@ -22,7 +23,8 @@ import javax.inject.Inject
  */
 class CompleteOrderUseCase @Inject constructor(
     private val repository: OrdersRepository,
-    private val currentUserProvider: CurrentUserProvider
+    private val currentUserProvider: CurrentUserProvider,
+    private val stateMachine: OrderStateMachine
 ) {
     suspend operator fun invoke(orderId: Long): UseCaseResult<Unit> {
         val actor = currentUserProvider.getCurrentUser()
@@ -38,7 +40,7 @@ class CompleteOrderUseCase @Inject constructor(
             loaderHasActiveAssignmentInThisOrder = loaderHasActiveAssignment
         )
 
-        val transitionResult = OrderStateMachine.transition(
+        val transitionResult = stateMachine.transition(
             order = order,
             event = OrderEvent.COMPLETE,
             actor = actor,
@@ -47,7 +49,7 @@ class CompleteOrderUseCase @Inject constructor(
         )
 
         if (transitionResult is OrderTransitionResult.Failure) {
-            return UseCaseResult.Failure(transitionResult.reason)
+            return UseCaseResult.Failure(transitionResult.reason.toDisplayMessage())
         }
 
         return runCatching {

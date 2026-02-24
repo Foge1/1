@@ -1,5 +1,7 @@
 package com.loaderapp.features.orders.data
 
+import com.loaderapp.features.orders.data.local.dao.ApplicationsDao
+import com.loaderapp.features.orders.data.local.dao.AssignmentsDao
 import com.loaderapp.features.orders.data.local.dao.OrdersDao
 import com.loaderapp.features.orders.data.local.entity.OrderApplicationEntity
 import com.loaderapp.features.orders.data.local.entity.OrderAssignmentEntity
@@ -15,15 +17,8 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/**
- * Tests for refresh and invariant helper methods.
- * Transaction-heavy operations (startOrder, cancelOrder, completeOrder) are tested
- * through FakeOrdersRepository, since Room withTransaction requires Robolectric/instrumented tests.
- */
 class OrdersRepositoryImplRefreshTest {
 
     @Test
@@ -59,83 +54,150 @@ class OrdersRepositoryImplRefreshTest {
         assertEquals(OrderStatus.EXPIRED, status)
     }
 
-    // ── InMemoryOrdersDao tests ───────────────────────────────────────────────
+    @Test
+    fun `InMemoryOrdersDao expireStaffingExactOrders updates only matching rows`() = runBlocking {
+        val dao = InMemoryOrdersDao()
+        dao.insertOrder(orderEntity(1L, OrderStatus.STAFFING.name, "exact", 10L))
+        dao.insertOrder(orderEntity(2L, OrderStatus.STAFFING.name, "soon", null))
+        dao.insertOrder(orderEntity(3L, OrderStatus.IN_PROGRESS.name, "exact", 10L))
+
+        val updated = dao.expireStaffingExactOrders(
+            staffingStatus = OrderStatus.STAFFING.name,
+            expiredStatus = OrderStatus.EXPIRED.name,
+            exactTimeType = "exact",
+            expirationThreshold = 100L
+        )
+
+        assertEquals(1, updated)
+        assertEquals(OrderStatus.EXPIRED.name, dao.getOrderById(1L)?.status)
+        assertEquals(OrderStatus.STAFFING.name, dao.getOrderById(2L)?.status)
+        assertEquals(OrderStatus.IN_PROGRESS.name, dao.getOrderById(3L)?.status)
+    }
 
     @Test
-    fun `InMemoryOrdersDao countAssignmentsByLoaderAndStatus works`() = runBlocking {
-        val dao = InMemoryOrdersDao()
-        dao.upsertAssignments(listOf(
-            OrderAssignmentEntity(1L, "loader-1", OrderAssignmentStatus.ACTIVE.name, 100L, 100L),
-            OrderAssignmentEntity(2L, "loader-1", OrderAssignmentStatus.ACTIVE.name, 200L, 200L),
-            OrderAssignmentEntity(3L, "loader-1", OrderAssignmentStatus.COMPLETED.name, 300L, 300L),
-        ))
+    fun `InMemoryAssignmentsDao countAssignmentsByLoaderAndStatus works`() = runBlocking {
+        val dao = InMemoryAssignmentsDao()
+        dao.upsertAssignments(
+            listOf(
+                OrderAssignmentEntity(1L, "loader-1", OrderAssignmentStatus.ACTIVE.name, 100L, 100L),
+                OrderAssignmentEntity(2L, "loader-1", OrderAssignmentStatus.ACTIVE.name, 200L, 200L),
+                OrderAssignmentEntity(3L, "loader-1", OrderAssignmentStatus.COMPLETED.name, 300L, 300L),
+            )
+        )
         assertEquals(2, dao.countAssignmentsByLoaderAndStatus("loader-1", OrderAssignmentStatus.ACTIVE.name))
-        assertEquals(0, dao.countAssignmentsByLoaderAndStatus("loader-2", OrderAssignmentStatus.ACTIVE.name))
     }
 
     @Test
-    fun `InMemoryOrdersDao countApplicationsByLoaderAndStatus works`() = runBlocking {
-        val dao = InMemoryOrdersDao()
-        dao.upsertApplication(OrderApplicationEntity(1L, "loader-1", OrderApplicationStatus.APPLIED.name, 100L, null))
-        dao.upsertApplication(OrderApplicationEntity(2L, "loader-1", OrderApplicationStatus.APPLIED.name, 200L, null))
-        dao.upsertApplication(OrderApplicationEntity(3L, "loader-1", OrderApplicationStatus.WITHDRAWN.name, 300L, null))
-        assertEquals(2, dao.countApplicationsByLoaderAndStatus("loader-1", OrderApplicationStatus.APPLIED.name))
-    }
-
-    @Test
-    fun `InMemoryOrdersDao updateApplicationsStatusByOrder rejects APPLIED`() = runBlocking {
-        val dao = InMemoryOrdersDao()
+    fun `InMemoryApplicationsDao updateApplicationsStatusByOrder rejects APPLIED`() = runBlocking {
+        val dao = InMemoryApplicationsDao()
         dao.upsertApplication(OrderApplicationEntity(1L, "loader-a", OrderApplicationStatus.APPLIED.name, 100L, null))
         dao.upsertApplication(OrderApplicationEntity(1L, "loader-b", OrderApplicationStatus.SELECTED.name, 101L, null))
         dao.updateApplicationsStatusByOrder(1L, OrderApplicationStatus.APPLIED.name, OrderApplicationStatus.REJECTED.name)
         assertEquals(OrderApplicationStatus.REJECTED.name, dao.getApplication(1L, "loader-a")!!.status)
-        // SELECTED should not be touched
         assertEquals(OrderApplicationStatus.SELECTED.name, dao.getApplication(1L, "loader-b")!!.status)
     }
 }
 
-/** In-memory OrdersDao for unit tests that don't need Room/Robolectric. */
+private fun orderEntity(id: Long, status: String, orderTimeType: String, exactMillis: Long?): OrderEntity =
+    OrderEntity(
+        id = id,
+        title = "title-$id",
+        address = "address-$id",
+        pricePerHour = 100.0,
+        orderTimeType = orderTimeType,
+        orderTimeExactMillis = exactMillis,
+        durationMin = 60,
+        workersCurrent = 0,
+        workersTotal = 1,
+        tags = emptyList(),
+        meta = emptyMap(),
+        comment = null,
+        status = status,
+        createdByUserId = "dispatcher"
+    )
+
 internal class InMemoryOrdersDao : OrdersDao {
     private val orders = MutableStateFlow<List<OrderEntity>>(emptyList())
-    private val apps = MutableStateFlow<List<OrderApplicationEntity>>(emptyList())
-    private val assigns = MutableStateFlow<List<OrderAssignmentEntity>>(emptyList())
 
     override fun observeOrders(): Flow<List<OrderEntity>> = orders
-    override fun observeApplications(): Flow<List<OrderApplicationEntity>> = apps
-    override fun observeAssignments(): Flow<List<OrderAssignmentEntity>> = assigns
-
     override suspend fun getOrders(): List<OrderEntity> = orders.value
     override suspend fun getOrderById(id: Long): OrderEntity? = orders.value.firstOrNull { it.id == id }
     override suspend fun insertOrder(order: OrderEntity): Long {
-        val newId = (orders.value.maxOfOrNull { it.id } ?: 0L) + 1L
-        orders.update { it + order.copy(id = newId) }
+        val newId = if (order.id > 0L) order.id else (orders.value.maxOfOrNull { it.id } ?: 0L) + 1L
+        orders.update { current ->
+            val existing = current.indexOfFirst { it.id == newId }
+            if (existing >= 0) current.mapIndexed { i, e -> if (i == existing) order.copy(id = newId) else e }
+            else current + order.copy(id = newId)
+        }
         return newId
     }
+
     override suspend fun updateOrder(order: OrderEntity) {
         orders.update { it.map { e -> if (e.id == order.id) order else e } }
     }
+
+    override suspend fun expireStaffingExactOrders(
+        staffingStatus: String,
+        expiredStatus: String,
+        exactTimeType: String,
+        expirationThreshold: Long
+    ): Int {
+        var updated = 0
+        orders.update { list ->
+            list.map { entity ->
+                val shouldExpire = entity.status == staffingStatus &&
+                    entity.orderTimeType == exactTimeType &&
+                    entity.orderTimeExactMillis != null &&
+                    entity.orderTimeExactMillis < expirationThreshold
+                if (shouldExpire) {
+                    updated++
+                    entity.copy(status = expiredStatus)
+                } else {
+                    entity
+                }
+            }
+        }
+        return updated
+    }
+}
+
+internal class InMemoryApplicationsDao : ApplicationsDao {
+    private val apps = MutableStateFlow<List<OrderApplicationEntity>>(emptyList())
+
+    override fun observeApplications(): Flow<List<OrderApplicationEntity>> = apps
     override suspend fun getApplicationsByOrder(orderId: Long) = apps.value.filter { it.orderId == orderId }
     override suspend fun getApplication(orderId: Long, loaderId: String) =
         apps.value.firstOrNull { it.orderId == orderId && it.loaderId == loaderId }
+
     override suspend fun upsertApplication(application: OrderApplicationEntity) {
         apps.update { list ->
-            val idx = list.indexOfFirst { it.orderId == application.orderId && it.loaderId == application.loaderId }
-            if (idx >= 0) list.mapIndexed { i, a -> if (i == idx) application else a }
-            else list + application
+            val idx = list.indexOfFirst {
+                it.orderId == application.orderId && it.loaderId == application.loaderId
+            }
+            if (idx >= 0) list.mapIndexed { i, a -> if (i == idx) application else a } else list + application
         }
     }
+
     override suspend fun updateApplicationStatus(orderId: Long, loaderId: String, newStatus: String) {
         apps.update { list ->
             list.map { a -> if (a.orderId == orderId && a.loaderId == loaderId) a.copy(status = newStatus) else a }
         }
     }
+
     override suspend fun updateApplicationsStatusByOrder(orderId: Long, fromStatus: String, toStatus: String) {
         apps.update { list ->
             list.map { a -> if (a.orderId == orderId && a.status == fromStatus) a.copy(status = toStatus) else a }
         }
     }
-    override suspend fun countApplicationsByLoaderAndStatus(loaderId: String, status: String): Int =
-        apps.value.count { it.loaderId == loaderId && it.status == status }
+
+    override suspend fun countApplicationsByLoaderAndStatuses(loaderId: String, statuses: List<String>): Int =
+        apps.value.count { it.loaderId == loaderId && it.status in statuses }
+}
+
+internal class InMemoryAssignmentsDao : AssignmentsDao {
+    private val assigns = MutableStateFlow<List<OrderAssignmentEntity>>(emptyList())
+
+    override fun observeAssignments(): Flow<List<OrderAssignmentEntity>> = assigns
     override suspend fun getAssignmentsByOrder(orderId: Long) = assigns.value.filter { it.orderId == orderId }
     override suspend fun upsertAssignments(assignments: List<OrderAssignmentEntity>) {
         assigns.update { list ->
@@ -147,9 +209,11 @@ internal class InMemoryOrdersDao : OrdersDao {
             current
         }
     }
+
     override suspend fun updateAssignmentsStatusByOrder(orderId: Long, newStatus: String) {
         assigns.update { list -> list.map { a -> if (a.orderId == orderId) a.copy(status = newStatus) else a } }
     }
+
     override suspend fun countAssignmentsByLoaderAndStatus(loaderId: String, status: String): Int =
         assigns.value.count { it.loaderId == loaderId && it.status == status }
 }

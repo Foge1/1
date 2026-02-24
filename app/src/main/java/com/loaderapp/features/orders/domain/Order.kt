@@ -21,18 +21,7 @@ data class Order(
     val createdByUserId: String,
     // New staffing model
     val applications: List<OrderApplication> = emptyList(),
-    val assignments: List<OrderAssignment> = emptyList(),
-    // Deprecated: kept for backward-compat with old use-sites; derived from assignments on read.
-    @Deprecated(
-        message = "Use assignments to find loader. Will be removed after Step 3.",
-        replaceWith = ReplaceWith("assignments.firstOrNull()?.loaderId")
-    )
-    val acceptedByUserId: String? = null,
-    @Deprecated(
-        message = "Use assignments to find startedAtMillis. Will be removed after Step 3.",
-        replaceWith = ReplaceWith("assignments.firstOrNull()?.startedAtMillis")
-    )
-    val acceptedAtMillis: Long? = null
+    val assignments: List<OrderAssignment> = emptyList()
 ) {
     val dateTime: Long
         get() = when (val time = orderTime) {
@@ -59,4 +48,3 @@ data class OrderDraft(
     val meta: Map<String, String>,
     val comment: String? = null
 )
-

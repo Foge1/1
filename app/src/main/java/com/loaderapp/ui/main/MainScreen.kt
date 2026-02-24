@@ -164,8 +164,7 @@ fun MainScreen(
                     }
                 ) {
                     CreateOrderScreen(
-                        dispatcherId = user.id,
-                        onBack       = { navController.popBackStack() }
+                        onBack = { navController.popBackStack() }
                     )
                 }
             }

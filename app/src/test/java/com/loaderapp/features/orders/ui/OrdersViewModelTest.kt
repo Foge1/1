@@ -1,5 +1,8 @@
 package com.loaderapp.features.orders.ui
 
+import com.loaderapp.features.orders.domain.OrderStateMachine
+import com.loaderapp.features.orders.domain.OrdersLimits
+
 import com.loaderapp.features.orders.domain.Order
 import com.loaderapp.features.orders.domain.OrderApplication
 import com.loaderapp.features.orders.domain.OrderApplicationStatus
@@ -12,13 +15,11 @@ import com.loaderapp.features.orders.domain.Role
 import com.loaderapp.features.orders.domain.repository.OrdersRepository
 import com.loaderapp.features.orders.domain.session.CurrentUser
 import com.loaderapp.features.orders.domain.session.CurrentUserProvider
-import com.loaderapp.features.orders.domain.usecase.AcceptOrderUseCase
 import com.loaderapp.features.orders.domain.usecase.ApplyToOrderUseCase
 import com.loaderapp.features.orders.domain.usecase.CancelOrderUseCase
 import com.loaderapp.features.orders.domain.usecase.CompleteOrderUseCase
 import com.loaderapp.features.orders.domain.usecase.CreateOrderUseCase
 import com.loaderapp.features.orders.domain.usecase.ObserveOrderUiModelsUseCase
-import com.loaderapp.features.orders.domain.usecase.ObserveOrdersForRoleUseCase
 import com.loaderapp.features.orders.domain.usecase.RefreshOrdersUseCase
 import com.loaderapp.features.orders.domain.usecase.SelectApplicantUseCase
 import com.loaderapp.features.orders.domain.usecase.StartOrderUseCase
@@ -73,10 +74,10 @@ class OrdersViewModelTest {
     }
 
     @Test
-    fun `loader canApply false when activeAppliedCount at limit`() = runTest {
+    fun `loader canApply false when activeApplicationsForLimitCount at limit`() = runTest {
         val repository = TestOrdersRepository(
             orders = listOf(testOrder(id = 1L, status = OrderStatus.STAFFING)),
-            activeAppliedCount = 3
+            activeApplicationsForLimitCount = 3
         )
         val viewModel = buildViewModel(repository, loaderUser)
         advanceUntilIdle()
@@ -91,7 +92,7 @@ class OrdersViewModelTest {
         val repository = TestOrdersRepository(
             orders = listOf(testOrder(id = 1L, status = OrderStatus.STAFFING)),
             hasActiveAssignment = false,
-            activeAppliedCount = 2
+            activeApplicationsForLimitCount = 2
         )
         val viewModel = buildViewModel(repository, loaderUser)
         advanceUntilIdle()
@@ -256,26 +257,24 @@ class OrdersViewModelTest {
         user: CurrentUser
     ): OrdersViewModel {
         val userProvider = StaticCurrentUserProvider(user)
-        val observeForRole = ObserveOrdersForRoleUseCase(repository, userProvider)
-        val applyUseCase = ApplyToOrderUseCase(repository, userProvider)
-        @Suppress("DEPRECATION")
+        val stateMachine = OrderStateMachine(OrdersLimits())
+        val applyUseCase = ApplyToOrderUseCase(repository, userProvider, stateMachine)
         val orchestrator = OrdersOrchestrator(
             createOrderUseCase = CreateOrderUseCase(repository, userProvider),
             applyToOrderUseCase = applyUseCase,
-            withdrawApplicationUseCase = WithdrawApplicationUseCase(repository, userProvider),
-            selectApplicantUseCase = SelectApplicantUseCase(repository, userProvider),
-            unselectApplicantUseCase = UnselectApplicantUseCase(repository, userProvider),
-            startOrderUseCase = StartOrderUseCase(repository, userProvider),
-            cancelOrderUseCase = CancelOrderUseCase(repository, userProvider),
-            completeOrderUseCase = CompleteOrderUseCase(repository, userProvider),
-            refreshOrdersUseCase = RefreshOrdersUseCase(repository),
-            acceptOrderUseCase = AcceptOrderUseCase(applyUseCase)
+            withdrawApplicationUseCase = WithdrawApplicationUseCase(repository, userProvider, stateMachine),
+            selectApplicantUseCase = SelectApplicantUseCase(repository, userProvider, stateMachine),
+            unselectApplicantUseCase = UnselectApplicantUseCase(repository, userProvider, stateMachine),
+            startOrderUseCase = StartOrderUseCase(repository, userProvider, stateMachine),
+            cancelOrderUseCase = CancelOrderUseCase(repository, userProvider, stateMachine),
+            completeOrderUseCase = CompleteOrderUseCase(repository, userProvider, stateMachine),
+            refreshOrdersUseCase = RefreshOrdersUseCase(repository)
         )
         return OrdersViewModel(
             observeOrderUiModels = ObserveOrderUiModelsUseCase(
                 repository = repository,
                 currentUserProvider = userProvider,
-                observeOrdersForRoleUseCase = observeForRole
+                stateMachine = stateMachine,
             ),
             ordersOrchestrator = orchestrator
         )
@@ -297,7 +296,7 @@ class OrdersViewModelTest {
         var refreshMode: ExecutionMode = ExecutionMode.Success,
         var applyMode: ExecutionMode = ExecutionMode.Success,
         private val hasActiveAssignment: Boolean = false,
-        private val activeAppliedCount: Int = 0
+        private val activeApplicationsForLimitCount: Int = 0
     ) : OrdersRepository {
 
         private val state = MutableStateFlow(orders)
@@ -318,7 +317,8 @@ class OrdersViewModelTest {
         override suspend fun startOrder(orderId: Long, startedAtMillis: Long) = Unit
 
         override suspend fun hasActiveAssignment(loaderId: String): Boolean = hasActiveAssignment
-        override suspend fun countActiveAppliedApplications(loaderId: String): Int = activeAppliedCount
+        override suspend fun hasActiveAssignmentInOrder(orderId: Long, loaderId: String): Boolean = false
+        override suspend fun countActiveApplicationsForLimit(loaderId: String): Int = activeApplicationsForLimitCount
 
         override suspend fun cancelOrder(id: Long, reason: String?) {
             state.update { orders ->
@@ -363,7 +363,6 @@ class OrdersViewModelTest {
     private val loaderUser = CurrentUser(id = "loader-1", role = Role.LOADER)
     private val dispatcherUser = CurrentUser(id = "dispatcher-1", role = Role.DISPATCHER)
 
-    @Suppress("DEPRECATION")
     private fun testOrder(
         id: Long,
         status: OrderStatus,
@@ -384,8 +383,6 @@ class OrdersViewModelTest {
         meta = mapOf(Order.CREATED_AT_KEY to "0"),
         status = status,
         createdByUserId = createdBy,
-        acceptedByUserId = null,
-        acceptedAtMillis = null,
         applications = applications,
         assignments = assignments
     )

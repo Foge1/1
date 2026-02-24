@@ -11,6 +11,13 @@ import org.junit.Test
 class Migration2To3Test {
 
     @Test
+    fun `orders migrations list contains 2 to 3`() {
+        val pair = OrdersMigrations.ALL.map { it.startVersion to it.endVersion }
+        assertEquals(listOf(2 to 3), pair)
+    }
+
+
+    @Test
     fun `migration start version is 2`() {
         assertEquals(2, Migration2To3.startVersion)
     }

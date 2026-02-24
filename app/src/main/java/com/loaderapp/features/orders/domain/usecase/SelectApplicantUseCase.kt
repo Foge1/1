@@ -13,7 +13,8 @@ import javax.inject.Inject
  */
 class SelectApplicantUseCase @Inject constructor(
     private val repository: OrdersRepository,
-    private val currentUserProvider: CurrentUserProvider
+    private val currentUserProvider: CurrentUserProvider,
+    private val stateMachine: OrderStateMachine
 ) {
     suspend operator fun invoke(orderId: Long, loaderId: String): UseCaseResult<Unit> {
         val actor = currentUserProvider.getCurrentUser()
@@ -25,7 +26,7 @@ class SelectApplicantUseCase @Inject constructor(
         val order = repository.getOrderById(orderId)
             ?: return UseCaseResult.Failure("Заказ не найден")
 
-        val actions = OrderStateMachine.actionsFor(order, actor)
+        val actions = stateMachine.actionsFor(order, actor)
 
         if (!actions.canSelect) {
             return UseCaseResult.Failure("Нет прав для выбора грузчика в этом заказе")
