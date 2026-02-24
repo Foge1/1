@@ -40,7 +40,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.mapSaver
+import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -76,11 +76,19 @@ fun ResponsesScreen(viewModel: ResponsesViewModel) {
 
             else -> {
                 val expandedMap = rememberSaveable(
-                    saver = mapSaver(
-                        save = { state -> state.toMap() },
-                        restore = { restored -> mutableStateMapOf<Long, Boolean>().apply {
-                            restored.forEach { (key, value) -> put(key as Long, value as Boolean) }
-                        } }
+                    saver = listSaver(
+                        save = { state ->
+                            state.entries.flatMap { entry ->
+                                listOf(entry.key, if (entry.value) 1L else 0L)
+                            }
+                        },
+                        restore = { restored ->
+                            mutableStateMapOf<Long, Boolean>().apply {
+                                restored.chunked(2).forEach { (orderId, expandedFlag) ->
+                                    put(orderId, expandedFlag == 1L)
+                                }
+                            }
+                        }
                     )
                 ) { mutableStateMapOf<Long, Boolean>() }
                 LazyColumn(
