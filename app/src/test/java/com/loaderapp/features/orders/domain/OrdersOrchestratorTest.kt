@@ -1,5 +1,6 @@
 package com.loaderapp.features.orders.domain
 
+import com.loaderapp.core.logging.AppLogger
 import com.loaderapp.features.orders.domain.OrderStateMachine
 import com.loaderapp.features.orders.domain.OrdersLimits
 
@@ -248,7 +249,8 @@ class OrdersOrchestratorTest {
             startOrderUseCase = StartOrderUseCase(repo, userProvider, stateMachine),
             cancelOrderUseCase = CancelOrderUseCase(repo, userProvider, stateMachine),
             completeOrderUseCase = CompleteOrderUseCase(repo, userProvider, stateMachine),
-            refreshOrdersUseCase = RefreshOrdersUseCase(repo)
+            refreshOrdersUseCase = RefreshOrdersUseCase(repo),
+            appLogger = TestAppLogger
         )
     }
 
@@ -323,4 +325,9 @@ class OrdersOrchestratorTest {
         const val LOADER_ID = "loader-1"
         const val DISPATCHER_ID = "dispatcher-1"
     }
+}
+
+
+private object TestAppLogger : AppLogger {
+    override fun d(tag: String, message: String) = Unit
 }

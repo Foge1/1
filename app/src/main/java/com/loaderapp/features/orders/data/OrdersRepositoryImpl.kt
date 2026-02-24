@@ -1,7 +1,7 @@
 package com.loaderapp.features.orders.data
 
-import android.util.Log
 import androidx.room.withTransaction
+import com.loaderapp.core.logging.AppLogger
 import com.loaderapp.features.orders.data.local.dao.ApplicationsDao
 import com.loaderapp.features.orders.data.local.dao.AssignmentsDao
 import com.loaderapp.features.orders.data.local.dao.OrdersDao
@@ -29,6 +29,7 @@ class OrdersRepositoryImpl @Inject constructor(
     private val applicationsDao: ApplicationsDao,
     private val assignmentsDao: AssignmentsDao,
     private val ordersGraphMapper: OrdersGraphMapper,
+    private val appLogger: AppLogger,
 ) : OrdersRepository {
 
     override fun observeOrders(): Flow<List<Order>> =
@@ -218,7 +219,7 @@ class OrdersRepositoryImpl @Inject constructor(
         )
 
     private fun log(message: String) {
-        Log.d(LOG_TAG, message)
+        appLogger.d(LOG_TAG, message)
     }
 
     private companion object {

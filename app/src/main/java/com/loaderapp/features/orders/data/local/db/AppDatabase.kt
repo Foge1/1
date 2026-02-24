@@ -16,7 +16,7 @@ import com.loaderapp.features.orders.data.local.entity.OrdersConverters
         OrderAssignmentEntity::class
     ],
     version = 3,
-    exportSchema = false
+    exportSchema = true
 )
 @TypeConverters(OrdersConverters::class)
 abstract class AppDatabase : RoomDatabase() {
