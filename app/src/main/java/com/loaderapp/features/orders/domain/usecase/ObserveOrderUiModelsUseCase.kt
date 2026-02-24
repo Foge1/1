@@ -5,8 +5,8 @@ import com.loaderapp.features.orders.domain.OrderActions
 import com.loaderapp.features.orders.domain.OrderAssignmentStatus
 import com.loaderapp.features.orders.domain.OrderRulesContext
 import com.loaderapp.features.orders.domain.OrderStateMachine
-import com.loaderapp.features.orders.domain.OrderStatus
 import com.loaderapp.features.orders.domain.Role
+import com.loaderapp.features.orders.domain.orders.filterForUser
 import com.loaderapp.features.orders.domain.repository.OrdersRepository
 import com.loaderapp.features.orders.domain.session.CurrentUser
 import com.loaderapp.features.orders.domain.session.CurrentUserProvider
@@ -33,7 +33,7 @@ class ObserveOrderUiModelsUseCase @Inject constructor(
         }.mapLatest { (actor, orders) ->
             val visibleOrders = orders.filterForUser(actor)
             val baseContext = buildBaseContext(actor)
-            visibleOrders.map { order -> order.toUiModel(actor, baseContext) }
+            visibleOrders.map { order: Order -> order.toUiModel(actor, baseContext) }
         }
 
     private suspend fun buildBaseContext(actor: CurrentUser): OrderRulesContext =
@@ -73,19 +73,3 @@ class ObserveOrderUiModelsUseCase @Inject constructor(
         )
     }
 }
-
-private fun List<Order>.filterForUser(user: CurrentUser): List<Order> =
-    when (user.role) {
-        Role.DISPATCHER -> filter { order -> order.createdByUserId == user.id }
-        Role.LOADER -> filter { order ->
-            when (order.status) {
-                OrderStatus.STAFFING -> true
-                OrderStatus.IN_PROGRESS,
-                OrderStatus.COMPLETED,
-                OrderStatus.CANCELED,
-                OrderStatus.EXPIRED -> {
-                    order.assignments.any { it.loaderId == user.id }
-                }
-            }
-        }
-    }
