@@ -27,7 +27,7 @@ class CompleteOrderUseCase @Inject constructor(
     private val stateMachine: OrderStateMachine
 ) {
     suspend operator fun invoke(orderId: Long): UseCaseResult<Unit> {
-        val actor = currentUserProvider.getCurrentUser()
+        val actor = currentUserProvider.requireCurrentUserOnce()
         val order = repository.getOrderById(orderId)
             ?: return UseCaseResult.Failure("Заказ не найден")
 

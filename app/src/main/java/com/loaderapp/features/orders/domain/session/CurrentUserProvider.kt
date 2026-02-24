@@ -9,6 +9,7 @@ data class CurrentUser(
 )
 
 interface CurrentUserProvider {
-    fun observeCurrentUser(): Flow<CurrentUser>
-    suspend fun getCurrentUser(): CurrentUser
+    fun observeCurrentUser(): Flow<CurrentUser?>
+    suspend fun getCurrentUserOrNull(): CurrentUser?
+    suspend fun requireCurrentUserOnce(): CurrentUser
 }

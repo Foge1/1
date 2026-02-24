@@ -24,16 +24,22 @@ class ObserveOrderUiModelsUseCase @Inject constructor(
     private val currentUserProvider: CurrentUserProvider,
     private val stateMachine: OrderStateMachine,
 ) {
-    operator fun invoke(): Flow<List<OrderUiModel>> =
+    operator fun invoke(): Flow<ObserveOrderUiModelsResult> =
         combine(
             currentUserProvider.observeCurrentUser(),
             repository.observeOrders()
         ) { actor, orders ->
             actor to orders
         }.mapLatest { (actor, orders) ->
-            val visibleOrders = orders.filterForUser(actor)
-            val baseContext = buildBaseContext(actor)
-            visibleOrders.map { order: Order -> order.toUiModel(actor, baseContext) }
+            if (actor == null) {
+                ObserveOrderUiModelsResult.NotSelected
+            } else {
+                val visibleOrders = orders.filterForUser(actor)
+                val baseContext = buildBaseContext(actor)
+                ObserveOrderUiModelsResult.Selected(
+                    visibleOrders.map { order: Order -> order.toUiModel(actor, baseContext) }
+                )
+            }
         }
 
     private suspend fun buildBaseContext(actor: CurrentUser): OrderRulesContext =
@@ -72,4 +78,9 @@ class ObserveOrderUiModelsUseCase @Inject constructor(
             canOpenChat = actions.canOpenChat,
         )
     }
+}
+
+sealed interface ObserveOrderUiModelsResult {
+    data object NotSelected : ObserveOrderUiModelsResult
+    data class Selected(val orders: List<OrderUiModel>) : ObserveOrderUiModelsResult
 }

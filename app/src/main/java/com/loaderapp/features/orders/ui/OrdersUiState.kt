@@ -7,5 +7,6 @@ data class OrdersUiState(
     val loading: Boolean = true,
     val refreshing: Boolean = false,
     val errorMessage: String? = null,
-    val pendingActions: Set<Long> = emptySet()
+    val pendingActions: Set<Long> = emptySet(),
+    val requiresUserSelection: Boolean = false
 )

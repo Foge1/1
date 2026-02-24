@@ -223,14 +223,16 @@ class OrdersOwnershipUseCasesTest {
 
     private class StaticCurrentUserProvider(private val currentUser: CurrentUser) : CurrentUserProvider {
         private val state = MutableStateFlow(currentUser)
-        override fun observeCurrentUser(): Flow<CurrentUser> = state
-        override suspend fun getCurrentUser(): CurrentUser = state.value
+        override fun observeCurrentUser(): Flow<CurrentUser?> = state
+        override suspend fun getCurrentUserOrNull(): CurrentUser? = state.value
+        override suspend fun requireCurrentUserOnce(): CurrentUser = state.value ?: error("Current user is not selected")
     }
 
     private class FakeCurrentUserProvider(initial: CurrentUser) : CurrentUserProvider {
-        private val state = MutableStateFlow(initial)
-        override fun observeCurrentUser(): Flow<CurrentUser> = state
-        override suspend fun getCurrentUser(): CurrentUser = state.value
+        private val state = MutableStateFlow<CurrentUser?>(initial)
+        override fun observeCurrentUser(): Flow<CurrentUser?> = state
+        override suspend fun getCurrentUserOrNull(): CurrentUser? = state.value
+        override suspend fun requireCurrentUserOnce(): CurrentUser = state.value ?: error("Current user is not selected")
         suspend fun emit(currentUser: CurrentUser) { state.emit(currentUser) }
     }
 
