@@ -4,8 +4,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.loaderapp.features.orders.domain.OrderApplicationStatus
 import com.loaderapp.features.orders.domain.OrderStatus
+import com.loaderapp.features.orders.domain.usecase.GetRespondersWithAvailabilityUseCase
 import com.loaderapp.features.orders.domain.usecase.ObserveOrderUiModelsResult
 import com.loaderapp.features.orders.domain.usecase.ObserveOrderUiModelsUseCase
+import com.loaderapp.features.orders.domain.usecase.ResponderAvailability
 import com.loaderapp.features.orders.domain.usecase.UseCaseResult
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -22,6 +24,7 @@ import kotlinx.coroutines.launch
 @HiltViewModel
 class ResponsesViewModel @Inject constructor(
     private val observeOrderUiModels: ObserveOrderUiModelsUseCase,
+    private val getRespondersWithAvailability: GetRespondersWithAvailabilityUseCase,
     private val ordersOrchestrator: OrdersOrchestrator,
 ) : ViewModel() {
 
@@ -38,19 +41,32 @@ class ResponsesViewModel @Inject constructor(
     private fun observeResponses() {
         viewModelScope.launch {
             observeOrderUiModels().collect { result ->
-                _uiState.update { state ->
-                    when (result) {
-                        ObserveOrderUiModelsResult.NotSelected -> state.copy(
-                            loading = false,
-                            items = emptyList(),
-                            errorMessage = null,
-                        )
+                when (result) {
+                    ObserveOrderUiModelsResult.NotSelected -> {
+                        _uiState.update { state ->
+                            state.copy(
+                                loading = false,
+                                items = emptyList(),
+                                errorMessage = null,
+                            )
+                        }
+                    }
 
-                        is ObserveOrderUiModelsResult.Selected -> state.copy(
-                            loading = false,
-                            errorMessage = null,
-                            items = result.orders.toResponsesItems()
-                        )
+                    is ObserveOrderUiModelsResult.Selected -> {
+                        val responderIds = result.orders
+                            .asSequence()
+                            .filter { it.order.status == OrderStatus.STAFFING }
+                            .flatMap { order -> order.visibleApplicants.asSequence().map { it.loaderId } }
+                            .distinct()
+                            .toList()
+                        val availability = getRespondersWithAvailability(responderIds)
+                        _uiState.update { state ->
+                            state.copy(
+                                loading = false,
+                                errorMessage = null,
+                                items = result.orders.toResponsesItems(availability)
+                            )
+                        }
                     }
                 }
             }
@@ -94,19 +110,34 @@ class ResponsesViewModel @Inject constructor(
     }
 }
 
-internal fun List<OrderUiModel>.toResponsesItems(): List<OrderResponsesUiModel> =
+internal fun List<OrderUiModel>.toResponsesItems(
+    availability: Map<String, ResponderAvailability>
+): List<OrderResponsesUiModel> =
     asSequence()
         .filter { it.order.status == OrderStatus.STAFFING }
         .map { order ->
             val responses = order.visibleApplicants.map { application ->
                 val isSelected = application.status == OrderApplicationStatus.SELECTED
-                val canToggle = if (isSelected) order.canUnselect else order.canSelect
+                val loaderAvailability = availability[application.loaderId]
+                val isBusyOutsideCurrentOrder = loaderAvailability?.isBusy == true &&
+                    loaderAvailability.busyOrderId != order.order.id
+                val canToggle = if (isSelected) {
+                    order.canUnselect
+                } else {
+                    order.canSelect && !isBusyOutsideCurrentOrder
+                }
                 ResponseRowUiModel(
                     loaderId = application.loaderId,
                     loaderName = application.loaderId,
                     isSelected = isSelected,
                     canToggle = canToggle,
-                    toggleDisabledReason = if (canToggle) null else "Недоступно"
+                    toggleDisabledReason = when {
+                        canToggle -> null
+                        isBusyOutsideCurrentOrder -> "Грузчик уже в работе"
+                        else -> "Недоступно"
+                    },
+                    isBusy = isBusyOutsideCurrentOrder,
+                    busyOrderId = loaderAvailability?.busyOrderId
                 )
             }
             val selectedCount = order.selectedApplicantsCount

@@ -233,7 +233,16 @@ private fun ResponseRow(
             Icon(Icons.Outlined.Person, null, modifier = Modifier.size(14.dp))
         }
         Spacer(Modifier.width(8.dp))
-        Text(item.loaderName, modifier = Modifier.weight(1f), maxLines = 1)
+        Column(modifier = Modifier.weight(1f)) {
+            Text(item.loaderName, maxLines = 1)
+            if (item.isBusy) {
+                Text(
+                    text = "В работе",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.error
+                )
+            }
+        }
 
         val enabled = item.canToggle && !actionsBlocked
         IconButton(onClick = onToggle, enabled = enabled) {

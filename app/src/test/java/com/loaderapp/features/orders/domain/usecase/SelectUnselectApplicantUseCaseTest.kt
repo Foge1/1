@@ -41,6 +41,21 @@ class SelectUnselectApplicantUseCaseTest {
         assertEquals(OrderApplicationStatus.APPLIED, repo.currentApplicationStatus())
     }
 
+
+    @Test
+    fun `select returns AlreadyAssigned and does not mutate repository when loader is busy`() = runBlocking {
+        val repo = TrackingOrdersRepository(busyAssignments = mapOf("loader-1" to 77L))
+        val currentUserProvider = StaticCurrentUserProvider(CurrentUser("dispatcher-1", Role.DISPATCHER))
+        val stateMachine = OrderStateMachine(OrdersLimits())
+
+        val select = SelectApplicantUseCase(repo, currentUserProvider, stateMachine)
+
+        val result = select.select(1L, "loader-1")
+
+        assertTrue(result is SelectApplicantResult.AlreadyAssigned)
+        assertEquals(0, repo.selectCalls)
+        assertEquals(OrderApplicationStatus.APPLIED, repo.currentApplicationStatus())
+    }
     private class StaticCurrentUserProvider(currentUser: CurrentUser) : CurrentUserProvider {
         private val state = MutableStateFlow<CurrentUser?>(currentUser)
         override fun observeCurrentUser(): Flow<CurrentUser?> = state
@@ -48,7 +63,9 @@ class SelectUnselectApplicantUseCaseTest {
         override suspend fun requireCurrentUserOnce(): CurrentUser = state.value ?: error("Current user is not selected")
     }
 
-    private class TrackingOrdersRepository : OrdersRepository {
+    private class TrackingOrdersRepository(
+        private val busyAssignments: Map<String, Long> = emptyMap()
+    ) : OrdersRepository {
         private val state = MutableStateFlow(listOf(baseOrder()))
         var selectCalls: Int = 0
         var unselectCalls: Int = 0
@@ -95,7 +112,8 @@ class SelectUnselectApplicantUseCaseTest {
         override suspend fun applyToOrder(orderId: Long, loaderId: String, now: Long) = Unit
         override suspend fun withdrawApplication(orderId: Long, loaderId: String) = Unit
         override suspend fun startOrder(orderId: Long, startedAtMillis: Long) = Unit
-        override suspend fun hasActiveAssignment(loaderId: String): Boolean = false
+        override suspend fun hasActiveAssignment(loaderId: String): Boolean = busyAssignments.containsKey(loaderId)
+        override suspend fun getBusyAssignments(loaderIds: Collection<String>): Map<String, Long> = busyAssignments.filterKeys { it in loaderIds }
         override suspend fun hasActiveAssignmentInOrder(orderId: Long, loaderId: String): Boolean = false
         override suspend fun countActiveApplicationsForLimit(loaderId: String): Int = 0
     }

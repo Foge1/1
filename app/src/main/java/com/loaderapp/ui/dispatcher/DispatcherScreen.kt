@@ -48,6 +48,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.text.input.TextFieldValue
 import com.loaderapp.features.orders.ui.OrderUiModel
 import com.loaderapp.features.orders.ui.OrdersTab
 import com.loaderapp.features.orders.ui.OrdersViewModel
@@ -269,14 +270,27 @@ private fun DispatcherHistoryPage(
     onOrderClick: (Long) -> Unit,
     onQueryChange: (String) -> Unit
 ) {
+    var localQuery by rememberSaveable(stateSaver = TextFieldValue.Saver) {
+        mutableStateOf(TextFieldValue(state.query))
+    }
+
+    LaunchedEffect(state.query) {
+        if (state.query.isEmpty() && localQuery.text.isNotEmpty()) {
+            localQuery = TextFieldValue("")
+        }
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(horizontal = 16.dp)
     ) {
         OutlinedTextField(
-            value = state.query,
-            onValueChange = onQueryChange,
+            value = localQuery,
+            onValueChange = { newValue ->
+                localQuery = newValue
+                onQueryChange(newValue.text)
+            },
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = 8.dp),

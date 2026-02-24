@@ -76,7 +76,7 @@ fun MainScreen(
     val dispatcherOrdersState by dispatcherOrdersVm?.uiState?.collectAsState() ?: remember { mutableStateOf(null) }
     val navBackStack  by navController.currentBackStackEntryAsState()
     val currentRoute  = navBackStack?.destination?.route
-    val tabs          = tabsForRole(user.role, dispatcherOrdersState?.responsesBadgeCount ?: 0)
+    val tabs          = tabsForRole(user.role, dispatcherOrdersState?.responsesBadge?.totalResponses ?: 0)
 
     val isFullscreen  = currentRoute in FULLSCREEN_ROUTES
     val selectedIndex = tabs.indexOfFirst { it.route == currentRoute }.coerceAtLeast(0)
