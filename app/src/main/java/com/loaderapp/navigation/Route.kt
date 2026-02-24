@@ -9,6 +9,7 @@ sealed class Route(val route: String) {
     // ── Вкладки Bottom Nav ───────────────────────────────────────────────────
     object Home     : Route("home")
     object History  : Route("history")
+    object Responses : Route("responses")
     object Rating   : Route("rating")
     object Profile  : Route("profile")
     object Settings : Route("settings")

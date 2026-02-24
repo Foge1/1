@@ -21,6 +21,8 @@ import com.loaderapp.ui.components.AppBottomBar
 import com.loaderapp.ui.components.BottomNavItem
 import com.loaderapp.ui.dispatcher.CreateOrderScreen
 import com.loaderapp.ui.dispatcher.DispatcherScreen
+import com.loaderapp.features.orders.ui.ResponsesViewModel
+import com.loaderapp.ui.dispatcher.ResponsesScreen
 import com.loaderapp.ui.history.HistoryScreen
 import com.loaderapp.ui.loader.LoaderScreen
 import com.loaderapp.ui.profile.ProfileScreen
@@ -45,12 +47,17 @@ private val FULLSCREEN_ROUTES: Set<String> = setOf(Route.CreateOrder.route)
 @Composable
 private fun tabsForRole(role: UserRoleModel): List<TabConfig> {
     val homeIcon = if (role == UserRoleModel.DISPATCHER) Icons.Default.Dashboard
-                   else Icons.Default.LocalShipping
+    else Icons.Default.LocalShipping
+    val middleTab = if (role == UserRoleModel.DISPATCHER) {
+        TabConfig(Route.Responses.route, BottomNavItem(Icons.Default.History, "Отклики"))
+    } else {
+        TabConfig(Route.History.route, BottomNavItem(Icons.Default.History, "История"))
+    }
     return listOf(
-        TabConfig(Route.Home.route,     BottomNavItem(homeIcon,               "Заказы")),
-        TabConfig(Route.History.route,  BottomNavItem(Icons.Default.History,  "История")),
-        TabConfig(Route.Rating.route,   BottomNavItem(Icons.Default.Star,     "Рейтинг")),
-        TabConfig(Route.Profile.route,  BottomNavItem(Icons.Default.Person,   "Профиль")),
+        TabConfig(Route.Home.route, BottomNavItem(homeIcon, "Заказы")),
+        middleTab,
+        TabConfig(Route.Rating.route, BottomNavItem(Icons.Default.Star, "Рейтинг")),
+        TabConfig(Route.Profile.route, BottomNavItem(Icons.Default.Person, "Профиль")),
         TabConfig(Route.Settings.route, BottomNavItem(Icons.Default.Settings, "Настройки"))
     )
 }
@@ -140,12 +147,25 @@ fun MainScreen(
 
                 composable(Route.History.route) {
                     HistoryScreen(
-                        userId       = user.id,
-                        userRole     = user.role,
+                        userId = user.id,
+                        userRole = user.role,
                         onOrderClick = { orderId ->
                             onOrderClick(orderId, user.role == UserRoleModel.DISPATCHER)
                         }
                     )
+                }
+
+                composable(Route.Responses.route) {
+                    if (user.role == UserRoleModel.DISPATCHER) {
+                        val responsesVm: ResponsesViewModel = hiltViewModel()
+                        ResponsesScreen(viewModel = responsesVm)
+                    } else {
+                        HistoryScreen(
+                            userId = user.id,
+                            userRole = user.role,
+                            onOrderClick = { orderId -> onOrderClick(orderId, false) }
+                        )
+                    }
                 }
 
                 composable(Route.Rating.route)   { RatingScreen() }

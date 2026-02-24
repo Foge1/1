@@ -124,12 +124,6 @@ fun DispatcherScreen(
                             StaffingOrderActions(
                                 order = order,
                                 pending = state.pendingActions.contains(order.order.id),
-                                onSelectApplicant = { loaderId ->
-                                    viewModel.onSelectApplicant(order.order.id, loaderId)
-                                },
-                                onUnselectApplicant = { loaderId ->
-                                    viewModel.onUnselectApplicant(order.order.id, loaderId)
-                                },
                                 onStart = { viewModel.onStartClicked(order.order.id) },
                                 onCancel = { viewModel.onCancelClicked(order.order.id) }
                             )
@@ -202,29 +196,18 @@ fun DispatcherScreen(
 private fun StaffingOrderActions(
     order: OrderUiModel,
     pending: Boolean,
-    onSelectApplicant: (String) -> Unit,
-    onUnselectApplicant: (String) -> Unit,
     onStart: () -> Unit,
     onCancel: () -> Unit,
 ) {
     var showCancelDialog by remember { mutableStateOf(false) }
 
     Column(modifier = Modifier.fillMaxWidth()) {
-        // Блок откликов показываем всегда (пустой список — тоже информация).
-        ApplicantsBlock(
-            applicants = order.visibleApplicants,
-            selectedCount = order.selectedApplicantsCount,
-            workersTotal = order.order.workersTotal,
-            // Флаги select/unselect из StateMachine — true только у создателя.
-            canSelect = order.canSelect,
-            canUnselect = order.canUnselect,
-            actionsBlocked = pending,
-            onSelect = onSelectApplicant,
-            onUnselect = onUnselectApplicant
+        Text(
+            text = "Отклики: ${order.visibleApplicants.size}",
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
 
-        // "Запустить" показываем только если у актора есть право запуска (canSelect == true →
-        // значит, он создатель-диспетчер). canStart контролирует enabled.
         if (order.canSelect || order.canStart) {
             Spacer(Modifier.height(12.dp))
             StartButton(
