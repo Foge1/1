@@ -284,6 +284,7 @@ class OrdersOrchestratorTest {
         override suspend fun unselectApplicant(orderId: Long, loaderId: String) = Unit
         override suspend fun startOrder(orderId: Long, startedAtMillis: Long) = Unit
         override suspend fun hasActiveAssignment(loaderId: String): Boolean = hasActiveAssignment
+        override suspend fun getBusyAssignments(loaderIds: Collection<String>): Map<String, Long> = emptyMap()
         override suspend fun hasActiveAssignmentInOrder(orderId: Long, loaderId: String): Boolean = false
         override suspend fun countActiveApplicationsForLimit(loaderId: String): Int = activeApplicationsForLimitCount
 

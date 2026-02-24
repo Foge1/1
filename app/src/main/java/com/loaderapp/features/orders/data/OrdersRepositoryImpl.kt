@@ -195,6 +195,14 @@ class OrdersRepositoryImpl @Inject constructor(
             status = OrderAssignmentStatus.ACTIVE
         ) > 0
 
+    override suspend fun getBusyAssignments(loaderIds: Collection<String>): Map<String, Long> {
+        if (loaderIds.isEmpty()) return emptyMap()
+        return assignmentsDao.findActiveAssignmentsByLoaders(
+            loaderIds = loaderIds.toList(),
+            status = OrderAssignmentStatus.ACTIVE.toPersistedValue()
+        ).associate { it.loaderId to it.orderId }
+    }
+
     override suspend fun hasActiveAssignmentInOrder(orderId: Long, loaderId: String): Boolean =
         assignmentsDao.countAssignmentsByOrderLoaderAndStatuses(
             orderId = orderId,

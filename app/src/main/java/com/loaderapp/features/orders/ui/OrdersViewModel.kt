@@ -12,6 +12,7 @@ import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -26,7 +27,9 @@ import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @HiltViewModel
 class OrdersViewModel @Inject constructor(
@@ -68,7 +71,7 @@ class OrdersViewModel @Inject constructor(
                                 availableOrders = emptyList(),
                                 inProgressOrders = emptyList(),
                                 historyOrders = emptyList(),
-                                responsesBadgeCount = 0,
+                                responsesBadge = ResponsesBadgeState(),
                                 history = DispatcherHistoryUiState()
                             )
                         }
@@ -91,8 +94,9 @@ class OrdersViewModel @Inject constructor(
                                 availableOrders = availableOrders,
                                 inProgressOrders = inProgressOrders,
                                 historyOrders = historyOrders,
-                                responsesBadgeCount = (availableOrders + inProgressOrders)
-                                    .sumOf { it.visibleApplicants.size },
+                                responsesBadge = ResponsesBadgeState(
+                                    totalResponses = availableOrders.sumOf { it.visibleApplicants.size }
+                                ),
                                 history = buildHistoryState(
                                     query = historyQuery.value,
                                     historyOrders = historyOrders,
@@ -107,29 +111,22 @@ class OrdersViewModel @Inject constructor(
         }
     }
 
-    // ── Public commands ───────────────────────────────────────────────────────
-
     fun refresh() = submit(OrdersCommand.Refresh)
 
     fun onHistoryQueryChanged(query: String) {
         historyQuery.value = query
     }
 
-    /** Грузчик откликается на заказ. */
     fun onApplyClicked(orderId: Long) = submit(OrdersCommand.Apply(orderId), orderId)
 
-    /** Грузчик отзывает отклик. */
     fun onWithdrawClicked(orderId: Long) = submit(OrdersCommand.Withdraw(orderId), orderId)
 
-    /** Диспетчер-создатель выбирает грузчика. */
     fun onSelectApplicant(orderId: Long, loaderId: String) =
         submit(OrdersCommand.Select(orderId, loaderId), orderId)
 
-    /** Диспетчер-создатель снимает выбор грузчика. */
     fun onUnselectApplicant(orderId: Long, loaderId: String) =
         submit(OrdersCommand.Unselect(orderId, loaderId), orderId)
 
-    /** Диспетчер-создатель запускает заказ (STAFFING → IN_PROGRESS). */
     fun onStartClicked(orderId: Long) = submit(OrdersCommand.Start(orderId), orderId)
 
     fun onCancelClicked(orderId: Long, reason: String? = null) =
@@ -142,19 +139,22 @@ class OrdersViewModel @Inject constructor(
         historyQueryJob?.cancel()
         historyQueryJob = viewModelScope.launch {
             historyQuery
-                .debounce(300)
+                .map { it.trim() }
                 .distinctUntilChanged()
-                .collect { query ->
-                    _uiState.update { state ->
+                .debounce(250)
+                .mapLatest { query ->
+                    val snapshot = _uiState.value
+                    withContext(Dispatchers.Default) {
                         buildHistoryState(
                             query = query,
-                            historyOrders = state.historyOrders,
-                            isLoading = state.loading,
-                            error = state.errorMessage
-                        ).let { historyState ->
-                            state.copy(history = historyState)
-                        }
+                            historyOrders = snapshot.historyOrders,
+                            isLoading = snapshot.loading,
+                            error = snapshot.errorMessage
+                        )
                     }
+                }
+                .collect { historyState ->
+                    _uiState.update { state -> state.copy(history = historyState) }
                 }
         }
     }
@@ -208,8 +208,6 @@ class OrdersViewModel @Inject constructor(
             error = error
         )
     }
-
-    // ── Internal ──────────────────────────────────────────────────────────────
 
     private fun submit(command: OrdersCommand, pendingOrderId: Long? = null) {
         startExecution(command, pendingOrderId)

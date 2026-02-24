@@ -204,6 +204,15 @@ class FakeOrdersRepository @Inject constructor() : OrdersRepository {
     override suspend fun hasActiveAssignment(loaderId: String): Boolean =
         assignments.value.any { it.loaderId == loaderId && it.status == OrderAssignmentStatus.ACTIVE }
 
+    override suspend fun getBusyAssignments(loaderIds: Collection<String>): Map<String, Long> {
+        val ids = loaderIds.toSet()
+        if (ids.isEmpty()) return emptyMap()
+        return assignments.value
+            .asSequence()
+            .filter { it.status == OrderAssignmentStatus.ACTIVE && it.loaderId in ids }
+            .associate { it.loaderId to it.orderId }
+    }
+
     override suspend fun hasActiveAssignmentInOrder(orderId: Long, loaderId: String): Boolean =
         assignments.value.any {
             it.orderId == orderId &&

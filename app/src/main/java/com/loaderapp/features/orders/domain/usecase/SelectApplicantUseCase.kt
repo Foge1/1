@@ -16,27 +16,49 @@ class SelectApplicantUseCase @Inject constructor(
     private val currentUserProvider: CurrentUserProvider,
     private val stateMachine: OrderStateMachine
 ) {
-    suspend operator fun invoke(orderId: Long, loaderId: String): UseCaseResult<Unit> {
+    suspend fun select(orderId: Long, loaderId: String): SelectApplicantResult {
         val actor = currentUserProvider.requireCurrentUserOnce()
 
         if (actor.role != Role.DISPATCHER) {
-            return UseCaseResult.Failure("Только диспетчер может выбирать грузчиков")
+            return SelectApplicantResult.Forbidden("Только диспетчер может выбирать грузчиков")
         }
 
         val order = repository.getOrderById(orderId)
-            ?: return UseCaseResult.Failure("Заказ не найден")
+            ?: return SelectApplicantResult.OrderNotFound
 
         val actions = stateMachine.actionsFor(order, actor)
 
         if (!actions.canSelect) {
-            return UseCaseResult.Failure("Нет прав для выбора грузчика в этом заказе")
+            return SelectApplicantResult.Forbidden("Нет прав для выбора грузчика в этом заказе")
         }
 
+        val hasBusyAssignment = repository.hasActiveAssignment(loaderId)
+        val assignmentInCurrentOrder = repository.hasActiveAssignmentInOrder(orderId, loaderId)
+        if (hasBusyAssignment && !assignmentInCurrentOrder) {
+            return SelectApplicantResult.AlreadyAssigned
+        }
+
+        repository.selectApplicant(orderId, loaderId)
+        return SelectApplicantResult.Success
+    }
+
+    suspend operator fun invoke(orderId: Long, loaderId: String): UseCaseResult<Unit> {
         return runCatching {
-            repository.selectApplicant(orderId, loaderId)
-            UseCaseResult.Success(Unit)
+            when (val result = select(orderId, loaderId)) {
+                SelectApplicantResult.Success -> UseCaseResult.Success(Unit)
+                SelectApplicantResult.OrderNotFound -> UseCaseResult.Failure("Заказ не найден")
+                SelectApplicantResult.AlreadyAssigned -> UseCaseResult.Failure("Грузчик уже в работе на другом заказе")
+                is SelectApplicantResult.Forbidden -> UseCaseResult.Failure(result.reason)
+            }
         }.getOrElse { e ->
             UseCaseResult.Failure(e.message ?: "Не удалось выбрать грузчика")
         }
     }
+}
+
+sealed interface SelectApplicantResult {
+    data object Success : SelectApplicantResult
+    data object OrderNotFound : SelectApplicantResult
+    data object AlreadyAssigned : SelectApplicantResult
+    data class Forbidden(val reason: String) : SelectApplicantResult
 }

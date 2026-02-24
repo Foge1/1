@@ -25,4 +25,6 @@ data class ResponseRowUiModel(
     val isSelected: Boolean,
     val canToggle: Boolean,
     val toggleDisabledReason: String?,
+    val isBusy: Boolean,
+    val busyOrderId: Long?,
 )

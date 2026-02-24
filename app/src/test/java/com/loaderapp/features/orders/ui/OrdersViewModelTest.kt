@@ -265,6 +265,65 @@ class OrdersViewModelTest {
         snackbarCollector.cancel()
     }
 
+
+    @Test
+    fun `responses badge is zero for empty orders`() = runTest {
+        val repository = TestOrdersRepository(orders = emptyList())
+        val viewModel = buildViewModel(repository, dispatcherUser)
+        advanceUntilIdle()
+
+        assertTrue(viewModel.uiState.value.responsesBadge.totalResponses == 0)
+    }
+
+    @Test
+    fun `responses badge sums responses from active orders only`() = runTest {
+        val available = testOrder(
+            id = 1L,
+            status = OrderStatus.STAFFING,
+            applications = listOf(OrderApplication(1L, "l1", OrderApplicationStatus.APPLIED, 0L))
+        )
+        val inProgress = testOrder(
+            id = 2L,
+            status = OrderStatus.IN_PROGRESS,
+            applications = listOf(
+                OrderApplication(2L, "l2", OrderApplicationStatus.APPLIED, 0L),
+                OrderApplication(2L, "l3", OrderApplicationStatus.APPLIED, 0L)
+            )
+        )
+        val history = testOrder(
+            id = 3L,
+            status = OrderStatus.COMPLETED,
+            applications = listOf(OrderApplication(3L, "l4", OrderApplicationStatus.APPLIED, 0L))
+        )
+        val repository = TestOrdersRepository(orders = listOf(available, inProgress, history))
+        val viewModel = buildViewModel(repository, dispatcherUser)
+        advanceUntilIdle()
+
+        assertTrue(viewModel.uiState.value.responsesBadge.totalResponses == 3)
+    }
+
+    @Test
+    fun `responses badge resets to zero when user is not selected`() = runTest {
+        val repository = TestOrdersRepository(
+            orders = listOf(
+                testOrder(
+                    id = 1L,
+                    status = OrderStatus.STAFFING,
+                    applications = listOf(OrderApplication(1L, "l1", OrderApplicationStatus.APPLIED, 0L))
+                )
+            )
+        )
+        val userProvider = NullableCurrentUserProvider(dispatcherUser)
+        val viewModel = buildViewModel(repository, userProvider)
+        advanceUntilIdle()
+        assertTrue(viewModel.uiState.value.responsesBadge.totalResponses == 1)
+
+        userProvider.emit(null)
+        advanceUntilIdle()
+
+        assertTrue(viewModel.uiState.value.responsesBadge.totalResponses == 0)
+    }
+
     // ── Builder ───────────────────────────────────────────────────────────────
 
     private fun TestScope.buildViewModel(
@@ -316,6 +375,7 @@ class OrdersViewModelTest {
         override fun observeCurrentUser(): Flow<CurrentUser?> = state
         override suspend fun getCurrentUserOrNull(): CurrentUser? = state.value
         override suspend fun requireCurrentUserOnce(): CurrentUser = state.value ?: error("Current user is not selected")
+        suspend fun emit(user: CurrentUser?) { state.emit(user) }
     }
 
     private class TestOrdersRepository(
@@ -344,6 +404,7 @@ class OrdersViewModelTest {
         override suspend fun startOrder(orderId: Long, startedAtMillis: Long) = Unit
 
         override suspend fun hasActiveAssignment(loaderId: String): Boolean = hasActiveAssignment
+        override suspend fun getBusyAssignments(loaderIds: Collection<String>): Map<String, Long> = emptyMap()
         override suspend fun hasActiveAssignmentInOrder(orderId: Long, loaderId: String): Boolean = false
         override suspend fun countActiveApplicationsForLimit(loaderId: String): Int = activeApplicationsForLimitCount
 
