@@ -29,4 +29,20 @@ interface ApplicationsDao {
 
     @Query("SELECT COUNT(*) FROM order_applications WHERE loaderId = :loaderId AND status IN (:statuses)")
     suspend fun countApplicationsByLoaderAndStatuses(loaderId: String, statuses: List<String>): Int
+
+    @Query(
+        """
+        SELECT COUNT(*)
+        FROM order_applications AS oa
+        INNER JOIN orders AS o ON o.id = oa.orderId
+        WHERE oa.loaderId = :loaderId
+          AND oa.status IN (:applicationStatuses)
+          AND o.status IN (:activeOrderStatuses)
+        """
+    )
+    suspend fun countActiveApplicationsForLimit(
+        loaderId: String,
+        applicationStatuses: List<String>,
+        activeOrderStatuses: List<String>
+    ): Int
 }

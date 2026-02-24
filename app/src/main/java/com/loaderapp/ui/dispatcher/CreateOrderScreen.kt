@@ -117,7 +117,7 @@ fun CreateOrderScreen(
                 }
             )
 
-            if (uiState.isSoon) {
+            if (uiState.selectedDayOption == OrderDayOption.SOON) {
                 Text(
                     text = "Режим: Ближайшее время",
                     style = MaterialTheme.typography.bodyMedium,
@@ -131,14 +131,14 @@ fun CreateOrderScreen(
                     label = dateFormatter.format(Date(uiState.selectedDateMillis)),
                     modifier = Modifier.weight(1f),
                     onClick = { showDatePicker = true },
-                    enabled = uiState.selectedDayOption == OrderDayOption.OTHER_DATE && !uiState.isSoon
+                    enabled = uiState.selectedDayOption == OrderDayOption.OTHER_DATE
                 )
                 AppPickerButton(
                     icon = Icons.Default.AccessTime,
                     label = "%02d:%02d".format(uiState.selectedHour, uiState.selectedMinute),
                     modifier = Modifier.weight(0.7f),
                     onClick = { showTimePicker = true },
-                    enabled = !uiState.isSoon
+                    enabled = uiState.selectedDayOption != OrderDayOption.SOON
                 )
             }
 
@@ -654,5 +654,3 @@ private fun SectionLabel(text: String) {
         modifier   = Modifier.padding(bottom = 2.dp)
     )
 }
-
-

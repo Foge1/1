@@ -212,7 +212,14 @@ class FakeOrdersRepository @Inject constructor() : OrdersRepository {
         }
 
     override suspend fun countActiveApplicationsForLimit(loaderId: String): Int =
-        applications.value.count { it.loaderId == loaderId && it.status == OrderApplicationStatus.APPLIED }
+        applications.value.count { application ->
+            val hasActiveStatus = application.status == OrderApplicationStatus.APPLIED ||
+                application.status == OrderApplicationStatus.SELECTED
+            val orderStatus = orders.value.firstOrNull { it.id == application.orderId }?.status
+            application.loaderId == loaderId &&
+                hasActiveStatus &&
+                orderStatus in OrderStatus.ACTIVE_FOR_APPLICATION_LIMIT
+        }
 
     // ── Private ───────────────────────────────────────────────────────────────
 
@@ -232,4 +239,3 @@ class FakeOrdersRepository @Inject constructor() : OrdersRepository {
         const val ORDER_EXPIRATION_GRACE_MS = 60_000L
     }
 }
-

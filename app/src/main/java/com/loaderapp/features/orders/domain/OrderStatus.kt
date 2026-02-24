@@ -9,4 +9,10 @@ enum class OrderStatus {
     COMPLETED,
     CANCELED,
     EXPIRED
+
+    ;
+
+    companion object {
+        val ACTIVE_FOR_APPLICATION_LIMIT: Set<OrderStatus> = setOf(STAFFING, IN_PROGRESS)
+    }
 }
