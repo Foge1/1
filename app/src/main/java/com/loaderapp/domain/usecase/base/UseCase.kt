@@ -1,6 +1,7 @@
 package com.loaderapp.domain.usecase.base
 
 import com.loaderapp.core.common.Result
+import com.loaderapp.core.common.toAppError
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -16,7 +17,7 @@ abstract class UseCase<in Input, out Output>(
         return try {
             withContext(dispatcher) { execute(params) }
         } catch (e: Exception) {
-            Result.Error(message = e.message ?: "Неизвестная ошибка", exception = e)
+            Result.Error(error = e.toAppError(), exception = e)
         }
     }
 

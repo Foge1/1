@@ -2,6 +2,9 @@ package com.loaderapp.presentation.history
 
 import androidx.lifecycle.viewModelScope
 import com.loaderapp.core.common.UiState
+import com.loaderapp.core.common.toAppError
+import com.loaderapp.core.common.UiText
+import com.loaderapp.presentation.common.toUiText
 import com.loaderapp.domain.model.OrderModel
 import com.loaderapp.domain.model.UserRoleModel
 import com.loaderapp.domain.usecase.order.GetDispatcherHistoryParams
@@ -48,7 +51,7 @@ class HistoryViewModel @Inject constructor(
                 }
             }
             .onEach  { orders -> _historyState.value = UiState.Success(orders) }
-            .catch   { e -> _historyState.value = UiState.Error("Ошибка загрузки истории: ${e.message}") }
+            .catch   { e -> _historyState.value = UiState.Error(e.toAppError().toUiText()) }
             .launchIn(viewModelScope)
     }
 

@@ -23,7 +23,7 @@ sealed class UiState<out T> {
     /**
      * Ошибка загрузки
      */
-    data class Error(val message: String) : UiState<Nothing>()
+    data class Error(val message: UiText) : UiState<Nothing>()
     
     /**
      * Проверка состояний
@@ -67,7 +67,7 @@ inline fun <T> UiState<T>.onSuccess(action: (T) -> Unit): UiState<T> {
 /**
  * Extension для обработки ошибки
  */
-inline fun <T> UiState<T>.onError(action: (String) -> Unit): UiState<T> {
+inline fun <T> UiState<T>.onError(action: (UiText) -> Unit): UiState<T> {
     if (this is UiState.Error) {
         action(message)
     }

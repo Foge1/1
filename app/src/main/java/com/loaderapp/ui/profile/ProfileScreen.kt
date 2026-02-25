@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.loaderapp.core.common.UiState
+import com.loaderapp.ui.common.asString
 import com.loaderapp.domain.model.UserModel
 import com.loaderapp.domain.model.UserRoleModel
 import com.loaderapp.presentation.profile.ProfileStats
@@ -65,7 +66,7 @@ fun ProfileScreen(
 
         when (val state = userState) {
             is UiState.Loading -> LoadingView()
-            is UiState.Error   -> ErrorView(message = state.message, onRetry = null)
+            is UiState.Error   -> ErrorView(message = state.message.asString(), onRetry = null)
             is UiState.Success -> ProfileContent(
                 user          = state.data,
                 stats         = stats,

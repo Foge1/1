@@ -10,6 +10,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.loaderapp.core.common.UiState
+import com.loaderapp.ui.common.asString
 import com.loaderapp.domain.model.UserRoleModel
 import com.loaderapp.presentation.history.HistoryViewModel
 import com.loaderapp.ui.components.*
@@ -34,7 +35,7 @@ fun HistoryScreen(
 
         when (val state = historyState) {
             is UiState.Loading -> LoadingView()
-            is UiState.Error   -> ErrorView(message = state.message)
+            is UiState.Error   -> ErrorView(message = state.message.asString())
             is UiState.Success -> {
                 if (state.data.isEmpty()) {
                     EmptyStateView(

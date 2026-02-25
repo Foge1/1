@@ -3,6 +3,9 @@ package com.loaderapp.presentation.order
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import com.loaderapp.core.common.UiState
+import com.loaderapp.core.common.toAppError
+import com.loaderapp.core.common.UiText
+import com.loaderapp.presentation.common.toUiText
 import com.loaderapp.core.logging.AppLogger
 import com.loaderapp.domain.model.OrderModel
 import com.loaderapp.domain.usecase.order.GetWorkerCountParams
@@ -53,9 +56,9 @@ class OrderDetailViewModel @Inject constructor(
                 _orderState.value = order
                     ?.toLegacyOrderModel()
                     ?.let { UiState.Success(it) }
-                    ?: UiState.Error("Заказ не найден")
+                    ?: UiState.Error(UiText.Dynamic("Заказ не найден"))
             }
-            .catch { e -> _orderState.value = UiState.Error("Ошибка загрузки заказа: ${e.message}") }
+            .catch { e -> _orderState.value = UiState.Error(e.toAppError().toUiText()) }
             .launchIn(viewModelScope)
     }
 

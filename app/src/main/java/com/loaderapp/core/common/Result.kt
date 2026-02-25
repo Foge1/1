@@ -1,95 +1,85 @@
 package com.loaderapp.core.common
 
 /**
- * Sealed class для представления результата операции.
- * Используется для явной обработки успеха/ошибки без исключений.
+ * Legacy result model kept for gradual migration.
+ * New code should use [AppResult].
  */
+@Deprecated(
+    message = "Use AppResult instead",
+    replaceWith = ReplaceWith("AppResult")
+)
 sealed class Result<out T> {
-    /**
-     * Успешный результат с данными
-     */
     data class Success<T>(val data: T) : Result<T>()
-    
-    /**
-     * Ошибка с сообщением и опциональным исключением
-     */
+
     data class Error(
-        val message: String,
+        val error: AppError,
         val exception: Throwable? = null
-    ) : Result<Nothing>()
-    
-    /**
-     * Состояние загрузки
-     */
-    object Loading : Result<Nothing>()
-    
-    /**
-     * Проверка на успех
-     */
-    val isSuccess: Boolean
-        get() = this is Success
-    
-    /**
-     * Проверка на ошибку
-     */
-    val isError: Boolean
-        get() = this is Error
-    
-    /**
-     * Получить данные или null
-     */
-    fun getOrNull(): T? = when (this) {
-        is Success -> data
-        else -> null
+    ) : Result<Nothing>() {
+        constructor(message: String, exception: Throwable? = null) : this(
+            error = AppError.Validation(message = message),
+            exception = exception
+        )
+
+        val message: String
+            get() = when (val current = error) {
+                is AppError.Validation -> current.message ?: "Ошибка валидации"
+                is AppError.Backend -> current.serverMessage ?: "Ошибка сервера"
+                AppError.Auth.Forbidden -> "Доступ запрещён"
+                AppError.Auth.SessionExpired -> "Сессия истекла"
+                AppError.Auth.Unauthorized -> "Требуется авторизация"
+                AppError.Network.Dns -> "DNS ошибка"
+                AppError.Network.NoInternet -> "Нет интернета"
+                AppError.Network.Timeout -> "Превышено время ожидания"
+                AppError.Network.UnknownHost -> "Неизвестный хост"
+                AppError.NotFound -> "Не найдено"
+                is AppError.Storage.Db -> "Ошибка базы данных"
+                is AppError.Storage.Serialization -> "Ошибка сериализации"
+                is AppError.Unknown -> current.cause?.message ?: "Неизвестная ошибка"
+            }
     }
-    
-    /**
-     * Получить данные или значение по умолчанию
-     */
+
+    object Loading : Result<Nothing>()
+
+    val isSuccess: Boolean get() = this is Success
+    val isError: Boolean get() = this is Error
+
+    fun getOrNull(): T? = (this as? Success)?.data
+
     fun getOrDefault(default: @UnsafeVariance T): T = when (this) {
         is Success -> data
         else -> default
     }
 }
 
-/**
- * Extension для map операции над Result
- */
-inline fun <T, R> Result<T>.map(transform: (T) -> R): Result<R> {
-    return when (this) {
-        is Result.Success -> Result.Success(transform(data))
-        is Result.Error -> this
-        is Result.Loading -> this
-    }
+inline fun <T, R> Result<T>.map(transform: (T) -> R): Result<R> = when (this) {
+    is Result.Success -> Result.Success(transform(data))
+    is Result.Error -> this
+    is Result.Loading -> this
 }
 
-/**
- * Extension для flatMap операции над Result
- */
-inline fun <T, R> Result<T>.flatMap(transform: (T) -> Result<R>): Result<R> {
-    return when (this) {
-        is Result.Success -> transform(data)
-        is Result.Error -> this
-        is Result.Loading -> this
-    }
+inline fun <T, R> Result<T>.flatMap(transform: (T) -> Result<R>): Result<R> = when (this) {
+    is Result.Success -> transform(data)
+    is Result.Error -> this
+    is Result.Loading -> this
 }
 
-/**
- * Extension для обработки успеха
- */
 inline fun <T> Result<T>.onSuccess(action: (T) -> Unit): Result<T> {
-    if (this is Result.Success) {
-        action(data)
-    }
+    if (this is Result.Success) action(data)
     return this
 }
 
-/**
- * Extension для обработки ошибки
- */
-inline fun <T> Result<T>.onError(action: (String, Throwable?) -> Unit): Result<T> {
-    if (this is Result.Error) {
-        action(message, exception)
-    }
+inline fun <T> Result<T>.onError(action: (AppError, Throwable?) -> Unit): Result<T> {
+    if (this is Result.Error) action(error, exception)
     return this
+}
+
+fun <T> Result<T>.toAppResult(): AppResult<T> = when (this) {
+    is Result.Success -> AppResult.Success(data)
+    is Result.Error -> AppResult.Failure(error)
+    is Result.Loading -> AppResult.Failure(AppError.Unknown())
+}
+
+fun <T> AppResult<T>.toLegacyResult(): Result<T> = when (this) {
+    is AppResult.Success -> Result.Success(data)
+    is AppResult.Failure -> Result.Error(error)
 }

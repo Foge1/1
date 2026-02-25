@@ -4,6 +4,8 @@ import androidx.lifecycle.viewModelScope
 import com.loaderapp.core.common.UiState
 import com.loaderapp.core.common.onError
 import com.loaderapp.core.common.onSuccess
+import com.loaderapp.core.common.toAppError
+import com.loaderapp.presentation.common.toUiText
 import com.loaderapp.domain.model.OrderModel
 import com.loaderapp.domain.model.OrderStatusModel
 import com.loaderapp.domain.usecase.order.*
@@ -69,7 +71,7 @@ class LoaderViewModel @Inject constructor(
                 }
             }
             .onEach { orders -> _availableOrdersState.setSuccess(orders) }
-            .catch  { e -> _availableOrdersState.setError("Ошибка загрузки заказов: ${e.message}") }
+            .catch  { e -> _availableOrdersState.setError(e.toAppError().toUiText()) }
             .launchIn(viewModelScope)
     }
 
@@ -86,7 +88,7 @@ class LoaderViewModel @Inject constructor(
                     }
             }
             .onEach { orders -> _myOrdersState.setSuccess(orders) }
-            .catch  { e -> _myOrdersState.setError("Ошибка загрузки моих заказов: ${e.message}") }
+            .catch  { e -> _myOrdersState.setError(e.toAppError().toUiText()) }
             .launchIn(viewModelScope)
     }
 
@@ -95,7 +97,7 @@ class LoaderViewModel @Inject constructor(
             .filterNotNull()
             .flatMapLatest { workerId -> getWorkerStatsUseCase(GetWorkerStatsParams(workerId)) }
             .onEach { stats -> _statsState.setSuccess(stats) }
-            .catch  { e -> _statsState.setError("Ошибка загрузки статистики: ${e.message}") }
+            .catch  { e -> _statsState.setError(e.toAppError().toUiText()) }
             .launchIn(viewModelScope)
     }
 
@@ -106,7 +108,7 @@ class LoaderViewModel @Inject constructor(
         launchSafe {
             takeOrderUseCase(TakeOrderParams(order.id, workerId))
                 .onSuccess { _ -> showSnackbar("Заказ успешно взят") }
-                .onError   { msg, _ -> showSnackbar(msg) }
+                .onError   { error, _ -> showSnackbar(error.toUiText()) }
         }
     }
 
@@ -114,7 +116,7 @@ class LoaderViewModel @Inject constructor(
         launchSafe {
             completeOrderUseCase(CompleteOrderParams(order.id))
                 .onSuccess { _ -> showSnackbar("Заказ завершён") }
-                .onError   { msg, _ -> showSnackbar(msg) }
+                .onError   { error, _ -> showSnackbar(error.toUiText()) }
         }
     }
 }

@@ -3,6 +3,9 @@ package com.loaderapp.presentation.profile
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.loaderapp.core.common.UiState
+import com.loaderapp.core.common.toAppError
+import com.loaderapp.core.common.UiText
+import com.loaderapp.presentation.common.toUiText
 import com.loaderapp.domain.model.UserModel
 import com.loaderapp.domain.model.UserRoleModel
 import com.loaderapp.domain.usecase.order.GetDispatcherStatsParams
@@ -57,7 +60,7 @@ class ProfileViewModel @Inject constructor(
                         _userState.value = UiState.Success(user)
                         loadStats(userId, user.role)
                     } else {
-                        _userState.value = UiState.Error("Пользователь не найден")
+                        _userState.value = UiState.Error(UiText.Dynamic("Пользователь не найден"))
                     }
                 }
         }
