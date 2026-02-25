@@ -17,6 +17,8 @@ captures/
 *.jks
 *.keystore
 release/
+!app/src/release/
+!app/src/release/**
 
 ## Generated files
 gen/
