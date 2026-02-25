@@ -1,4 +1,4 @@
-package com.loaderapp.di.features.orders
+package com.loaderapp.features.orders.di
 
 import com.loaderapp.features.orders.domain.OrdersLimits
 import dagger.Module
@@ -9,7 +9,7 @@ import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
-object OrdersDomainModule {
+internal object OrdersDomainModule {
 
     @Provides
     @Singleton

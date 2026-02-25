@@ -17,3 +17,5 @@ dependencyResolutionManagement {
 rootProject.name = "LoaderApp"
 include ':app'
 include ':core'
+
+include ':feature-orders'

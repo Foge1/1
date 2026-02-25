@@ -1,4 +1,4 @@
-package com.loaderapp.di.features.orders
+package com.loaderapp.features.orders.di
 
 import android.content.Context
 import androidx.room.Room
@@ -16,7 +16,7 @@ import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
-object OrdersDataModule {
+internal object OrdersDataModule {
 
     @Provides
     @Singleton

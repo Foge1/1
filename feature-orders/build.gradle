@@ -1,0 +1,73 @@
+plugins {
+    id 'com.android.library'
+    id 'org.jetbrains.kotlin.android'
+    id 'kotlin-kapt'
+    id 'com.google.dagger.hilt.android'
+}
+
+android {
+    namespace 'com.loaderapp.feature.orders'
+    compileSdk 34
+
+    defaultConfig {
+        minSdk 24
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        javaCompileOptions {
+            annotationProcessorOptions {
+                arguments += ["room.schemaLocation": "$projectDir/schemas"]
+            }
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    kotlinOptions {
+        jvmTarget = '17'
+    }
+
+    buildFeatures {
+        buildConfig false
+    }
+
+    sourceSets {
+        androidTest.assets.srcDirs += files("$projectDir/schemas")
+    }
+}
+
+kapt {
+    correctErrorTypes true
+    arguments {
+        arg("room.schemaLocation", "$projectDir/schemas")
+    }
+}
+
+dependencies {
+    def versions = rootProject.ext.versions
+
+    implementation project(':core')
+
+    implementation "androidx.core:core-ktx:${versions.coreKtx}"
+    implementation "androidx.lifecycle:lifecycle-runtime-ktx:${versions.lifecycle}"
+    implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:${versions.lifecycle}"
+
+    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:${versions.coroutines}"
+
+    implementation "androidx.room:room-runtime:${versions.room}"
+    implementation "androidx.room:room-ktx:${versions.room}"
+    kapt "androidx.room:room-compiler:${versions.room}"
+
+    implementation "com.google.dagger:hilt-android:${versions.hilt}"
+    kapt "com.google.dagger:hilt-compiler:${versions.hilt}"
+
+    testImplementation "junit:junit:${versions.junit4}"
+    testImplementation "org.jetbrains.kotlinx:kotlinx-coroutines-test:${versions.coroutines}"
+    testImplementation "app.cash.turbine:turbine:1.1.0"
+
+    androidTestImplementation "androidx.test.ext:junit:${versions.androidxJunit}"
+    androidTestImplementation "androidx.test.espresso:espresso-core:${versions.espresso}"
+    androidTestImplementation "androidx.room:room-testing:${versions.room}"
+}
