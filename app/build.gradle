@@ -79,6 +79,8 @@ kapt {
 dependencies {
     def versions = rootProject.ext.versions
 
+    implementation project(':core')
+
     // Core Android
     implementation "androidx.core:core-ktx:${versions.coreKtx}"
     implementation "androidx.lifecycle:lifecycle-runtime-ktx:${versions.lifecycle}"
