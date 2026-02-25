@@ -9,20 +9,15 @@ import com.loaderapp.features.orders.domain.OrderStatus
 import com.loaderapp.features.orders.domain.OrderTime
 import com.loaderapp.features.orders.domain.repository.OrdersRepository
 import java.util.concurrent.atomic.AtomicLong
+import javax.inject.Inject
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
-/**
- * In-memory реализация [OrdersRepository] для использования в тестах.
- *
- * Создаётся напрямую — без Hilt. Детерминирована: никакой симуляции задержек.
- * Потокобезопасна: мутации защищены [Mutex], атомарный [idGenerator] для id.
- */
-class FakeOrdersRepository : OrdersRepository {
+class FakeOrdersRepository @Inject constructor() : OrdersRepository {
 
     private val mutex = Mutex()
     private val orders = MutableStateFlow<List<Order>>(emptyList())
@@ -30,25 +25,33 @@ class FakeOrdersRepository : OrdersRepository {
     private val assignments = MutableStateFlow<List<OrderAssignment>>(emptyList())
     private val idGenerator = AtomicLong(1)
 
-    override fun observeOrders(): Flow<List<Order>> =
-        combine(orders, applications, assignments) { orderList, appList, assignList ->
+    override fun observeOrders(): Flow<List<Order>> {
+        // Return orders enriched with applications and assignments
+        return kotlinx.coroutines.flow.combine(
+            orders.asStateFlow(),
+            applications.asStateFlow(),
+            assignments.asStateFlow()
+        ) { orderList, appList, assignList ->
             val appsByOrder = appList.groupBy { it.orderId }
             val assignByOrder = assignList.groupBy { it.orderId }
             orderList.map { order ->
                 order.copy(
-                    applications = appsByOrder[order.id].orEmpty(),
-                    assignments = assignByOrder[order.id].orEmpty()
+                    applications = appsByOrder[order.id] ?: emptyList(),
+                    assignments = assignByOrder[order.id] ?: emptyList()
                 )
             }
         }
+    }
 
     override suspend fun createOrder(order: Order) {
+        simulateLatency()
         val resolvedId = if (order.id > 0) {
             idGenerator.updateAndGet { current -> maxOf(current, order.id + 1) }
             order.id
         } else {
             idGenerator.getAndIncrement()
         }
+
         val newOrder = order.copy(
             id = resolvedId,
             status = OrderStatus.STAFFING,
@@ -59,6 +62,7 @@ class FakeOrdersRepository : OrdersRepository {
     }
 
     override suspend fun cancelOrder(id: Long, reason: String?) {
+        simulateLatency()
         mutex.withLock {
             mutateOrder(id) { it.copy(status = OrderStatus.CANCELED) }
             assignments.update { list ->
@@ -72,6 +76,7 @@ class FakeOrdersRepository : OrdersRepository {
     }
 
     override suspend fun completeOrder(id: Long) {
+        simulateLatency()
         mutex.withLock {
             mutateOrder(id) { it.copy(status = OrderStatus.COMPLETED) }
             assignments.update { list ->
@@ -93,7 +98,9 @@ class FakeOrdersRepository : OrdersRepository {
     }
 
     override suspend fun refresh() {
-        val expirationThreshold = System.currentTimeMillis() - ORDER_EXPIRATION_GRACE_MS
+        simulateLatency()
+        val now = System.currentTimeMillis()
+        val expirationThreshold = now - ORDER_EXPIRATION_GRACE_MS
         orders.update { current ->
             current.map { order ->
                 val shouldExpire = order.status == OrderStatus.STAFFING &&
@@ -104,37 +111,39 @@ class FakeOrdersRepository : OrdersRepository {
         }
     }
 
-    // ── Application flow ──────────────────────────────────────────────────────
+    // ── Application flow ───────────────────────────────────────────────────────
 
     override suspend fun applyToOrder(orderId: Long, loaderId: String, now: Long) {
-        mutex.withLock {
-            val order = orders.value.firstOrNull { it.id == orderId } ?: return@withLock
-            if (order.status != OrderStatus.STAFFING) return@withLock
-            val exists = applications.value.any { it.orderId == orderId && it.loaderId == loaderId }
-            if (exists) return@withLock
-            applications.update { list ->
-                list + OrderApplication(
-                    orderId = orderId,
-                    loaderId = loaderId,
-                    status = OrderApplicationStatus.APPLIED,
-                    appliedAtMillis = now,
-                    ratingSnapshot = null
-                )
-            }
+        simulateLatency()
+        val application = OrderApplication(
+            orderId = orderId,
+            loaderId = loaderId,
+            status = OrderApplicationStatus.APPLIED,
+            appliedAtMillis = now,
+            ratingSnapshot = null
+        )
+        applications.update { list ->
+            val existing = list.indexOfFirst { it.orderId == orderId && it.loaderId == loaderId }
+            if (existing >= 0) list.mapIndexed { i, a -> if (i == existing) application else a }
+            else list + application
         }
     }
 
     override suspend fun withdrawApplication(orderId: Long, loaderId: String) {
+        simulateLatency()
         applications.update { list ->
             list.map { a ->
                 if (a.orderId == orderId && a.loaderId == loaderId &&
                     (a.status == OrderApplicationStatus.APPLIED || a.status == OrderApplicationStatus.SELECTED)
-                ) a.copy(status = OrderApplicationStatus.WITHDRAWN) else a
+                ) {
+                    a.copy(status = OrderApplicationStatus.WITHDRAWN)
+                } else a
             }
         }
     }
 
     override suspend fun selectApplicant(orderId: Long, loaderId: String) {
+        simulateLatency()
         applications.update { list ->
             list.map { a ->
                 if (a.orderId == orderId && a.loaderId == loaderId) a.copy(status = OrderApplicationStatus.SELECTED)
@@ -144,6 +153,7 @@ class FakeOrdersRepository : OrdersRepository {
     }
 
     override suspend fun unselectApplicant(orderId: Long, loaderId: String) {
+        simulateLatency()
         applications.update { list ->
             list.map { a ->
                 if (a.orderId == orderId && a.loaderId == loaderId && a.status == OrderApplicationStatus.SELECTED) {
@@ -154,22 +164,26 @@ class FakeOrdersRepository : OrdersRepository {
     }
 
     override suspend fun startOrder(orderId: Long, startedAtMillis: Long) {
+        simulateLatency()
         mutex.withLock {
             val selected = applications.value.filter {
                 it.orderId == orderId && it.status == OrderApplicationStatus.SELECTED
             }
             require(selected.isNotEmpty()) { "startOrder: no SELECTED applicants for order $orderId" }
 
-            assignments.update { it + selected.map { app ->
+            // Create ACTIVE assignments
+            val newAssignments = selected.map { app ->
                 OrderAssignment(
                     orderId = orderId,
                     loaderId = app.loaderId,
                     status = OrderAssignmentStatus.ACTIVE,
-                    assignedAtMillis = app.appliedAtMillis,
+                    assignedAtMillis = startedAtMillis,
                     startedAtMillis = startedAtMillis
                 )
-            }}
+            }
+            assignments.update { it + newAssignments }
 
+            // Reject remaining APPLIED
             applications.update { list ->
                 list.map { a ->
                     if (a.orderId == orderId && a.status == OrderApplicationStatus.APPLIED) {
@@ -178,6 +192,7 @@ class FakeOrdersRepository : OrdersRepository {
                 }
             }
 
+            // Order → IN_PROGRESS
             mutateOrder(orderId) { it.copy(status = OrderStatus.IN_PROGRESS) }
         }
     }
@@ -196,7 +211,9 @@ class FakeOrdersRepository : OrdersRepository {
 
     override suspend fun hasActiveAssignmentInOrder(orderId: Long, loaderId: String): Boolean =
         assignments.value.any {
-            it.orderId == orderId && it.loaderId == loaderId && it.status == OrderAssignmentStatus.ACTIVE
+            it.orderId == orderId &&
+                it.loaderId == loaderId &&
+                it.status == OrderAssignmentStatus.ACTIVE
         }
 
     override suspend fun countActiveApplicationsForLimit(loaderId: String): Int =
@@ -218,6 +235,8 @@ class FakeOrdersRepository : OrdersRepository {
             current.mapIndexed { i, order -> if (i == index) transform(order) else order }
         }
     }
+
+    private suspend fun simulateLatency() = Unit
 
     private companion object {
         const val ORDER_EXPIRATION_GRACE_MS = 60_000L

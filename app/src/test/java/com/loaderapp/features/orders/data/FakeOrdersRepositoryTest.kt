@@ -6,7 +6,7 @@ import com.loaderapp.features.orders.domain.OrderAssignmentStatus
 import com.loaderapp.features.orders.domain.OrderStatus
 import com.loaderapp.features.orders.domain.OrderTime
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -21,7 +21,7 @@ class FakeOrdersRepositoryTest {
     )
 
     @Test
-    fun `createOrder always normalizes status to STAFFING`() = runBlocking {
+    fun `createOrder always normalizes status to STAFFING`() = runTest {
         val repo = FakeOrdersRepository()
         repo.createOrder(baseOrder(status = OrderStatus.IN_PROGRESS))
 
@@ -30,7 +30,7 @@ class FakeOrdersRepositoryTest {
     }
 
     @Test
-    fun `applyToOrder is idempotent and keeps first appliedAtMillis`() = runBlocking {
+    fun `applyToOrder is idempotent and keeps first appliedAtMillis`() = runTest {
         val repo = FakeOrdersRepository()
         repo.createOrder(baseOrder(status = OrderStatus.STAFFING))
         val orderId = repo.observeOrders().first().first().id
@@ -44,7 +44,7 @@ class FakeOrdersRepositoryTest {
     }
 
     @Test
-    fun `applyToOrder is ignored when order is not STAFFING`() = runBlocking {
+    fun `applyToOrder is ignored when order is not STAFFING`() = runTest {
         val repo = FakeOrdersRepository()
         repo.createOrder(baseOrder(status = OrderStatus.IN_PROGRESS))
         val orderId = repo.observeOrders().first().first().id
@@ -59,7 +59,7 @@ class FakeOrdersRepositoryTest {
     }
 
     @Test
-    fun `startOrder creates assignments only for SELECTED with correct timestamps and rejects APPLIED`() = runBlocking {
+    fun `startOrder creates assignments only for SELECTED with correct timestamps and rejects APPLIED`() = runTest {
         val repo = FakeOrdersRepository()
         repo.createOrder(baseOrder())
         val orderId = repo.observeOrders().first().first().id
@@ -90,7 +90,7 @@ class FakeOrdersRepositoryTest {
     }
 
     @Test
-    fun `cancelOrder transitions active assignments to CANCELED`() = runBlocking {
+    fun `cancelOrder transitions active assignments to CANCELED`() = runTest {
         val repo = FakeOrdersRepository()
         repo.createOrder(baseOrder())
         val orderId = repo.observeOrders().first().first().id
@@ -107,7 +107,7 @@ class FakeOrdersRepositoryTest {
     }
 
     @Test
-    fun `completeOrder transitions active assignments to COMPLETED`() = runBlocking {
+    fun `completeOrder transitions active assignments to COMPLETED`() = runTest {
         val repo = FakeOrdersRepository()
         repo.createOrder(baseOrder())
         val orderId = repo.observeOrders().first().first().id
@@ -124,7 +124,7 @@ class FakeOrdersRepositoryTest {
     }
 
     @Test
-    fun `hasActiveAssignment returns true after startOrder`() = runBlocking {
+    fun `hasActiveAssignment returns true after startOrder`() = runTest {
         val repo = FakeOrdersRepository()
         repo.createOrder(baseOrder())
         val orderId = repo.observeOrders().first().first().id
@@ -136,7 +136,7 @@ class FakeOrdersRepositoryTest {
     }
 
     @Test
-    fun `countActiveApplicationsForLimit counts correctly`() = runBlocking {
+    fun `countActiveApplicationsForLimit counts correctly`() = runTest {
         val repo = FakeOrdersRepository()
         repo.createOrder(baseOrder())
         repo.createOrder(baseOrder())
