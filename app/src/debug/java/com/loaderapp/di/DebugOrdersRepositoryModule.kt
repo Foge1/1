@@ -1,6 +1,6 @@
 package com.loaderapp.di
 
-import com.loaderapp.features.orders.data.OrdersRepositoryImpl
+import com.loaderapp.features.orders.data.FakeOrdersRepository
 import com.loaderapp.features.orders.domain.repository.OrdersRepository
 import dagger.Binds
 import dagger.Module
@@ -10,11 +10,11 @@ import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
-abstract class OrdersRepositoryBindingModule {
+abstract class DebugOrdersRepositoryModule {
 
     @Binds
     @Singleton
     abstract fun bindOrdersRepository(
-        impl: OrdersRepositoryImpl
+        impl: FakeOrdersRepository
     ): OrdersRepository
 }
