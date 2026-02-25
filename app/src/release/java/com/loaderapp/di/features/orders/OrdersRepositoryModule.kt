@@ -1,4 +1,4 @@
-package com.loaderapp.di
+package com.loaderapp.di.features.orders
 
 import com.loaderapp.features.orders.data.OrdersRepositoryImpl
 import com.loaderapp.features.orders.domain.repository.OrdersRepository
@@ -14,7 +14,5 @@ abstract class OrdersRepositoryModule {
 
     @Binds
     @Singleton
-    abstract fun bindOrdersRepository(
-        impl: OrdersRepositoryImpl
-    ): OrdersRepository
+    abstract fun bindOrdersRepository(impl: OrdersRepositoryImpl): OrdersRepository
 }

@@ -1,4 +1,4 @@
-package com.loaderapp.di
+package com.loaderapp.di.features.orders
 
 import com.loaderapp.features.orders.domain.OrdersLimits
 import dagger.Module
