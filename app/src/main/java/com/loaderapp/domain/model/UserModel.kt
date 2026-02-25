@@ -14,8 +14,3 @@ data class UserModel(
     val avatarInitials: String,
     val createdAt: Long
 )
-
-enum class UserRoleModel {
-    DISPATCHER,
-    LOADER
-}
