@@ -7,7 +7,7 @@ import androidx.datastore.preferences.core.longPreferencesKey
 import com.loaderapp.core.common.AppError
 import com.loaderapp.core.common.AppResult
 import com.loaderapp.core.common.toAppResult
-import com.loaderapp.di.core.IoDispatcher
+import com.loaderapp.core.dispatcher.IoDispatcher
 import com.loaderapp.domain.model.UserModel
 import com.loaderapp.domain.model.UserRoleModel
 import com.loaderapp.domain.repository.UserRepository
