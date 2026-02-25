@@ -214,13 +214,15 @@ class OrdersViewModel @Inject constructor(
 
         viewModelScope.launch {
             var failureReason: String? = null
+            var shouldShowSnackbar = true
             try {
                 when (val result = ordersOrchestrator.execute(command)) {
                     is UseCaseResult.Success -> Unit
                     is UseCaseResult.Failure -> failureReason = result.reason
                 }
             } catch (e: CancellationException) {
-                throw e
+                failureReason = e.message ?: "cancelled"
+                shouldShowSnackbar = false
             } catch (e: Exception) {
                 failureReason = e.message ?: "Неизвестная ошибка"
             } finally {
@@ -229,7 +231,9 @@ class OrdersViewModel @Inject constructor(
 
             failureReason?.let { reason ->
                 _uiState.update { it.copy(errorMessage = reason) }
-                _uiEvents.emit(OrdersUiEvent.ShowSnackbar(reason))
+                if (shouldShowSnackbar) {
+                    _uiEvents.emit(OrdersUiEvent.ShowSnackbar(reason))
+                }
             }
         }
     }
