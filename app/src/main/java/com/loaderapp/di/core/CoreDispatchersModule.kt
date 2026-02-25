@@ -1,5 +1,8 @@
 package com.loaderapp.di.core
 
+import com.loaderapp.core.dispatcher.DefaultDispatcher
+import com.loaderapp.core.dispatcher.IoDispatcher
+import com.loaderapp.core.dispatcher.MainDispatcher
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn

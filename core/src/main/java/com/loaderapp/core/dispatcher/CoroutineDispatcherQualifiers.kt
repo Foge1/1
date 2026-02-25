@@ -1,4 +1,4 @@
-package com.loaderapp.di.core
+package com.loaderapp.core.dispatcher
 
 import javax.inject.Qualifier
 
