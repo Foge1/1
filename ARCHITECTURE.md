@@ -166,6 +166,7 @@ com.loaderapp/
 - **ViewModel** не имеет прямого доступа к DAO — только через UseCase
 - **Новые фичи** добавлять в `features/<name>/` со своими domain/data/presentation подпапками
 - **Feature-to-feature доступ**: только через `features.<owner>.domain.api/*` (или `feature-api`), никакого доступа к `features.<owner>.data.*`
+- **Правило compile-time изоляции фич**: feature-модуль может общаться с другими feature-модулями только через API-интерфейсы (`feature-api`/`domain.api`), а прямые зависимости на чужие implementation/data/presentation модули запрещены.
 - **Persistence ownership**: `@Entity/@Dao/migrations` принадлежат фиче-владельцу и не импортируются другой фичей
 - **DI ownership**: Hilt-модули, создающие feature persistence (`Room.databaseBuilder`, `Dao` providers), живут в пространстве этой фичи
 
