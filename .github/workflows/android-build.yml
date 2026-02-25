@@ -50,6 +50,9 @@ jobs:
       - name: Build Debug APK
         run: ./gradlew assembleDebug --no-daemon --stacktrace
 
+      - name: Run unit tests
+        run: ./gradlew testDebugUnitTest --no-daemon --stacktrace
+
       - name: Upload Debug APK
         uses: actions/upload-artifact@v4
         with:

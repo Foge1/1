@@ -1,12 +1,10 @@
 package com.loaderapp.features.orders.data.session
 
+import app.cash.turbine.test
 import com.loaderapp.domain.model.UserRoleModel
 import com.loaderapp.features.auth.domain.model.User
 import com.loaderapp.features.orders.domain.Role
-import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.take
-import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -22,9 +20,10 @@ class CurrentUserProviderImplTest {
             getCurrentUserOrNull = { authUserFlow.value }
         )
 
-        val emission = provider.observeCurrentUser().take(1).toList().single()
-
-        assertNull(emission)
+        provider.observeCurrentUser().test {
+            assertNull(awaitItem())
+            cancelAndIgnoreRemainingEvents()
+        }
     }
 
     @Test
@@ -35,13 +34,14 @@ class CurrentUserProviderImplTest {
             getCurrentUserOrNull = { authUserFlow.value }
         )
 
-        val emissionsDeferred = async { provider.observeCurrentUser().take(2).toList() }
-        authUserFlow.value = user(id = 1L, role = UserRoleModel.LOADER)
-
-        val emissions = emissionsDeferred.await()
-        assertNull(emissions[0])
-        assertEquals("1", emissions[1]?.id)
-        assertEquals(Role.LOADER, emissions[1]?.role)
+        provider.observeCurrentUser().test {
+            assertNull(awaitItem())
+            authUserFlow.value = user(id = 1L, role = UserRoleModel.LOADER)
+            val mapped = awaitItem()
+            assertEquals("1", mapped?.id)
+            assertEquals(Role.LOADER, mapped?.role)
+            cancelAndIgnoreRemainingEvents()
+        }
     }
 
     @Test
@@ -52,15 +52,16 @@ class CurrentUserProviderImplTest {
             getCurrentUserOrNull = { authUserFlow.value }
         )
 
-        val emissionsDeferred = async { provider.observeCurrentUser().take(3).toList() }
-        authUserFlow.value = null
-        authUserFlow.value = user(2L, UserRoleModel.DISPATCHER)
-
-        val emissions = emissionsDeferred.await()
-        assertEquals("1", emissions[0]?.id)
-        assertNull(emissions[1])
-        assertEquals("2", emissions[2]?.id)
-        assertEquals(Role.DISPATCHER, emissions[2]?.role)
+        provider.observeCurrentUser().test {
+            assertEquals("1", awaitItem()?.id)
+            authUserFlow.value = null
+            assertNull(awaitItem())
+            authUserFlow.value = user(2L, UserRoleModel.DISPATCHER)
+            val mapped = awaitItem()
+            assertEquals("2", mapped?.id)
+            assertEquals(Role.DISPATCHER, mapped?.role)
+            cancelAndIgnoreRemainingEvents()
+        }
     }
 
     private fun user(id: Long, role: UserRoleModel) = User(

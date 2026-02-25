@@ -64,19 +64,13 @@ class AuthRepositoryImplTest {
             ioDispatcher = StandardTestDispatcher(testScheduler)
         )
 
-        repository.observeSession().test {
-            assertTrue(awaitItem() is SessionState.Authenticating)
-            advanceUntilIdle()
-            awaitItem() // Unauthenticated after initial DataStore read
+        val result = repository.login("   ", UserRoleModel.LOADER)
 
-            val result = repository.login("   ", UserRoleModel.LOADER)
-            assertTrue(result is AppResult.Failure)
-            assertTrue((result as AppResult.Failure).error is AppError.Validation)
+        assertTrue(result is AppResult.Failure)
+        assertTrue((result as AppResult.Failure).error is AppError.Validation)
 
-            val errorState = awaitItem()
-            assertTrue(errorState is SessionState.Error)
-            cancelAndIgnoreRemainingEvents()
-        }
+        val errorState = repository.observeSession().first { it is SessionState.Error }
+        assertTrue(errorState is SessionState.Error)
     }
 
     @Test
@@ -106,7 +100,7 @@ class AuthRepositoryImplTest {
 
 
     private fun testDataStore(name: String): DataStore<Preferences> {
-        val file = File("build/tmp/test-datastore-$name.preferences_pb")
+        val file = File("build/tmp/test-datastore-$name-${System.nanoTime()}.preferences_pb")
         file.parentFile?.mkdirs()
         if (file.exists()) file.delete()
         return PreferenceDataStoreFactory.create(produceFile = { file })

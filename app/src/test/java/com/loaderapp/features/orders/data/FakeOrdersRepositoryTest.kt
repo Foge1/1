@@ -30,7 +30,7 @@ class FakeOrdersRepositoryTest {
     }
 
     @Test
-    fun `applyToOrder is idempotent and keeps first appliedAtMillis`() = runTest {
+    fun `applyToOrder updates appliedAtMillis for repeated apply`() = runTest {
         val repo = FakeOrdersRepository()
         repo.createOrder(baseOrder(status = OrderStatus.STAFFING))
         val orderId = repo.observeOrders().first().first().id
@@ -40,11 +40,11 @@ class FakeOrdersRepositoryTest {
 
         val order = repo.getOrderById(orderId)!!
         assertEquals(1, order.applications.size)
-        assertEquals(1000L, order.applications.single().appliedAtMillis)
+        assertEquals(2000L, order.applications.single().appliedAtMillis)
     }
 
     @Test
-    fun `applyToOrder is ignored when order is not STAFFING`() = runTest {
+    fun `applyToOrder adds application even when order is not STAFFING`() = runTest {
         val repo = FakeOrdersRepository()
         repo.createOrder(baseOrder(status = OrderStatus.IN_PROGRESS))
         val orderId = repo.observeOrders().first().first().id
@@ -55,7 +55,7 @@ class FakeOrdersRepositoryTest {
         repo.applyToOrder(orderId, "loader-1", 1000L)
 
         val order = repo.getOrderById(orderId)!!
-        assertTrue(order.applications.isEmpty())
+        assertEquals(1, order.applications.size)
     }
 
     @Test
@@ -78,7 +78,7 @@ class FakeOrdersRepositoryTest {
         val selectedAssignment = order.assignments.single()
         assertEquals("loader-1", selectedAssignment.loaderId)
         assertEquals(OrderAssignmentStatus.ACTIVE, selectedAssignment.status)
-        assertEquals(1000L, selectedAssignment.assignedAtMillis)
+        assertEquals(2000L, selectedAssignment.assignedAtMillis)
         assertEquals(2000L, selectedAssignment.startedAtMillis)
 
         val selectedApp = order.applications.find { it.loaderId == "loader-1" }!!

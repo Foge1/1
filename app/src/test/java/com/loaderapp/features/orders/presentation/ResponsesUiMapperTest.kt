@@ -15,7 +15,7 @@ class ResponsesUiMapperTest {
 
     @Test
     fun `required 1 with 0 selected should disable start with selection hint`() {
-        val item = listOf(orderUiModel(selected = false)).toResponsesItems().single()
+        val item = listOf(orderUiModel(selected = false)).toResponsesItems(emptyMap()).single()
 
         assertFalse(item.canStart)
         assertTrue(item.startDisabledReason?.contains("Выберите 0 из 1") == true)
@@ -23,7 +23,7 @@ class ResponsesUiMapperTest {
 
     @Test
     fun `required 1 with selected applicant should enable start`() {
-        val item = listOf(orderUiModel(selected = true)).toResponsesItems().single()
+        val item = listOf(orderUiModel(selected = true)).toResponsesItems(emptyMap()).single()
 
         assertTrue(item.canStart)
     }
@@ -62,7 +62,7 @@ class ResponsesUiMapperTest {
             canSelect = true,
             canUnselect = true,
             canStart = selected,
-            startBlockReason = if (selected) null else OrderActionBlockReason.NotEnoughSelectedApplicants,
+            startBlockReason = if (selected) null else OrderActionBlockReason.SelectedCountMismatch(selected = 0, required = 1),
             canCancel = true,
             cancelBlockReason = null,
             canComplete = false,

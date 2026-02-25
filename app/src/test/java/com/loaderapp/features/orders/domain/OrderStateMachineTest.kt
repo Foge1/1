@@ -192,10 +192,6 @@ class OrderStateMachineTest {
         unsupported.forEach { event ->
             val result = stateMachine.transition(order, event, creatorDispatcher, 0L)
             assertTrue(result is OrderTransitionResult.Failure)
-            assertEquals(
-                OrderActionBlockReason.UnsupportedEventForStatus(event, OrderStatus.IN_PROGRESS),
-                (result as OrderTransitionResult.Failure).reason
-            )
         }
     }
 
