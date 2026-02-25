@@ -50,8 +50,6 @@ dependencies {
 
     implementation project(':core')
 
-    implementation "androidx.core:core-ktx:${versions.coreKtx}"
-    implementation "androidx.lifecycle:lifecycle-runtime-ktx:${versions.lifecycle}"
     implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:${versions.lifecycle}"
 
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:${versions.coroutines}"
