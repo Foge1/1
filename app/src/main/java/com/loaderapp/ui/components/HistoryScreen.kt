@@ -26,7 +26,7 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.loaderapp.features.orders.ui.HistoryOrderUiModel
-import com.loaderapp.features.orders.ui.toLegacyOrderModel
+import com.loaderapp.features.orders.presentation.mapper.toLegacyOrderModel
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId

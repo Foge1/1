@@ -166,3 +166,36 @@ com.loaderapp/
 - **ViewModel** не имеет прямого доступа к DAO — только через UseCase
 - **Новые фичи** добавлять в `features/<name>/` со своими domain/data/presentation подпапками
 - **Общие компоненты** (без привязки к фиче) — в `ui/components/`
+
+---
+
+## Модельные границы (Domain / Persistence / UI)
+
+### Кандидаты на объединение (выявленное дублирование)
+
+| Кандидат | Где встречается | Решение по владельцу |
+|---|---|---|
+| `domain.model.OrderModel` vs `features.orders.domain.Order` | legacy domain + новая Orders-фича | **Не объединяем механически**. `features.orders.domain.Order` — владелец бизнес-логики оркестрации заказа (staffing/applications/assignments). `OrderModel` остаётся legacy read-model для старых экранов и постепенно вытесняется UI-моделями. |
+| `OrderStatusModel` vs `features.orders.domain.OrderStatus` | legacy domain + orders feature | **Владелец: feature-domain** для новых сценариев. Для legacy-экранов допускается только маппинг в data-слое (`LegacyOrderModelMapper`). |
+| `data.model.Order` vs `features.orders.data.local.entity.OrderEntity` | 2 Room-хранилища | **Контекстные persistence-модели**, не общая бизнес-сущность. Изоляция сохраняется до отдельной задачи по консолидации storage. |
+| `OrderUiModel`/`HistoryOrderUiModel` vs доменные модели | ui + domain | **Владелец: UI**. UI-модели не должны утекать в repository/usecase, и наоборот доменные/persistence типы не должны идти в composable API напрямую без маппинга. |
+
+### Правила владельца сущности
+
+1. **Core Domain owner** — только когда модель реально общая для нескольких bounded contexts и не содержит контекстных полей/статусов.
+2. **Feature owner** — когда модель отражает контекст фичи (например, staffing lifecycle в Orders).
+3. **Persistence owner** — только слой `data` (`@Entity`, relation/projection), без попадания в UI/ViewModel contract.
+4. **UI owner** — слой `ui`/`presentation` (state, items, card models), оптимизированный под рендеринг и UX.
+
+### Текущая реализация границ в Orders
+
+- Маппинг `features.orders.domain.Order` ↔ `domain.model.OrderModel` перенесён из UI в data-мэпперы (`features/orders/data/mappers/LegacyOrderModelMapper.kt`).
+- UI-пакет `features/orders/ui` больше не содержит knowledge о legacy domain-моделях, только `OrderUiModel` и производные UI-состояния.
+- Репозитории возвращают domain-модели; Room entity остаются внутри DAO/data и не поднимаются в ViewModel/UI.
+
+### Anti-patterns (запрещено)
+
+- Возвращать `@Entity` из repository/usecase.
+- Держать mapping persistence↔domain или domain↔legacy в composable/UI-пакетах.
+- Делать «псевдо-унификацию» через копирование одинаковых data class в разные фичи.
+- Добавлять feature-специфичную бизнес-логику в `core` только ради переиспользования.

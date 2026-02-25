@@ -11,7 +11,7 @@ import com.loaderapp.domain.model.OrderModel
 import com.loaderapp.domain.usecase.order.GetWorkerCountParams
 import com.loaderapp.domain.usecase.order.GetWorkerCountUseCase
 import com.loaderapp.features.orders.domain.repository.OrdersRepository
-import com.loaderapp.features.orders.ui.toLegacyOrderModel
+import com.loaderapp.features.orders.presentation.mapper.toLegacyOrderModel
 import com.loaderapp.navigation.NavArgs
 import com.loaderapp.presentation.base.BaseViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
