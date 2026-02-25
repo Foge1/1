@@ -31,3 +31,10 @@ UI and domain variants and made architecture boundaries blurry.
 - Returning Room entities from repository interfaces.
 - Mapping domain/persistence types inside composables or ui-state files.
 - Duplicating same business model in multiple packages «for convenience».
+
+## Update (PR 2.3 fix)
+- UI/presentation import from `features.orders.data.*` is prohibited to keep direction `data -> domain <- presentation/ui`.
+- Compile issue showed why: UI called mapper from data with mismatched receiver (`OrderUiModel` vs `Order`).
+- Presentation mapper is now the only boundary adapter for `domain Order -> UI model`.
+- Legacy conversion is kept in presentation adapter only as compatibility bridge for old `OrderCard` API.
+- Next step: remove legacy `OrderModel` usage from old screens and switch `OrderCard` contract to UI model directly.
