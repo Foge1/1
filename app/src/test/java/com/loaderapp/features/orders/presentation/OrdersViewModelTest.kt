@@ -325,6 +325,28 @@ class OrdersViewModelTest {
         assertTrue(viewModel.uiState.value.responsesBadge.totalResponses == 0)
     }
 
+
+    @Test
+    fun `Given selected dispatcher When current user becomes null Then uiState requires user selection and clears order lists`() = runTest {
+        val repository = TestOrdersRepository(
+            orders = listOf(testOrder(id = 1L, status = OrderStatus.STAFFING))
+        )
+        val userProvider = NullableCurrentUserProvider(dispatcherUser)
+        val viewModel = buildViewModel(repository, userProvider)
+        advanceUntilIdle()
+
+        assertTrue(viewModel.uiState.value.availableOrders.isNotEmpty())
+
+        userProvider.emit(null)
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertTrue(state.requiresUserSelection)
+        assertTrue(state.availableOrders.isEmpty())
+        assertTrue(state.inProgressOrders.isEmpty())
+        assertTrue(state.historyOrders.isEmpty())
+    }
+
     // ── Builder ───────────────────────────────────────────────────────────────
 
     private fun TestScope.buildViewModel(
