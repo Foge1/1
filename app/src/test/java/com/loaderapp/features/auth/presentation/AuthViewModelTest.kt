@@ -1,58 +1,86 @@
 package com.loaderapp.features.auth.presentation
 
+import app.cash.turbine.test
 import com.loaderapp.core.common.AppError
 import com.loaderapp.core.common.AppResult
 import com.loaderapp.domain.model.UserRoleModel
 import com.loaderapp.features.auth.domain.model.SessionState
 import com.loaderapp.features.auth.domain.model.User
 import com.loaderapp.features.auth.domain.repository.AuthRepository
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.setMain
+import kotlinx.coroutines.test.resetMain
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
+import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.TestWatcher
+import org.junit.runner.Description
 
 class AuthViewModelTest {
 
+    @get:Rule
+    val mainDispatcherRule = MainDispatcherRule()
+
     @Test
-    fun `login success transitions to authenticated state`() = runTest {
+    fun `Given valid credentials When login Then uiState becomes authenticated`() = runTest {
         val repository = FakeAuthRepository()
         val viewModel = AuthViewModel(repository)
 
-        viewModel.onEvent(AuthEvent.Login(name = "Ivan", role = UserRoleModel.LOADER))
+        viewModel.uiState.test {
+            skipItems(1)
 
-        val state = viewModel.uiState.value
-        assertTrue(state.sessionState is SessionState.Authenticated)
-        assertEquals("Ivan", state.user?.name)
-        assertEquals(false, state.isLoading)
-        assertEquals(null, state.error)
+            viewModel.onEvent(AuthEvent.Login(name = "Ivan", role = UserRoleModel.LOADER))
+
+            val state = awaitItem()
+            assertTrue(state.sessionState is SessionState.Authenticated)
+            assertEquals("Ivan", state.user?.name)
+            assertEquals(false, state.isLoading)
+            assertEquals(null, state.error)
+            cancelAndIgnoreRemainingEvents()
+        }
     }
 
     @Test
-    fun `login failure transitions to error state`() = runTest {
+    fun `Given blank name When login Then uiState exposes validation error`() = runTest {
         val repository = FakeAuthRepository(loginFailure = AppError.Validation("Bad input"))
         val viewModel = AuthViewModel(repository)
 
-        viewModel.onEvent(AuthEvent.Login(name = "", role = UserRoleModel.LOADER))
+        viewModel.uiState.test {
+            skipItems(1)
 
-        val state = viewModel.uiState.value
-        assertTrue(state.sessionState is SessionState.Error)
-        assertEquals("Bad input", state.error)
-        assertEquals(false, state.isLoading)
+            viewModel.onEvent(AuthEvent.Login(name = "", role = UserRoleModel.LOADER))
+
+            val state = awaitItem()
+            assertTrue(state.sessionState is SessionState.Error)
+            assertEquals("Bad input", state.error)
+            assertEquals(false, state.isLoading)
+            cancelAndIgnoreRemainingEvents()
+        }
     }
 
     @Test
-    fun `logout transitions to unauthenticated`() = runTest {
+    fun `Given active session When logout Then uiState becomes unauthenticated`() = runTest {
         val repository = FakeAuthRepository()
         val viewModel = AuthViewModel(repository)
 
-        viewModel.onEvent(AuthEvent.Login(name = "Daria", role = UserRoleModel.DISPATCHER))
-        viewModel.onEvent(AuthEvent.Logout)
+        viewModel.uiState.test {
+            skipItems(1)
+            viewModel.onEvent(AuthEvent.Login(name = "Daria", role = UserRoleModel.DISPATCHER))
+            awaitItem()
 
-        val state = viewModel.uiState.value
-        assertTrue(state.sessionState is SessionState.Unauthenticated)
-        assertEquals(null, state.user)
+            viewModel.onEvent(AuthEvent.Logout)
+            val state = awaitItem()
+
+            assertTrue(state.sessionState is SessionState.Unauthenticated)
+            assertEquals(null, state.user)
+            cancelAndIgnoreRemainingEvents()
+        }
     }
 
     private class FakeAuthRepository(
@@ -81,5 +109,17 @@ class AuthViewModelTest {
         }
 
         override fun observeSession(): Flow<SessionState> = state
+    }
+
+    private class MainDispatcherRule(
+        private val dispatcher: TestDispatcher = StandardTestDispatcher()
+    ) : TestWatcher() {
+        override fun starting(description: Description) {
+            Dispatchers.setMain(dispatcher)
+        }
+
+        override fun finished(description: Description) {
+            Dispatchers.resetMain()
+        }
     }
 }

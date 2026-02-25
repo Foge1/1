@@ -6,7 +6,7 @@ import com.loaderapp.features.orders.domain.OrderAssignmentStatus
 import com.loaderapp.features.orders.domain.OrderStatus
 import com.loaderapp.features.orders.domain.OrderTime
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -21,8 +21,8 @@ class FakeOrdersRepositoryTest {
     )
 
     @Test
-    fun `createOrder always normalizes status to STAFFING`() = runBlocking {
-        val repo = FakeOrdersRepository()
+    fun `createOrder always normalizes status to STAFFING`() = runTest {
+        val repo = FakeOrdersRepository(latencyProvider = { 0L })
         repo.createOrder(baseOrder(status = OrderStatus.IN_PROGRESS))
 
         val order = repo.observeOrders().first().first()
@@ -30,8 +30,8 @@ class FakeOrdersRepositoryTest {
     }
 
     @Test
-    fun `applyToOrder is idempotent and keeps first appliedAtMillis`() = runBlocking {
-        val repo = FakeOrdersRepository()
+    fun `applyToOrder is idempotent and keeps first appliedAtMillis`() = runTest {
+        val repo = FakeOrdersRepository(latencyProvider = { 0L })
         repo.createOrder(baseOrder(status = OrderStatus.STAFFING))
         val orderId = repo.observeOrders().first().first().id
 
@@ -44,8 +44,8 @@ class FakeOrdersRepositoryTest {
     }
 
     @Test
-    fun `applyToOrder is ignored when order is not STAFFING`() = runBlocking {
-        val repo = FakeOrdersRepository()
+    fun `applyToOrder is ignored when order is not STAFFING`() = runTest {
+        val repo = FakeOrdersRepository(latencyProvider = { 0L })
         repo.createOrder(baseOrder(status = OrderStatus.IN_PROGRESS))
         val orderId = repo.observeOrders().first().first().id
 
@@ -59,8 +59,8 @@ class FakeOrdersRepositoryTest {
     }
 
     @Test
-    fun `startOrder creates assignments only for SELECTED with correct timestamps and rejects APPLIED`() = runBlocking {
-        val repo = FakeOrdersRepository()
+    fun `startOrder creates assignments only for SELECTED with correct timestamps and rejects APPLIED`() = runTest {
+        val repo = FakeOrdersRepository(latencyProvider = { 0L })
         repo.createOrder(baseOrder())
         val orderId = repo.observeOrders().first().first().id
 
@@ -90,8 +90,8 @@ class FakeOrdersRepositoryTest {
     }
 
     @Test
-    fun `cancelOrder transitions active assignments to CANCELED`() = runBlocking {
-        val repo = FakeOrdersRepository()
+    fun `cancelOrder transitions active assignments to CANCELED`() = runTest {
+        val repo = FakeOrdersRepository(latencyProvider = { 0L })
         repo.createOrder(baseOrder())
         val orderId = repo.observeOrders().first().first().id
         repo.applyToOrder(orderId, "loader-1", 1000L)
@@ -107,8 +107,8 @@ class FakeOrdersRepositoryTest {
     }
 
     @Test
-    fun `completeOrder transitions active assignments to COMPLETED`() = runBlocking {
-        val repo = FakeOrdersRepository()
+    fun `completeOrder transitions active assignments to COMPLETED`() = runTest {
+        val repo = FakeOrdersRepository(latencyProvider = { 0L })
         repo.createOrder(baseOrder())
         val orderId = repo.observeOrders().first().first().id
         repo.applyToOrder(orderId, "loader-1", 1000L)
@@ -124,8 +124,8 @@ class FakeOrdersRepositoryTest {
     }
 
     @Test
-    fun `hasActiveAssignment returns true after startOrder`() = runBlocking {
-        val repo = FakeOrdersRepository()
+    fun `hasActiveAssignment returns true after startOrder`() = runTest {
+        val repo = FakeOrdersRepository(latencyProvider = { 0L })
         repo.createOrder(baseOrder())
         val orderId = repo.observeOrders().first().first().id
         repo.applyToOrder(orderId, "loader-1", 1000L)
@@ -136,8 +136,8 @@ class FakeOrdersRepositoryTest {
     }
 
     @Test
-    fun `countActiveApplicationsForLimit counts correctly`() = runBlocking {
-        val repo = FakeOrdersRepository()
+    fun `countActiveApplicationsForLimit counts correctly`() = runTest {
+        val repo = FakeOrdersRepository(latencyProvider = { 0L })
         repo.createOrder(baseOrder())
         repo.createOrder(baseOrder())
         val orders = repo.observeOrders().first()

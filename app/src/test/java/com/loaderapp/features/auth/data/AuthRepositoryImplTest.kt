@@ -1,8 +1,9 @@
 package com.loaderapp.features.auth.data
 
+import app.cash.turbine.test
 import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
+import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.longPreferencesKey
 import com.loaderapp.core.common.AppError
@@ -14,9 +15,10 @@ import com.loaderapp.domain.repository.UserRepository
 import com.loaderapp.features.auth.domain.model.SessionState
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -26,7 +28,7 @@ import java.io.File
 class AuthRepositoryImplTest {
 
     @Test
-    fun `restoreSession emits authenticated when user id exists in datastore`() = runTest {
+    fun `Given persisted user id When restoreSession Then emits authenticated state`() = runTest {
         val dataStore = testDataStore("restore")
         dataStore.edit { it[CURRENT_USER_ID] = 7L }
         val userRepository = FakeUserRepository().apply {
@@ -39,60 +41,75 @@ class AuthRepositoryImplTest {
             ioDispatcher = StandardTestDispatcher(testScheduler)
         )
 
-        repository.restoreSession()
-        val state = repository.observeSession().first { it !is SessionState.Authenticating }
+        repository.observeSession().test {
+            assertTrue(awaitItem() is SessionState.Authenticating)
 
-        assertTrue(state is SessionState.Authenticated)
-        val user = (state as SessionState.Authenticated).user
-        assertEquals(7L, user.id)
-        assertEquals("Alex", user.name)
+            repository.restoreSession()
+            advanceUntilIdle()
+
+            val authenticated = awaitItem()
+            assertTrue(authenticated is SessionState.Authenticated)
+            val user = (authenticated as SessionState.Authenticated).user
+            assertEquals(7L, user.id)
+            assertEquals("Alex", user.name)
+            cancelAndIgnoreRemainingEvents()
+        }
     }
 
     @Test
-    fun `login saves session and publishes authenticated`() = runTest {
-        val dataStore = testDataStore("login")
-        val userRepository = FakeUserRepository()
+    fun `Given blank login name When login Then returns AppError Validation and SessionState Error`() = runTest {
         val repository = AuthRepositoryImpl(
-            userRepository = userRepository,
-            dataStore = dataStore,
+            userRepository = FakeUserRepository(),
+            dataStore = testDataStore("blank-login"),
             ioDispatcher = StandardTestDispatcher(testScheduler)
         )
 
-        val loginResult = repository.login("Den", UserRoleModel.DISPATCHER)
-        val state = repository.observeSession().first { it is SessionState.Authenticated }
+        repository.observeSession().test {
+            assertTrue(awaitItem() is SessionState.Authenticating)
+            advanceUntilIdle()
+            awaitItem() // Unauthenticated after initial DataStore read
 
-        assertTrue(loginResult is AppResult.Success)
-        assertTrue(state is SessionState.Authenticated)
-        assertTrue(dataStore.data.first()[CURRENT_USER_ID] != null)
+            val result = repository.login("   ", UserRoleModel.LOADER)
+            assertTrue(result is AppResult.Failure)
+            assertTrue((result as AppResult.Failure).error is AppError.Validation)
+
+            val errorState = awaitItem()
+            assertTrue(errorState is SessionState.Error)
+            cancelAndIgnoreRemainingEvents()
+        }
     }
 
     @Test
-    fun `logout clears session and publishes unauthenticated`() = runTest {
+    fun `Given authenticated session When logout Then clears datastore and emits unauthenticated`() = runTest {
         val dataStore = testDataStore("logout")
         dataStore.edit { it[CURRENT_USER_ID] = 1L }
-        val userRepository = FakeUserRepository().apply {
-            users[1L] = testUser(1L, "User", UserRoleModel.LOADER)
-        }
         val repository = AuthRepositoryImpl(
-            userRepository = userRepository,
+            userRepository = FakeUserRepository().apply {
+                users[1L] = testUser(1L, "User", UserRoleModel.LOADER)
+            },
             dataStore = dataStore,
             ioDispatcher = StandardTestDispatcher(testScheduler)
         )
 
-        repository.logout()
-        val state = repository.observeSession().first { it is SessionState.Unauthenticated }
+        repository.observeSession().test {
+            assertTrue(awaitItem() is SessionState.Authenticating)
+            advanceUntilIdle()
+            assertTrue(awaitItem() is SessionState.Authenticated)
 
-        assertTrue(state is SessionState.Unauthenticated)
-        assertTrue(dataStore.data.first()[CURRENT_USER_ID] == null)
+            repository.logout()
+
+            assertTrue(awaitItem() is SessionState.Unauthenticated)
+            assertTrue(dataStore.data.first()[CURRENT_USER_ID] == null)
+            cancelAndIgnoreRemainingEvents()
+        }
     }
+
 
     private fun testDataStore(name: String): DataStore<Preferences> {
         val file = File("build/tmp/test-datastore-$name.preferences_pb")
         file.parentFile?.mkdirs()
         if (file.exists()) file.delete()
-        return PreferenceDataStoreFactory.create(
-            produceFile = { file }
-        )
+        return PreferenceDataStoreFactory.create(produceFile = { file })
     }
 
     private fun testUser(id: Long, name: String, role: UserRoleModel) = UserModel(

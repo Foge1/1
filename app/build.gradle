@@ -120,6 +120,7 @@ dependencies {
     // Testing
     testImplementation "junit:junit:${versions.junit4}"
     testImplementation "org.jetbrains.kotlinx:kotlinx-coroutines-test:${versions.coroutines}"
+    testImplementation "app.cash.turbine:turbine:1.1.0"
     androidTestImplementation "androidx.test.ext:junit:${versions.androidxJunit}"
     androidTestImplementation "androidx.test.espresso:espresso-core:${versions.espresso}"
     androidTestImplementation platform("androidx.compose:compose-bom:${versions.composeBom}")
