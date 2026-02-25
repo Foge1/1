@@ -1,6 +1,8 @@
 package com.loaderapp.features.orders.data.session
 
-import com.loaderapp.data.preferences.UserPreferences
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.longPreferencesKey
 import com.loaderapp.domain.model.UserModel
 import com.loaderapp.domain.model.UserRoleModel
 import com.loaderapp.domain.repository.UserRepository
@@ -24,10 +26,10 @@ class CurrentUserProviderImpl private constructor(
 
     @Inject
     constructor(
-        userPreferences: UserPreferences,
+        dataStore: DataStore<Preferences>,
         userRepository: UserRepository
     ) : this(
-        currentUserIdFlow = userPreferences.currentUserId,
+        currentUserIdFlow = dataStore.data.map { it[CURRENT_USER_ID] },
         observeUserById = userRepository::getUserByIdFlow
     )
 
@@ -59,6 +61,8 @@ class CurrentUserProviderImpl private constructor(
     }
 
     companion object {
+        private val CURRENT_USER_ID = longPreferencesKey("current_user_id")
+
         internal fun createForTests(
             currentUserIdFlow: Flow<Long?>,
             observeUserById: (Long) -> Flow<UserModel?>

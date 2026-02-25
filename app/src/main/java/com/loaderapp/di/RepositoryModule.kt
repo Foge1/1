@@ -6,6 +6,8 @@ import com.loaderapp.data.repository.UserRepositoryImpl
 import com.loaderapp.domain.repository.ChatRepository
 import com.loaderapp.domain.repository.OrderRepository
 import com.loaderapp.domain.repository.UserRepository
+import com.loaderapp.features.auth.data.AuthRepositoryImpl
+import com.loaderapp.features.auth.domain.repository.AuthRepository
 import com.loaderapp.features.orders.data.OrdersRepositoryImpl
 import com.loaderapp.features.orders.data.session.CurrentUserProviderImpl
 import com.loaderapp.features.orders.domain.repository.OrdersRepository
@@ -64,4 +66,10 @@ abstract class RepositoryModule {
     abstract fun bindCurrentUserProvider(
         currentUserProviderImpl: CurrentUserProviderImpl
     ): CurrentUserProvider
+
+    @Binds
+    @Singleton
+    abstract fun bindAuthRepository(
+        authRepositoryImpl: AuthRepositoryImpl
+    ): AuthRepository
 }
