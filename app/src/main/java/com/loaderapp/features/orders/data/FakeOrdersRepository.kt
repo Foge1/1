@@ -10,7 +10,6 @@ import com.loaderapp.features.orders.domain.OrderTime
 import com.loaderapp.features.orders.domain.repository.OrdersRepository
 import java.util.concurrent.atomic.AtomicLong
 import javax.inject.Inject
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -18,9 +17,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
-class FakeOrdersRepository @Inject constructor(
-    private val latencyProvider: suspend () -> Long = { 0L }
-) : OrdersRepository {
+class FakeOrdersRepository @Inject constructor() : OrdersRepository {
 
     private val mutex = Mutex()
     private val orders = MutableStateFlow<List<Order>>(emptyList())
@@ -239,10 +236,7 @@ class FakeOrdersRepository @Inject constructor(
         }
     }
 
-    private suspend fun simulateLatency() {
-        val latencyMs = latencyProvider()
-        if (latencyMs > 0) delay(latencyMs)
-    }
+    private suspend fun simulateLatency() = Unit
 
     private companion object {
         const val ORDER_EXPIRATION_GRACE_MS = 60_000L

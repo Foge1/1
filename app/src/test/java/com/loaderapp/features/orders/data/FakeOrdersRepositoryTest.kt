@@ -22,7 +22,7 @@ class FakeOrdersRepositoryTest {
 
     @Test
     fun `createOrder always normalizes status to STAFFING`() = runTest {
-        val repo = FakeOrdersRepository(latencyProvider = { 0L })
+        val repo = FakeOrdersRepository()
         repo.createOrder(baseOrder(status = OrderStatus.IN_PROGRESS))
 
         val order = repo.observeOrders().first().first()
@@ -31,7 +31,7 @@ class FakeOrdersRepositoryTest {
 
     @Test
     fun `applyToOrder is idempotent and keeps first appliedAtMillis`() = runTest {
-        val repo = FakeOrdersRepository(latencyProvider = { 0L })
+        val repo = FakeOrdersRepository()
         repo.createOrder(baseOrder(status = OrderStatus.STAFFING))
         val orderId = repo.observeOrders().first().first().id
 
@@ -45,7 +45,7 @@ class FakeOrdersRepositoryTest {
 
     @Test
     fun `applyToOrder is ignored when order is not STAFFING`() = runTest {
-        val repo = FakeOrdersRepository(latencyProvider = { 0L })
+        val repo = FakeOrdersRepository()
         repo.createOrder(baseOrder(status = OrderStatus.IN_PROGRESS))
         val orderId = repo.observeOrders().first().first().id
 
@@ -60,7 +60,7 @@ class FakeOrdersRepositoryTest {
 
     @Test
     fun `startOrder creates assignments only for SELECTED with correct timestamps and rejects APPLIED`() = runTest {
-        val repo = FakeOrdersRepository(latencyProvider = { 0L })
+        val repo = FakeOrdersRepository()
         repo.createOrder(baseOrder())
         val orderId = repo.observeOrders().first().first().id
 
@@ -91,7 +91,7 @@ class FakeOrdersRepositoryTest {
 
     @Test
     fun `cancelOrder transitions active assignments to CANCELED`() = runTest {
-        val repo = FakeOrdersRepository(latencyProvider = { 0L })
+        val repo = FakeOrdersRepository()
         repo.createOrder(baseOrder())
         val orderId = repo.observeOrders().first().first().id
         repo.applyToOrder(orderId, "loader-1", 1000L)
@@ -108,7 +108,7 @@ class FakeOrdersRepositoryTest {
 
     @Test
     fun `completeOrder transitions active assignments to COMPLETED`() = runTest {
-        val repo = FakeOrdersRepository(latencyProvider = { 0L })
+        val repo = FakeOrdersRepository()
         repo.createOrder(baseOrder())
         val orderId = repo.observeOrders().first().first().id
         repo.applyToOrder(orderId, "loader-1", 1000L)
@@ -125,7 +125,7 @@ class FakeOrdersRepositoryTest {
 
     @Test
     fun `hasActiveAssignment returns true after startOrder`() = runTest {
-        val repo = FakeOrdersRepository(latencyProvider = { 0L })
+        val repo = FakeOrdersRepository()
         repo.createOrder(baseOrder())
         val orderId = repo.observeOrders().first().first().id
         repo.applyToOrder(orderId, "loader-1", 1000L)
@@ -137,7 +137,7 @@ class FakeOrdersRepositoryTest {
 
     @Test
     fun `countActiveApplicationsForLimit counts correctly`() = runTest {
-        val repo = FakeOrdersRepository(latencyProvider = { 0L })
+        val repo = FakeOrdersRepository()
         repo.createOrder(baseOrder())
         repo.createOrder(baseOrder())
         val orders = repo.observeOrders().first()
