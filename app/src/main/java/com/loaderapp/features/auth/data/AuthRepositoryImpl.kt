@@ -11,6 +11,7 @@ import com.loaderapp.di.core.IoDispatcher
 import com.loaderapp.domain.model.UserModel
 import com.loaderapp.domain.model.UserRoleModel
 import com.loaderapp.domain.repository.UserRepository
+import com.loaderapp.features.auth.domain.api.AuthSessionApi
 import com.loaderapp.features.auth.domain.model.SessionState
 import com.loaderapp.features.auth.domain.model.User
 import com.loaderapp.features.auth.domain.repository.AuthRepository
@@ -33,7 +34,7 @@ class AuthRepositoryImpl @Inject constructor(
     private val userRepository: UserRepository,
     private val dataStore: DataStore<Preferences>,
     @IoDispatcher ioDispatcher: CoroutineDispatcher
-) : AuthRepository {
+) : AuthRepository, AuthSessionApi {
 
     private val repositoryScope = CoroutineScope(SupervisorJob() + ioDispatcher)
     private val sessionState = MutableStateFlow<SessionState>(SessionState.Authenticating)
@@ -94,6 +95,18 @@ class AuthRepositoryImpl @Inject constructor(
     }
 
     override fun observeSession(): Flow<SessionState> = sessionState.asStateFlow()
+
+    override fun observeCurrentUser(): Flow<User?> = sessionState.map { state ->
+        when (state) {
+            is SessionState.Authenticated -> state.user
+            else -> null
+        }
+    }
+
+    override suspend fun getCurrentUserOrNull(): User? = when (val state = sessionState.value) {
+        is SessionState.Authenticated -> state.user
+        else -> null
+    }
 
     private suspend fun resolveAuthenticatedState(userId: Long): SessionState {
         return when (val result = userRepository.getUserById(userId).toAppResult()) {

@@ -1,7 +1,7 @@
 package com.loaderapp.features.orders.data.session
 
-import com.loaderapp.domain.model.UserModel
 import com.loaderapp.domain.model.UserRoleModel
+import com.loaderapp.features.auth.domain.model.User
 import com.loaderapp.features.orders.domain.Role
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -15,12 +15,12 @@ import org.junit.Test
 class CurrentUserProviderImplTest {
 
     @Test
-    fun `observeCurrentUser emits null when current user id is not selected`() = runTest {
-        val currentUserIdFlow = MutableStateFlow<Long?>(null)
-        val usersById = mutableMapOf<Long, MutableStateFlow<UserModel?>>()
-        val provider = CurrentUserProviderImpl.createForTests(currentUserIdFlow) { userId ->
-            usersById.getOrPut(userId) { MutableStateFlow(null) }
-        }
+    fun `observeCurrentUser emits null when session has no user`() = runTest {
+        val authUserFlow = MutableStateFlow<User?>(null)
+        val provider = CurrentUserProviderImpl.createForTests(
+            observeCurrentUser = authUserFlow,
+            getCurrentUserOrNull = { authUserFlow.value }
+        )
 
         val emission = provider.observeCurrentUser().take(1).toList().single()
 
@@ -28,13 +28,15 @@ class CurrentUserProviderImplTest {
     }
 
     @Test
-    fun `observeCurrentUser emits selected user when it appears`() = runTest {
-        val currentUserIdFlow = MutableStateFlow<Long?>(1L)
-        val userFlow = MutableStateFlow<UserModel?>(null)
-        val provider = CurrentUserProviderImpl.createForTests(currentUserIdFlow) { userFlow }
+    fun `observeCurrentUser maps auth user to orders current user`() = runTest {
+        val authUserFlow = MutableStateFlow<User?>(null)
+        val provider = CurrentUserProviderImpl.createForTests(
+            observeCurrentUser = authUserFlow,
+            getCurrentUserOrNull = { authUserFlow.value }
+        )
 
         val emissionsDeferred = async { provider.observeCurrentUser().take(2).toList() }
-        userFlow.value = user(id = 1L, role = UserRoleModel.LOADER)
+        authUserFlow.value = user(id = 1L, role = UserRoleModel.LOADER)
 
         val emissions = emissionsDeferred.await()
         assertNull(emissions[0])
@@ -43,19 +45,16 @@ class CurrentUserProviderImplTest {
     }
 
     @Test
-    fun `observeCurrentUser emits consistent sequence when current user changes`() = runTest {
-        val currentUserIdFlow = MutableStateFlow<Long?>(1L)
-        val usersById = mutableMapOf(
-            1L to MutableStateFlow<UserModel?>(user(1L, UserRoleModel.LOADER)),
-            2L to MutableStateFlow<UserModel?>(user(2L, UserRoleModel.DISPATCHER))
+    fun `observeCurrentUser emits consistent sequence when session user changes`() = runTest {
+        val authUserFlow = MutableStateFlow<User?>(user(1L, UserRoleModel.LOADER))
+        val provider = CurrentUserProviderImpl.createForTests(
+            observeCurrentUser = authUserFlow,
+            getCurrentUserOrNull = { authUserFlow.value }
         )
-        val provider = CurrentUserProviderImpl.createForTests(currentUserIdFlow) { userId ->
-            usersById.getValue(userId)
-        }
 
         val emissionsDeferred = async { provider.observeCurrentUser().take(3).toList() }
-        currentUserIdFlow.value = null
-        currentUserIdFlow.value = 2L
+        authUserFlow.value = null
+        authUserFlow.value = user(2L, UserRoleModel.DISPATCHER)
 
         val emissions = emissionsDeferred.await()
         assertEquals("1", emissions[0]?.id)
@@ -64,7 +63,7 @@ class CurrentUserProviderImplTest {
         assertEquals(Role.DISPATCHER, emissions[2]?.role)
     }
 
-    private fun user(id: Long, role: UserRoleModel) = UserModel(
+    private fun user(id: Long, role: UserRoleModel) = User(
         id = id,
         name = "User $id",
         phone = "",
