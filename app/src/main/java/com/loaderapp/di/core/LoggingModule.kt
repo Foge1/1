@@ -1,4 +1,4 @@
-package com.loaderapp.di.logging
+package com.loaderapp.di.core
 
 import com.loaderapp.core.common.AppBuildInfo
 import com.loaderapp.core.logging.AppLogger

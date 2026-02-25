@@ -1,18 +1,18 @@
-package com.loaderapp.di
+package com.loaderapp.di.core
 
-import com.loaderapp.core.common.AppBuildInfo
 import com.loaderapp.appinfo.AppBuildInfoImpl
+import com.loaderapp.core.common.AppBuildInfo
+import dagger.Binds
 import dagger.Module
-import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
-object AppBuildInfoModule {
+abstract class AppBuildInfoModule {
 
-    @Provides
+    @Binds
     @Singleton
-    fun provideAppBuildInfo(): AppBuildInfo = AppBuildInfoImpl()
+    abstract fun bindAppBuildInfo(impl: AppBuildInfoImpl): AppBuildInfo
 }
