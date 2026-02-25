@@ -1,4 +1,4 @@
-package com.loaderapp.features.orders.ui
+package com.loaderapp.features.orders.presentation
 
 import com.loaderapp.features.orders.domain.usecase.ApplyToOrderUseCase
 import com.loaderapp.features.orders.domain.usecase.CancelOrderUseCase

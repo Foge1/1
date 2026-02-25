@@ -1,4 +1,4 @@
-package com.loaderapp.features.orders.ui
+package com.loaderapp.features.orders.presentation
 
 sealed class OrdersUiEvent {
     data class ShowSnackbar(val message: String) : OrdersUiEvent()

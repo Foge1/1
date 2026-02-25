@@ -10,7 +10,7 @@ import com.loaderapp.features.orders.domain.orders.filterForUser
 import com.loaderapp.features.orders.domain.repository.OrdersRepository
 import com.loaderapp.features.orders.domain.session.CurrentUser
 import com.loaderapp.features.orders.domain.session.CurrentUserProvider
-import com.loaderapp.features.orders.ui.OrderUiModel
+import com.loaderapp.features.orders.presentation.OrderUiModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine

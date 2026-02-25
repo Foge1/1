@@ -1,4 +1,4 @@
-package com.loaderapp.features.orders.ui
+package com.loaderapp.features.orders.presentation
 
 data class DispatcherHistoryUiState(
     val query: String = "",

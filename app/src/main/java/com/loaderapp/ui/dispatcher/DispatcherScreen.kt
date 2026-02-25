@@ -44,12 +44,10 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.text.input.TextFieldValue
-import com.loaderapp.features.orders.ui.OrderUiModel
-import com.loaderapp.features.orders.ui.HistoryOrderUiModel
-import com.loaderapp.features.orders.ui.OrdersTab
-import com.loaderapp.features.orders.ui.OrdersViewModel
-import com.loaderapp.features.orders.ui.toHistoryOrderUiModel
+import com.loaderapp.features.orders.presentation.OrderUiModel
+import com.loaderapp.features.orders.presentation.DispatcherHistoryUiState
+import com.loaderapp.features.orders.presentation.OrdersTab
+import com.loaderapp.features.orders.presentation.OrdersViewModel
 import com.loaderapp.features.orders.presentation.mapper.toLegacyOrderModel
 import com.loaderapp.ui.components.AppScaffold
 import com.loaderapp.ui.components.EmptyStateView
@@ -137,7 +135,8 @@ fun DispatcherScreen(
                         }
                     )
                     2 -> DispatcherHistoryPage(
-                        items = state.historyOrders.map { it.toHistoryOrderUiModel() },
+                        historyState = state.history,
+                        onHistoryQueryChanged = viewModel::onHistoryQueryChanged,
                         bottomNavHeight = bottomNavHeight,
                         onOrderClick = onOrderClick
                     )
@@ -266,18 +265,14 @@ private fun CancelConfirmDialog(onConfirm: () -> Unit, onDismiss: () -> Unit) {
 
 @Composable
 private fun DispatcherHistoryPage(
-    items: List<HistoryOrderUiModel>,
+    historyState: DispatcherHistoryUiState,
+    onHistoryQueryChanged: (String) -> Unit,
     bottomNavHeight: Dp,
     onOrderClick: (Long) -> Unit,
 ) {
-    var localQuery by rememberSaveable(stateSaver = TextFieldValue.Saver) {
-        mutableStateOf(TextFieldValue(""))
-    }
-
     HistoryScreen(
-        items = items,
-        query = localQuery,
-        onQueryChange = { localQuery = it },
+        state = historyState,
+        onQueryChange = onHistoryQueryChanged,
         onOrderClick = onOrderClick,
         bottomPadding = bottomNavHeight + 80.dp
     )
