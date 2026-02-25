@@ -165,7 +165,15 @@ com.loaderapp/
 - **UseCase** = один публичный метод, одна бизнес-операция
 - **ViewModel** не имеет прямого доступа к DAO — только через UseCase
 - **Новые фичи** добавлять в `features/<name>/` со своими domain/data/presentation подпапками
-- **Общие компоненты** (без привязки к фиче) — в `ui/components/`
+- **Feature-to-feature доступ**: только через `features.<owner>.domain.api/*` (или `feature-api`), никакого доступа к `features.<owner>.data.*`
+- **Persistence ownership**: `@Entity/@Dao/migrations` принадлежат фиче-владельцу и не импортируются другой фичей
+- **DI ownership**: Hilt-модули, создающие feature persistence (`Room.databaseBuilder`, `Dao` providers), живут в пространстве этой фичи
+
+### Контракты между фичами (через domain API)
+
+- `features.auth.domain.api.AuthSessionApi` — публичный контракт auth-фичи для чтения текущей сессии (`observeCurrentUser`, `getCurrentUserOrNull`).
+- `features.orders.data.session.CurrentUserProviderImpl` зависит только от `AuthSessionApi`, а не от `UserRepository`/DataStore другой фичи.
+- Реализация контракта предоставляется владельцем (`AuthRepositoryImpl`) и связывается через Hilt (`FeatureRepositoryModule`).
 
 ---
 

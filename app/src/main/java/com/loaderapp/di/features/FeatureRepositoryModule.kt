@@ -1,6 +1,7 @@
 package com.loaderapp.di.features
 
 import com.loaderapp.features.auth.data.AuthRepositoryImpl
+import com.loaderapp.features.auth.domain.api.AuthSessionApi
 import com.loaderapp.features.auth.domain.repository.AuthRepository
 import com.loaderapp.features.orders.data.session.CurrentUserProviderImpl
 import com.loaderapp.features.orders.domain.session.CurrentUserProvider
@@ -17,6 +18,11 @@ abstract class FeatureRepositoryModule {
     @Binds
     @Singleton
     abstract fun bindCurrentUserProvider(impl: CurrentUserProviderImpl): CurrentUserProvider
+
+
+    @Binds
+    @Singleton
+    abstract fun bindAuthSessionApi(impl: AuthRepositoryImpl): AuthSessionApi
 
     @Binds
     @Singleton
