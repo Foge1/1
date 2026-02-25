@@ -263,12 +263,11 @@ class OrdersOrchestratorTest {
     }
 
     private class InMemoryOrdersRepository(
-        private val orders: MutableList<Order> = mutableListOf(),
+        orders: List<Order> = emptyList(),
         private val hasActiveAssignment: Boolean = false,
         private val activeApplicationsForLimitCount: Int = 0
     ) : OrdersRepository {
-        constructor(orders: List<Order>, hasActiveAssignment: Boolean = false, activeApplicationsForLimitCount: Int = 0)
-            : this(orders.toMutableList(), hasActiveAssignment, activeApplicationsForLimitCount)
+        private val orders: MutableList<Order> = orders.toMutableList()
 
         override fun observeOrders(): Flow<List<Order>> = emptyFlow()
 

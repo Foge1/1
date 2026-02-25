@@ -1,5 +1,6 @@
 package com.loaderapp.features.orders.domain.usecase
 
+import app.cash.turbine.test
 import com.loaderapp.features.orders.domain.Order
 import com.loaderapp.features.orders.domain.OrderApplication
 import com.loaderapp.features.orders.domain.OrderStateMachine
@@ -10,12 +11,9 @@ import com.loaderapp.features.orders.domain.Role
 import com.loaderapp.features.orders.domain.repository.OrdersRepository
 import com.loaderapp.features.orders.domain.session.CurrentUser
 import com.loaderapp.features.orders.domain.session.CurrentUserProvider
-import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.take
-import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
@@ -69,18 +67,22 @@ class ObserveOrderUiModelsUseCaseTest {
         val currentUserProvider = StaticCurrentUserProvider(CurrentUser("loader-1", Role.LOADER))
         val useCase = ObserveOrderUiModelsUseCase(repo, currentUserProvider, OrderStateMachine(OrdersLimits()))
 
-        val emissionsDeferred = async { useCase().take(2).toList() }
-        repo.emitOrders(
-            listOf(
-                order(id = 1L, status = OrderStatus.STAFFING),
-                order(id = 2L, status = OrderStatus.STAFFING)
-            )
-        )
+        useCase().test {
+            val first = (awaitItem() as ObserveOrderUiModelsResult.Selected).orders
+            assertEquals(1, first.size)
 
-        val emissions = emissionsDeferred.await().map { (it as ObserveOrderUiModelsResult.Selected).orders }
-        assertEquals(1, emissions[0].size)
-        assertEquals(2, emissions[1].size)
-        assertEquals(listOf(1L, 2L), emissions[1].map { it.order.id })
+            repo.emitOrders(
+                listOf(
+                    order(id = 1L, status = OrderStatus.STAFFING),
+                    order(id = 2L, status = OrderStatus.STAFFING)
+                )
+            )
+
+            val second = (awaitItem() as ObserveOrderUiModelsResult.Selected).orders
+            assertEquals(2, second.size)
+            assertEquals(listOf(1L, 2L), second.map { it.order.id })
+            cancelAndIgnoreRemainingEvents()
+        }
     }
 
     private class StaticCurrentUserProvider(currentUser: CurrentUser) : CurrentUserProvider {

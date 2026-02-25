@@ -59,7 +59,10 @@ class AuthViewModelTest {
 
             viewModel.onEvent(AuthEvent.Login(name = "", role = UserRoleModel.LOADER))
 
-            val state = awaitItem()
+            var state = awaitItem()
+            if (state.sessionState !is SessionState.Error) {
+                state = awaitItem()
+            }
             assertTrue(state.sessionState is SessionState.Error)
             assertEquals("Bad input", state.error)
             assertEquals(false, state.isLoading)
@@ -148,7 +151,7 @@ class AuthViewModelTest {
         }
     }
 
-    private class MainDispatcherRule(
+    class MainDispatcherRule(
         private val dispatcher: TestDispatcher = StandardTestDispatcher()
     ) : TestWatcher() {
         override fun starting(description: Description) {

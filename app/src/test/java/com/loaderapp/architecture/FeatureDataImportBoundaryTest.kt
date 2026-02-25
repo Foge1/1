@@ -8,7 +8,8 @@ class FeatureDataImportBoundaryTest {
 
     @Test
     fun `Given feature source files When scanning imports Then cross-feature data imports are absent`() {
-        val repoRoot = File(System.getProperty("user.dir"))
+        val workingDir = File(requireNotNull(System.getProperty("user.dir")) { "user.dir is not set" })
+        val repoRoot = if (File(workingDir, "app/src/main/java").exists()) workingDir else workingDir.parentFile
         val featuresRoot = File(repoRoot, "app/src/main/java/com/loaderapp/features")
         assertTrue("Features folder not found: ${featuresRoot.path}", featuresRoot.exists())
 

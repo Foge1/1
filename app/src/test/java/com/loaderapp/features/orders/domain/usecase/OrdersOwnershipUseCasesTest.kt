@@ -1,5 +1,6 @@
 package com.loaderapp.features.orders.domain.usecase
 
+import app.cash.turbine.test
 import com.loaderapp.features.orders.domain.OrderStateMachine
 import com.loaderapp.features.orders.domain.OrdersLimits
 
@@ -12,15 +13,13 @@ import com.loaderapp.features.orders.domain.OrderAssignment
 import com.loaderapp.features.orders.domain.OrderAssignmentStatus
 import com.loaderapp.features.orders.domain.OrderTime
 import com.loaderapp.features.orders.domain.Role
+import com.loaderapp.features.orders.testing.OrderAssignmentTestFactory.assignment
 import com.loaderapp.features.orders.domain.repository.OrdersRepository
 import com.loaderapp.features.orders.domain.session.CurrentUser
 import com.loaderapp.features.orders.domain.session.CurrentUserProvider
-import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.take
-import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
@@ -211,12 +210,12 @@ class OrdersOwnershipUseCasesTest {
         val currentUserProvider = FakeCurrentUserProvider(CurrentUser("dispatcher-1", Role.DISPATCHER))
         val useCase = ObserveOrdersForRoleUseCase(repo, currentUserProvider)
 
-        val emissionsDeferred = async { useCase().take(2).toList() }
-        currentUserProvider.emit(CurrentUser("dispatcher-2", Role.DISPATCHER))
-
-        val emissions = emissionsDeferred.await()
-        assertEquals(listOf(1L), emissions[0].map { it.id })
-        assertEquals(listOf(2L), emissions[1].map { it.id })
+        useCase().test {
+            assertEquals(listOf(1L), awaitItem().map { it.id })
+            currentUserProvider.emit(CurrentUser("dispatcher-2", Role.DISPATCHER))
+            assertEquals(listOf(2L), awaitItem().map { it.id })
+            cancelAndIgnoreRemainingEvents()
+        }
     }
 
     // ── Test doubles ──────────────────────────────────────────────────────────
@@ -237,11 +236,11 @@ class OrdersOwnershipUseCasesTest {
     }
 
     private class InMemoryOrdersRepository(
-        initial: List<Order> = emptyList(),
+        orders: List<Order> = emptyList(),
         private val hasActiveAssignment: Boolean = false,
         private val activeApplicationsForLimitCount: Int = 0
     ) : OrdersRepository {
-        private val state = MutableStateFlow(initial)
+        private val state = MutableStateFlow(orders)
 
         override fun observeOrders(): Flow<List<Order>> = state
 
@@ -304,10 +303,11 @@ class OrdersOwnershipUseCasesTest {
 }
 
 
-private fun activeAssignment(orderId: Long, loaderId: String): OrderAssignment = OrderAssignment(
-    orderId = orderId,
-    loaderId = loaderId,
-    status = OrderAssignmentStatus.ACTIVE,
-    assignedAtMillis = 0L,
-    startedAtMillis = 0L
-)
+private fun activeAssignment(orderId: Long, loaderId: String): OrderAssignment =
+    assignment(
+        orderId = orderId,
+        loaderId = loaderId,
+        status = OrderAssignmentStatus.ACTIVE,
+        assignedAtMillis = 0L,
+        startedAtMillis = 0L
+    )

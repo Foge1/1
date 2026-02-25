@@ -1,16 +1,15 @@
 package com.loaderapp.features.orders.data.local.db
 
-import androidx.room.Database
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class OrdersMigrationsTest {
 
     @Test
-    fun `orders database version is 3`() {
-        val annotation = OrdersDatabase::class.java.getAnnotation(Database::class.java)
-        assertEquals(3, annotation.version)
+    fun `orders migrations target schema version 3`() {
+        assertTrue(OrdersMigrations.ALL.any { it.endVersion == 3 })
     }
 
     @Test

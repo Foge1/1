@@ -170,8 +170,7 @@ internal class InMemoryOrdersDao : OrdersDao {
             list.map { entity ->
                 val shouldExpire = entity.status == staffingStatus &&
                     entity.orderTimeType == exactTimeType &&
-                    entity.orderTimeExactMillis != null &&
-                    entity.orderTimeExactMillis < expirationThreshold
+                    entity.orderTimeExactMillis?.let { it < expirationThreshold } == true
                 if (shouldExpire) {
                     updated++
                     entity.copy(status = expiredStatus)
@@ -259,4 +258,13 @@ internal class InMemoryAssignmentsDao : AssignmentsDao {
 
     override suspend fun countAssignmentsByLoaderAndStatus(loaderId: String, status: String): Int =
         assigns.value.count { it.loaderId == loaderId && it.status == status }
+
+    override suspend fun findActiveAssignmentsByLoaders(loaderIds: List<String>, status: String) =
+        assigns.value
+            .asSequence()
+            .filter { it.loaderId in loaderIds && it.status == status }
+            .map { com.loaderapp.features.orders.data.local.dao.LoaderOrderPair(loaderId = it.loaderId, orderId = it.orderId) }
+            .toList()
+    override suspend fun countAssignmentsByOrderLoaderAndStatuses(orderId: Long, loaderId: String, statuses: List<String>): Int =
+        assigns.value.count { it.orderId == orderId && it.loaderId == loaderId && it.status in statuses }
 }

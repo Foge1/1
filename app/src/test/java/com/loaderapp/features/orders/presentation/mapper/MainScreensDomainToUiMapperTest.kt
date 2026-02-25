@@ -6,6 +6,7 @@ import com.loaderapp.features.orders.domain.OrderApplication
 import com.loaderapp.features.orders.domain.OrderApplicationStatus
 import com.loaderapp.features.orders.domain.OrderAssignment
 import com.loaderapp.features.orders.domain.OrderAssignmentStatus
+import com.loaderapp.features.orders.testing.OrderAssignmentTestFactory.assignment
 import com.loaderapp.features.orders.domain.OrderStatus
 import com.loaderapp.features.orders.domain.OrderTime
 import com.loaderapp.features.orders.domain.Role
@@ -20,8 +21,8 @@ class MainScreensDomainToUiMapperTest {
     fun `Given domain order When mapping for order card Then uses active assignments and metadata defaults`() {
         val domain = testOrder(
             assignments = listOf(
-                OrderAssignment(orderId = 10L, loaderId = "loader-1", status = OrderAssignmentStatus.ACTIVE, assignedAtMillis = 1L),
-                OrderAssignment(orderId = 10L, loaderId = "loader-2", status = OrderAssignmentStatus.COMPLETED, assignedAtMillis = 2L)
+                assignment(orderId = 10L, loaderId = "loader-1", status = OrderAssignmentStatus.ACTIVE, assignedAtMillis = 1L),
+                assignment(orderId = 10L, loaderId = "loader-2", status = OrderAssignmentStatus.COMPLETED, assignedAtMillis = 2L)
             ),
             meta = mapOf("dispatcherId" to "bad-value")
         )
@@ -39,7 +40,7 @@ class MainScreensDomainToUiMapperTest {
     fun `Given order ui model When mapping for order card Then selected workers are not lower than active assignments`() {
         val order = testOrder(
             assignments = listOf(
-                OrderAssignment(orderId = 10L, loaderId = "loader-1", status = OrderAssignmentStatus.ACTIVE, assignedAtMillis = 3L)
+                assignment(orderId = 10L, loaderId = "loader-1", status = OrderAssignmentStatus.ACTIVE, assignedAtMillis = 3L)
             ),
             applications = listOf(
                 OrderApplication(10L, "loader-1", OrderApplicationStatus.SELECTED, 1L),
