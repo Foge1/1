@@ -35,6 +35,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.loaderapp.core.common.UiState
+import com.loaderapp.ui.common.asString
 import com.loaderapp.domain.model.OrderModel
 import com.loaderapp.domain.model.OrderStatusModel
 import com.loaderapp.presentation.order.OrderDetailViewModel
@@ -78,7 +79,7 @@ fun OrderDetailScreen(
     ) { padding ->
         when (val state = orderState) {
             is UiState.Loading -> LoadingView(message = "Загрузка заказа...")
-            is UiState.Error -> ErrorView(message = state.message, onRetry = null)
+            is UiState.Error -> ErrorView(message = state.message.asString(), onRetry = null)
             is UiState.Success -> OrderDetailsContent(
                 order = state.data,
                 workerCount = workerCount,

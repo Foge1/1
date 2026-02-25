@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.loaderapp.core.common.Result
 import com.loaderapp.core.common.UiState
+import com.loaderapp.core.common.UiText
+import com.loaderapp.presentation.common.toUiText
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -22,7 +24,7 @@ import kotlinx.coroutines.launch
  */
 abstract class BaseViewModel : ViewModel() {
 
-    private val _snackbarMessage = Channel<String>(Channel.BUFFERED)
+    private val _snackbarMessage = Channel<UiText>(Channel.BUFFERED)
 
     /** Collect in UI with [LaunchedEffect] to show Snackbar messages. */
     val snackbarMessage = _snackbarMessage.receiveAsFlow()
@@ -32,10 +34,14 @@ abstract class BaseViewModel : ViewModel() {
     }
 
     protected open fun handleError(throwable: Throwable) {
-        showSnackbar(throwable.message ?: "Произошла неизвестная ошибка")
+        showSnackbar(UiText.Dynamic(throwable.message ?: "Произошла неизвестная ошибка"))
     }
 
     protected fun showSnackbar(message: String) {
+        showSnackbar(UiText.Dynamic(message))
+    }
+
+    protected fun showSnackbar(message: UiText) {
         viewModelScope.launch { _snackbarMessage.send(message) }
     }
 
@@ -55,6 +61,10 @@ abstract class BaseViewModel : ViewModel() {
     }
 
     protected fun <T> MutableStateFlow<UiState<T>>.setError(message: String) {
+        setError(UiText.Dynamic(message))
+    }
+
+    protected fun <T> MutableStateFlow<UiState<T>>.setError(message: UiText) {
         value = UiState.Error(message)
         showSnackbar(message)
     }
@@ -70,7 +80,7 @@ abstract class BaseViewModel : ViewModel() {
     ) {
         when (result) {
             is Result.Success -> { stateFlow.setSuccess(result.data); onSuccess?.invoke(result.data) }
-            is Result.Error   -> stateFlow.setError(result.message)
+            is Result.Error   -> stateFlow.setError(result.error.toUiText())
             is Result.Loading -> stateFlow.setLoading()
         }
     }
