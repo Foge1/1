@@ -17,8 +17,8 @@ import com.loaderapp.features.orders.domain.usecase.StartOrderUseCase
 import com.loaderapp.features.orders.domain.usecase.UnselectApplicantUseCase
 import com.loaderapp.features.orders.domain.usecase.UseCaseResult
 import com.loaderapp.features.orders.domain.usecase.WithdrawApplicationUseCase
-import com.loaderapp.features.orders.ui.OrdersCommand
-import com.loaderapp.features.orders.ui.OrdersOrchestrator
+import com.loaderapp.features.orders.presentation.OrdersCommand
+import com.loaderapp.features.orders.presentation.OrdersOrchestrator
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.flowOf

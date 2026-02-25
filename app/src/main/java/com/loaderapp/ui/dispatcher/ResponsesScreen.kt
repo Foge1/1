@@ -48,9 +48,9 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.loaderapp.features.orders.ui.OrderResponsesUiModel
-import com.loaderapp.features.orders.ui.ResponseRowUiModel
-import com.loaderapp.features.orders.ui.ResponsesViewModel
+import com.loaderapp.features.orders.presentation.OrderResponsesUiModel
+import com.loaderapp.features.orders.presentation.ResponseRowUiModel
+import com.loaderapp.features.orders.presentation.ResponsesViewModel
 import com.loaderapp.ui.components.AppScaffold
 import com.loaderapp.ui.components.EmptyStateView
 import com.loaderapp.ui.components.LoadingView

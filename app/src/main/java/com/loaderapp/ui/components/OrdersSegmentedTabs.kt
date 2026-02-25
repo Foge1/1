@@ -3,7 +3,7 @@ package com.loaderapp.ui.components
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.loaderapp.features.orders.ui.OrdersTab
+import com.loaderapp.features.orders.presentation.OrdersTab
 
 private object OrdersSegmentedTabDefaults {
     val TabsToPagerSpacing = 4.dp

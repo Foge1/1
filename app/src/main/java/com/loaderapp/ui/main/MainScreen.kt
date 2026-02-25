@@ -15,13 +15,13 @@ import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.*
 import com.loaderapp.domain.model.UserRoleModel
 import com.loaderapp.navigation.Route
-import com.loaderapp.features.orders.ui.OrdersViewModel
+import com.loaderapp.features.orders.presentation.OrdersViewModel
 import com.loaderapp.presentation.session.SessionViewModel
 import com.loaderapp.ui.components.AppBottomBar
 import com.loaderapp.ui.components.BottomNavItem
 import com.loaderapp.ui.dispatcher.CreateOrderScreen
 import com.loaderapp.ui.dispatcher.DispatcherScreen
-import com.loaderapp.features.orders.ui.ResponsesViewModel
+import com.loaderapp.features.orders.presentation.ResponsesViewModel
 import com.loaderapp.ui.dispatcher.ResponsesScreen
 import com.loaderapp.ui.history.HistoryScreen
 import com.loaderapp.ui.loader.LoaderScreen

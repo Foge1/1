@@ -8,7 +8,7 @@ import com.loaderapp.features.orders.domain.OrderStatus
 import com.loaderapp.features.orders.domain.OrderTime
 import com.loaderapp.features.orders.domain.OrderAssignmentStatus
 import com.loaderapp.features.orders.presentation.model.OrderCardUiModel
-import com.loaderapp.features.orders.ui.OrderUiModel
+import com.loaderapp.features.orders.presentation.OrderUiModel
 
 fun Order.toUiModel(): OrderCardUiModel {
     val currentWorkers = assignments.count { assignment -> assignment.status == OrderAssignmentStatus.ACTIVE }

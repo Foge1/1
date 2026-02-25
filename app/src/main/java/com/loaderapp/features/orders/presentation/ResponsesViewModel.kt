@@ -1,4 +1,4 @@
-package com.loaderapp.features.orders.ui
+package com.loaderapp.features.orders.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope

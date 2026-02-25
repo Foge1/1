@@ -190,7 +190,7 @@ com.loaderapp/
 ### Текущая реализация границ в Orders
 
 - Маппинг `features.orders.domain.Order` ↔ `domain.model.OrderModel` перенесён из UI в data-мэпперы (`features/orders/data/mappers/LegacyOrderModelMapper.kt`).
-- UI-пакет `features/orders/ui` больше не содержит knowledge о legacy domain-моделях, только `OrderUiModel` и производные UI-состояния.
+- Presentation-пакет `features/orders/presentation` содержит `ViewModel/UiState/UiModel` и мапперы; слой `ui/*` рендерит только готовые UI-структуры.
 - Репозитории возвращают domain-модели; Room entity остаются внутри DAO/data и не поднимаются в ViewModel/UI.
 
 ### Anti-patterns (запрещено)
@@ -199,3 +199,19 @@ com.loaderapp/
 - Держать mapping persistence↔domain или domain↔legacy в composable/UI-пакетах.
 - Делать «псевдо-унификацию» через копирование одинаковых data class в разные фичи.
 - Добавлять feature-специфичную бизнес-логику в `core` только ради переиспользования.
+
+
+## Граница Presentation ↔ UI (Phase 2)
+
+### Жёсткое правило слоёв
+- **presentation**: `ViewModel`, `UiState`, `UiEvent`, `UiEffect`, мапперы `domain -> ui`, orchestration use-case команд.
+- **ui**: только Compose rendering, локальное визуальное состояние (например, opened/closed диалог), прокидывание событий наверх в ViewModel.
+
+### Что запрещено
+- Маппинг `domain/entity -> ui` внутри composable.
+- Фильтрация/группировка/поиск бизнес-списков внутри composable, если это влияет на сценарий экрана.
+- Импорты `data/*` и `domain/*` сущностей напрямую в UI-компоненты (кроме случаев, где это уже UI-контракт типа enum для иконки/цвета и не содержит бизнес-решений).
+
+### Пример до/после
+- **До**: `ui/components/HistoryScreen` принимал сырые `items`, сам делал `search + filter + groupBy(date) + section title`.
+- **После**: `OrdersViewModel` строит `DispatcherHistoryUiState` (`query`, `sections`, `count`), а `HistoryScreen` только рендерит state и шлёт `onQueryChange`.
