@@ -1,19 +1,17 @@
 package com.loaderapp.features.auth.domain.usecase
 
-import com.loaderapp.domain.model.UserModel
+import com.loaderapp.core.common.AppResult
+import com.loaderapp.domain.model.UserRoleModel
+import com.loaderapp.features.auth.domain.model.User
 import com.loaderapp.features.auth.domain.repository.AuthRepository
 import javax.inject.Inject
 
-data class LoginParams(val phone: String, val pin: String)
+data class LoginParams(val name: String, val role: UserRoleModel)
 
-/**
- * UseCase для входа пользователя.
- * TODO: Реализовать когда будет готова серверная авторизация.
- */
 class LoginUseCase @Inject constructor(
     private val authRepository: AuthRepository
 ) {
-    suspend operator fun invoke(params: LoginParams): Result<UserModel> {
-        return authRepository.login(params.phone, params.pin)
+    suspend operator fun invoke(params: LoginParams): AppResult<User> {
+        return authRepository.login(params.name, params.role)
     }
 }

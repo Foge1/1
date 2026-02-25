@@ -1,25 +1,17 @@
 package com.loaderapp.features.auth.domain.repository
 
-import com.loaderapp.domain.model.UserModel
+import com.loaderapp.core.common.AppResult
 import com.loaderapp.domain.model.UserRoleModel
+import com.loaderapp.features.auth.domain.model.SessionState
+import com.loaderapp.features.auth.domain.model.User
+import kotlinx.coroutines.flow.Flow
 
-/**
- * Контракт репозитория аутентификации.
- * TODO: Реализовать AuthRepositoryImpl когда будет добавлена серверная авторизация.
- */
 interface AuthRepository {
-    /** Войти по номеру телефона + PIN */
-    suspend fun login(phone: String, pin: String): Result<UserModel>
+    suspend fun restoreSession(): AppResult<Unit>
 
-    /** Зарегистрироваться */
-    suspend fun register(name: String, phone: String, pin: String, role: UserRoleModel): Result<UserModel>
+    suspend fun login(name: String, role: UserRoleModel): AppResult<User>
 
-    /** Выйти из системы */
-    suspend fun logout()
+    suspend fun logout(): AppResult<Unit>
 
-    /** Текущий авторизованный пользователь или null */
-    suspend fun getCurrentUser(): UserModel?
-
-    /** Сохранить сессию пользователя */
-    suspend fun saveSession(userId: Long)
+    fun observeSession(): Flow<SessionState>
 }

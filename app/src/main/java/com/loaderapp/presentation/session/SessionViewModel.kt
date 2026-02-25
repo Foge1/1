@@ -2,54 +2,49 @@ package com.loaderapp.presentation.session
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.loaderapp.core.common.Result
+import com.loaderapp.core.common.AppError
+import com.loaderapp.core.common.AppResult
 import com.loaderapp.data.preferences.UserPreferences
 import com.loaderapp.domain.model.UserModel
 import com.loaderapp.domain.model.UserRoleModel
-import com.loaderapp.domain.usecase.user.CreateUserParams
-import com.loaderapp.domain.usecase.user.CreateUserUseCase
-import com.loaderapp.domain.usecase.user.GetUserByIdParams
-import com.loaderapp.domain.usecase.user.GetUserByIdUseCase
-import com.loaderapp.domain.usecase.user.GetUserByNameAndRoleParams
-import com.loaderapp.domain.usecase.user.GetUserByNameAndRoleUseCase
+import com.loaderapp.features.auth.domain.model.SessionState as AuthSessionState
+import com.loaderapp.features.auth.domain.repository.AuthRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 sealed class SessionDestination {
     object Loading : SessionDestination()
-    object Auth    : SessionDestination()
-    object Main    : SessionDestination()
+    object Auth : SessionDestination()
+    object Main : SessionDestination()
 
     val isResolved: Boolean get() = this !is Loading
 }
 
 data class SessionState(
-    val user: UserModel?   = null,
+    val user: UserModel? = null,
     val isLoading: Boolean = false,
-    val error: String?     = null
+    val error: String? = null
 )
 
-/**
- * ViewModel managing authentication session lifecycle.
- *
- * Uses [CreateUserUseCase] and [GetUserByIdUseCase] — no direct Repository access.
- * This keeps the ViewModel inside Clean Architecture boundaries and ensures
- * business rules (name validation, initials generation) are always applied.
- */
 @HiltViewModel
 class SessionViewModel @Inject constructor(
-    private val userPreferences: UserPreferences,
-    private val createUserUseCase: CreateUserUseCase,
-    private val getUserByIdUseCase: GetUserByIdUseCase,
-    private val getUserByNameAndRoleUseCase: GetUserByNameAndRoleUseCase
+    private val authRepository: AuthRepository,
+    private val userPreferences: UserPreferences
 ) : ViewModel() {
 
     private val _destination = MutableStateFlow<SessionDestination>(SessionDestination.Loading)
     val destination: StateFlow<SessionDestination> = _destination.asStateFlow()
 
-    private val _sessionState = MutableStateFlow(SessionState())
+    private val _sessionState = MutableStateFlow(SessionState(isLoading = true))
     val sessionState: StateFlow<SessionState> = _sessionState.asStateFlow()
 
     val currentUser: StateFlow<UserModel?> = sessionState
@@ -57,24 +52,51 @@ class SessionViewModel @Inject constructor(
         .stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
     init {
+        observeSession()
         resolveSession()
     }
 
     private fun resolveSession() {
         viewModelScope.launch {
-            val userId = userPreferences.getCurrentUserId()
-            if (userId == null) {
-                _destination.value = SessionDestination.Auth
-                return@launch
+            if (authRepository.restoreSession() is AppResult.Failure) {
+                // observeSession() propagates failure into UI state.
             }
-            when (val result = getUserByIdUseCase(GetUserByIdParams(userId))) {
-                is Result.Success -> {
-                    _sessionState.value = SessionState(user = result.data)
-                    _destination.value  = SessionDestination.Main
-                }
-                else -> {
-                    userPreferences.clearCurrentUser()
-                    _destination.value = SessionDestination.Auth
+        }
+    }
+
+    private fun observeSession() {
+        viewModelScope.launch {
+            authRepository.observeSession().collectLatest { state ->
+                when (state) {
+                    AuthSessionState.Authenticating -> {
+                        _sessionState.value = SessionState(isLoading = true)
+                        _destination.value = SessionDestination.Loading
+                    }
+
+                    AuthSessionState.Unauthenticated -> {
+                        _sessionState.value = SessionState()
+                        _destination.value = SessionDestination.Auth
+                    }
+
+                    is AuthSessionState.Authenticated -> {
+                        val user = UserModel(
+                            id = state.user.id,
+                            name = state.user.name,
+                            phone = state.user.phone,
+                            role = state.user.role,
+                            rating = state.user.rating,
+                            birthDate = state.user.birthDate,
+                            avatarInitials = state.user.avatarInitials,
+                            createdAt = state.user.createdAt
+                        )
+                        _sessionState.value = SessionState(user = user)
+                        _destination.value = SessionDestination.Main
+                    }
+
+                    is AuthSessionState.Error -> {
+                        _sessionState.value = SessionState(error = state.error.toHumanMessage())
+                        _destination.value = SessionDestination.Auth
+                    }
                 }
             }
         }
@@ -82,66 +104,44 @@ class SessionViewModel @Inject constructor(
 
     fun login(name: String, role: UserRoleModel) {
         viewModelScope.launch {
-            _sessionState.value = SessionState(isLoading = true)
-
-            val normalizedName = name.trim()
-
-            when (val existingUserResult =
-                getUserByNameAndRoleUseCase(GetUserByNameAndRoleParams(normalizedName, role))) {
-                is Result.Success -> {
-                    val existingUser = existingUserResult.data
-                    if (existingUser != null) {
-                        userPreferences.setCurrentUserId(existingUser.id)
-                        _sessionState.value = SessionState(user = existingUser)
-                        _destination.value = SessionDestination.Main
-                        return@launch
-                    }
+            _sessionState.update { it.copy(isLoading = true, error = null) }
+            when (val result = authRepository.login(name, role)) {
+                is AppResult.Success -> Unit
+                is AppResult.Failure -> {
+                    _sessionState.update { it.copy(isLoading = false, error = result.error.toHumanMessage()) }
                 }
-                is Result.Error -> {
-                    _sessionState.value = SessionState(error = existingUserResult.message)
-                    return@launch
-                }
-                is Result.Loading -> Unit
-            }
-
-            val domainUser = UserModel(
-                id             = 0,
-                name           = normalizedName,
-                phone          = "",
-                role           = role,
-                rating         = 5.0,
-                birthDate      = null,
-                avatarInitials = "",   // CreateUserUseCase will generate this
-                createdAt      = System.currentTimeMillis()
-            )
-
-            when (val createResult = createUserUseCase(CreateUserParams(domainUser))) {
-                is Result.Success -> {
-                    val userId = createResult.data
-                    userPreferences.setCurrentUserId(userId)
-                    when (val userResult = getUserByIdUseCase(GetUserByIdParams(userId))) {
-                        is Result.Success -> {
-                            _sessionState.value = SessionState(user = userResult.data)
-                            _destination.value  = SessionDestination.Main
-                        }
-                        else -> _sessionState.value = SessionState(error = "Ошибка загрузки профиля")
-                    }
-                }
-                is Result.Error -> _sessionState.value = SessionState(error = createResult.message)
-                else -> Unit
             }
         }
     }
 
     fun logout() {
         viewModelScope.launch {
-            userPreferences.clearCurrentUser()
-            _sessionState.value = SessionState()
-            _destination.value  = SessionDestination.Auth
+            when (val result = authRepository.logout()) {
+                is AppResult.Success -> Unit
+                is AppResult.Failure -> {
+                    _sessionState.update { it.copy(error = result.error.toHumanMessage()) }
+                }
+            }
         }
     }
 
     fun setDarkTheme(enabled: Boolean) {
         viewModelScope.launch { userPreferences.setDarkTheme(enabled) }
     }
+}
+
+private fun AppError.toHumanMessage(): String = when (this) {
+    is AppError.Validation -> message ?: "Ошибка валидации"
+    AppError.Auth.Unauthorized -> "Требуется авторизация"
+    AppError.Auth.Forbidden -> "Доступ запрещён"
+    AppError.Auth.SessionExpired -> "Сессия истекла"
+    AppError.Network.NoInternet -> "Нет интернета"
+    AppError.Network.Timeout -> "Превышено время ожидания"
+    AppError.Network.Dns,
+    AppError.Network.UnknownHost -> "Ошибка сети"
+    is AppError.Storage.Db -> "Ошибка базы данных"
+    is AppError.Storage.Serialization -> "Ошибка чтения сессии"
+    AppError.NotFound -> "Пользователь не найден"
+    is AppError.Backend -> serverMessage ?: "Ошибка сервера"
+    is AppError.Unknown -> cause?.message ?: "Неизвестная ошибка"
 }
