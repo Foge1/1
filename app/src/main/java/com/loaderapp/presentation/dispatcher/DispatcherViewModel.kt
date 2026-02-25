@@ -12,7 +12,7 @@ import com.loaderapp.features.orders.domain.OrderStatus
 import com.loaderapp.features.orders.domain.OrderTime
 import com.loaderapp.features.orders.domain.usecase.CreateOrderUseCase
 import com.loaderapp.features.orders.domain.usecase.UseCaseResult
-import com.loaderapp.features.orders.ui.toOrderModel
+import com.loaderapp.features.orders.data.mappers.toOrderModel
 import com.loaderapp.presentation.base.BaseViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject

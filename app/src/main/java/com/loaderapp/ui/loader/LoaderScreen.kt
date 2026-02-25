@@ -54,7 +54,7 @@ import com.loaderapp.features.orders.ui.HistoryOrderUiModel
 import com.loaderapp.features.orders.ui.OrdersTab
 import com.loaderapp.features.orders.ui.OrdersViewModel
 import com.loaderapp.features.orders.ui.toHistoryOrderUiModel
-import com.loaderapp.features.orders.ui.toLegacyOrderModel
+import com.loaderapp.features.orders.data.mappers.toLegacyOrderModel
 import com.loaderapp.ui.components.AppScaffold
 import com.loaderapp.ui.components.EmptyStateView
 import com.loaderapp.ui.components.FadingEdgeLazyColumn
