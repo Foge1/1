@@ -3,6 +3,7 @@ package com.loaderapp.di.data
 import android.content.Context
 import androidx.room.Room
 import com.loaderapp.data.AppDatabase
+import com.loaderapp.data.AppMigrations
 import com.loaderapp.data.dao.ChatDao
 import com.loaderapp.data.dao.OrderDao
 import com.loaderapp.data.dao.OrderWorkerDao
@@ -26,7 +27,9 @@ object DatabaseModule {
         context,
         AppDatabase::class.java,
         "loader_app_database"
-    ).build()
+    )
+        .addMigrations(*AppMigrations.ALL)
+        .build()
 
     @Provides
     @Singleton

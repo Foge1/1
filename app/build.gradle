@@ -126,6 +126,7 @@ dependencies {
     testImplementation "app.cash.turbine:turbine:1.1.0"
     androidTestImplementation "androidx.test.ext:junit:${versions.androidxJunit}"
     androidTestImplementation "androidx.test.espresso:espresso-core:${versions.espresso}"
+    androidTestImplementation "androidx.room:room-testing:${versions.room}"
     androidTestImplementation platform("androidx.compose:compose-bom:${versions.composeBom}")
     androidTestImplementation 'androidx.compose.ui:ui-test-junit4'
     debugImplementation 'androidx.compose.ui:ui-tooling'
