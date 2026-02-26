@@ -42,7 +42,6 @@ import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runCurrent
-import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -78,7 +77,7 @@ class OrdersViewModelTest {
     // ── OrderUiModel: canApply / canWithdraw correctness ─────────────────────
 
     @Test
-    fun `loader canApply false when activeAssignmentExists`() = runTest {
+    fun `loader canApply false when activeAssignmentExists`() = mainDispatcherRule.runTest {
         val repository = TestOrdersRepository(
             orders = listOf(testOrder(id = 1L, status = OrderStatus.STAFFING)),
             hasActiveAssignment = true
@@ -93,7 +92,7 @@ class OrdersViewModelTest {
     }
 
     @Test
-    fun `loader canApply false when activeApplicationsForLimitCount at limit`() = runTest {
+    fun `loader canApply false when activeApplicationsForLimitCount at limit`() = mainDispatcherRule.runTest {
         val repository = TestOrdersRepository(
             orders = listOf(testOrder(id = 1L, status = OrderStatus.STAFFING)),
             activeApplicationsForLimitCount = 3
@@ -107,7 +106,7 @@ class OrdersViewModelTest {
     }
 
     @Test
-    fun `loader canApply true when no active assignment and below limit`() = runTest {
+    fun `loader canApply true when no active assignment and below limit`() = mainDispatcherRule.runTest {
         val repository = TestOrdersRepository(
             orders = listOf(testOrder(id = 1L, status = OrderStatus.STAFFING)),
             hasActiveAssignment = false,
@@ -123,7 +122,7 @@ class OrdersViewModelTest {
     }
 
     @Test
-    fun `dispatcher creator canStart true only when selectedCount equals workersTotal`() = runTest {
+    fun `dispatcher creator canStart true only when selectedCount equals workersTotal`() = mainDispatcherRule.runTest {
         val applications = listOf(
             OrderApplication(orderId = 1L, loaderId = "l1", status = OrderApplicationStatus.SELECTED, appliedAtMillis = 0L),
             OrderApplication(orderId = 1L, loaderId = "l2", status = OrderApplicationStatus.SELECTED, appliedAtMillis = 0L)
@@ -143,7 +142,7 @@ class OrdersViewModelTest {
     }
 
     @Test
-    fun `dispatcher creator canStart false when not enough selected`() = runTest {
+    fun `dispatcher creator canStart false when not enough selected`() = mainDispatcherRule.runTest {
         val applications = listOf(
             OrderApplication(orderId = 1L, loaderId = "l1", status = OrderApplicationStatus.SELECTED, appliedAtMillis = 0L)
         )
@@ -162,7 +161,7 @@ class OrdersViewModelTest {
     }
 
     @Test
-    fun `non-creator dispatcher canSelect false`() = runTest {
+    fun `non-creator dispatcher canSelect false`() = mainDispatcherRule.runTest {
         val repository = TestOrdersRepository(
             orders = listOf(
                 testOrder(id = 1L, status = OrderStatus.STAFFING, createdBy = "other-dispatcher")
@@ -179,7 +178,7 @@ class OrdersViewModelTest {
 
 
     @Test
-    fun `not selected user updates ui state instead of crash`() = runTest {
+    fun `not selected user updates ui state instead of crash`() = mainDispatcherRule.runTest {
         val repository = TestOrdersRepository(
             orders = listOf(testOrder(id = 1L, status = OrderStatus.STAFFING))
         )
@@ -195,7 +194,7 @@ class OrdersViewModelTest {
     // ── Refresh ───────────────────────────────────────────────────────────────
 
     @Test
-    fun `refresh success toggles refreshing true to false`() = runTest {
+    fun `refresh success toggles refreshing true to false`() = mainDispatcherRule.runTest {
         val repository = TestOrdersRepository(refreshMode = ExecutionMode.Success)
         val viewModel = buildViewModel(repository, loaderUser)
         advanceUntilIdle()
@@ -209,7 +208,7 @@ class OrdersViewModelTest {
     }
 
     @Test
-    fun `refresh failure emits snackbar and clears refreshing`() = runTest {
+    fun `refresh failure emits snackbar and clears refreshing`() = mainDispatcherRule.runTest {
         val repository = TestOrdersRepository(refreshMode = ExecutionMode.Success)
         val viewModel = buildViewModel(repository, loaderUser)
         advanceUntilIdle()
@@ -226,7 +225,7 @@ class OrdersViewModelTest {
     }
 
     @Test
-    fun `refresh cancellation clears refreshing without snackbar`() = runTest {
+    fun `refresh cancellation clears refreshing without snackbar`() = mainDispatcherRule.runTest {
         val repository = TestOrdersRepository(refreshMode = ExecutionMode.Success)
         val viewModel = buildViewModel(repository, loaderUser)
         advanceUntilIdle()
@@ -246,7 +245,7 @@ class OrdersViewModelTest {
     // ── Pending actions ───────────────────────────────────────────────────────
 
     @Test
-    fun `pending action added then removed on success`() = runTest {
+    fun `pending action added then removed on success`() = mainDispatcherRule.runTest {
         val repository = TestOrdersRepository(
             orders = listOf(testOrder(id = 1L, status = OrderStatus.STAFFING)),
             applyMode = ExecutionMode.Success
@@ -260,7 +259,7 @@ class OrdersViewModelTest {
     }
 
     @Test
-    fun `pending action removed even after cancellation`() = runTest {
+    fun `pending action removed even after cancellation`() = mainDispatcherRule.runTest {
         val repository = TestOrdersRepository(
             orders = listOf(testOrder(id = 1L, status = OrderStatus.STAFFING)),
             applyMode = ExecutionMode.Cancel
@@ -282,7 +281,7 @@ class OrdersViewModelTest {
 
 
     @Test
-    fun `responses badge is zero for empty orders`() = runTest {
+    fun `responses badge is zero for empty orders`() = mainDispatcherRule.runTest {
         val repository = TestOrdersRepository(orders = emptyList())
         val viewModel = buildViewModel(repository, dispatcherUser)
         advanceUntilIdle()
@@ -291,7 +290,7 @@ class OrdersViewModelTest {
     }
 
     @Test
-    fun `responses badge counts available orders responses only`() = runTest {
+    fun `responses badge counts available orders responses only`() = mainDispatcherRule.runTest {
         val available = testOrder(
             id = 1L,
             status = OrderStatus.STAFFING,
@@ -318,7 +317,7 @@ class OrdersViewModelTest {
     }
 
     @Test
-    fun `responses badge resets to zero when user is not selected`() = runTest {
+    fun `responses badge resets to zero when user is not selected`() = mainDispatcherRule.runTest {
         val repository = TestOrdersRepository(
             orders = listOf(
                 testOrder(
@@ -341,7 +340,7 @@ class OrdersViewModelTest {
 
 
     @Test
-    fun `Given selected dispatcher When current user becomes null Then uiState requires user selection and clears order lists`() = runTest {
+    fun `Given selected dispatcher When current user becomes null Then uiState requires user selection and clears order lists`() = mainDispatcherRule.runTest {
         val repository = TestOrdersRepository(
             orders = listOf(testOrder(id = 1L, status = OrderStatus.STAFFING))
         )
@@ -478,10 +477,13 @@ class OrdersViewModelTest {
     // ── Rules ─────────────────────────────────────────────────────────────────
 
     class MainDispatcherRule(
-        private val dispatcher: TestDispatcher = StandardTestDispatcher()
+        val testDispatcher: TestDispatcher = StandardTestDispatcher()
     ) : TestWatcher() {
-        override fun starting(description: Description) { Dispatchers.setMain(dispatcher) }
+        override fun starting(description: Description) { Dispatchers.setMain(testDispatcher) }
         override fun finished(description: Description) { Dispatchers.resetMain() }
+
+        fun runTest(block: suspend TestScope.() -> Unit) =
+            kotlinx.coroutines.test.runTest(testDispatcher.scheduler, block = block)
     }
 
     // ── Fixtures ──────────────────────────────────────────────────────────────
