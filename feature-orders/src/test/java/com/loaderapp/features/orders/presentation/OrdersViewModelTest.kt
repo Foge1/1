@@ -161,7 +161,6 @@ class OrdersViewModelTest {
         assertNotNull(available.first().startDisabledReason)
     }
 
-    @Ignore("Flaky due ViewModel background history query dispatcher teardown in unit environment")
     @Test
     fun `non-creator dispatcher canSelect false`() = runTest {
         val repository = TestOrdersRepository(
