@@ -43,14 +43,16 @@ class SelectApplicantUseCase @Inject constructor(
     }
 
     suspend operator fun invoke(orderId: Long, loaderId: String): UseCaseResult<Unit> {
-        return runCatching {
+        return try {
             when (val result = select(orderId, loaderId)) {
                 SelectApplicantResult.Success -> UseCaseResult.Success(Unit)
                 SelectApplicantResult.OrderNotFound -> UseCaseResult.Failure("Заказ не найден")
                 SelectApplicantResult.AlreadyAssigned -> UseCaseResult.Failure("Грузчик уже в работе на другом заказе")
                 is SelectApplicantResult.Forbidden -> UseCaseResult.Failure(result.reason)
             }
-        }.getOrElse { e ->
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
+        } catch (e: Exception) {
             UseCaseResult.Failure(e.message ?: "Не удалось выбрать грузчика")
         }
     }

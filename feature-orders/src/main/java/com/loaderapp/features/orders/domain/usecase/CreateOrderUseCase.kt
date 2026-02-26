@@ -39,11 +39,9 @@ class CreateOrderUseCase @Inject constructor(
             createdByUserId = currentUser.id
         )
 
-        return runCatching {
+        return runCatchingUseCase("Не удалось создать заказ") {
             ordersRepository.createOrder(order)
-            UseCaseResult.Success(Unit)
-        }.getOrElse { error ->
-            UseCaseResult.Failure(error.message ?: "Не удалось создать заказ")
+            Unit
         }
     }
 }

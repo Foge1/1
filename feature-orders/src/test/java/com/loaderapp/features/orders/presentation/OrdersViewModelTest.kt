@@ -35,6 +35,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.TestScope
@@ -48,16 +49,31 @@ import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Assert.assertEquals
-import org.junit.Ignore
+import org.junit.After
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TestWatcher
 import org.junit.runner.Description
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class OrdersViewModelTest {
 
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
+
+    private val createdViewModels = mutableListOf<OrdersViewModel>()
+
+    @After
+    fun tearDown() {
+        createdViewModels.forEach { it.clearForTest() }
+        createdViewModels.clear()
+    }
+
+    private fun OrdersViewModel.clearForTest() {
+        val clearMethod = androidx.lifecycle.ViewModel::class.java.getDeclaredMethod("clear")
+        clearMethod.isAccessible = true
+        clearMethod.invoke(this)
+    }
 
     // ── OrderUiModel: canApply / canWithdraw correctness ─────────────────────
 
@@ -145,7 +161,6 @@ class OrdersViewModelTest {
         assertNotNull(available.first().startDisabledReason)
     }
 
-    @Ignore("Flaky due ViewModel background history query dispatcher teardown in unit environment")
     @Test
     fun `non-creator dispatcher canSelect false`() = runTest {
         val repository = TestOrdersRepository(
@@ -378,7 +393,7 @@ class OrdersViewModelTest {
                 stateMachine = stateMachine,
             ),
             ordersOrchestrator = orchestrator
-        )
+        ).also { createdViewModels += it }
     }
 
     // ── Enums ─────────────────────────────────────────────────────────────────

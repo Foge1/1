@@ -38,6 +38,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "loader_app_database"
                 )
+                    .addMigrations(*AppMigrations.ALL)
                     .build()
                 INSTANCE = instance
                 instance

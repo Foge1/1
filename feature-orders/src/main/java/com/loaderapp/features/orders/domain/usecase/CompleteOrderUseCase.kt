@@ -52,11 +52,9 @@ class CompleteOrderUseCase @Inject constructor(
             return UseCaseResult.Failure(transitionResult.reason.toDisplayMessage())
         }
 
-        return runCatching {
+        return runCatchingUseCase("Не удалось завершить заказ") {
             repository.completeOrder(orderId)
-            UseCaseResult.Success(Unit)
-        }.getOrElse { e ->
-            UseCaseResult.Failure(e.message ?: "Не удалось завершить заказ")
+            Unit
         }
     }
 }

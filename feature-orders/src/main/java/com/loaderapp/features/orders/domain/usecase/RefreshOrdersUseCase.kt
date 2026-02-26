@@ -7,11 +7,9 @@ class RefreshOrdersUseCase @Inject constructor(
     private val ordersRepository: OrdersRepository
 ) {
     suspend operator fun invoke(): UseCaseResult<Unit> {
-        return runCatching {
+        return runCatchingUseCase("Не удалось обновить заказы") {
             ordersRepository.refresh()
-            UseCaseResult.Success(Unit)
-        }.getOrElse { error ->
-            UseCaseResult.Failure(error.message ?: "Не удалось обновить заказы")
+            Unit
         }
     }
 }

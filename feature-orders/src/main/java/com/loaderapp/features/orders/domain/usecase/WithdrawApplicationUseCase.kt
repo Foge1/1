@@ -37,11 +37,9 @@ class WithdrawApplicationUseCase @Inject constructor(
             )
         }
 
-        return runCatching {
+        return runCatchingUseCase("Не удалось отозвать отклик") {
             repository.withdrawApplication(orderId, actor.id)
-            UseCaseResult.Success(Unit)
-        }.getOrElse { e ->
-            UseCaseResult.Failure(e.message ?: "Не удалось отозвать отклик")
+            Unit
         }
     }
 }

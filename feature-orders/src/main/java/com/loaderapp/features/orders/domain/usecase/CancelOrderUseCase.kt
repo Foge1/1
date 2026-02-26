@@ -41,11 +41,9 @@ class CancelOrderUseCase @Inject constructor(
             return UseCaseResult.Failure(transitionResult.reason.toDisplayMessage())
         }
 
-        return runCatching {
+        return runCatchingUseCase("Не удалось отменить заказ") {
             repository.cancelOrder(orderId, reason)
-            UseCaseResult.Success(Unit)
-        }.getOrElse { e ->
-            UseCaseResult.Failure(e.message ?: "Не удалось отменить заказ")
+            Unit
         }
     }
 }
