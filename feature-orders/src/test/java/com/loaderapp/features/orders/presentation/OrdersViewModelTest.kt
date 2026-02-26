@@ -482,8 +482,14 @@ class OrdersViewModelTest {
         override fun starting(description: Description) { Dispatchers.setMain(testDispatcher) }
         override fun finished(description: Description) { Dispatchers.resetMain() }
 
-        fun runTest(block: suspend TestScope.() -> Unit) =
-            kotlinx.coroutines.test.runTest(testDispatcher.scheduler, block = block)
+        fun runTest(
+            dispatchTimeoutMs: Long = 60_000L,
+            testBody: suspend TestScope.() -> Unit
+        ) = kotlinx.coroutines.test.runTest(
+            testDispatcher.scheduler,
+            dispatchTimeoutMs = dispatchTimeoutMs,
+            testBody = testBody
+        )
     }
 
     // ── Fixtures ──────────────────────────────────────────────────────────────
