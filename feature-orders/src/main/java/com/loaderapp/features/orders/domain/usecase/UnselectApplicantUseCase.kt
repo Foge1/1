@@ -32,11 +32,9 @@ class UnselectApplicantUseCase @Inject constructor(
             return UseCaseResult.Failure("Нет прав для снятия выбора грузчика в этом заказе")
         }
 
-        return runCatching {
+        return runCatchingUseCase("Не удалось снять кандидата") {
             repository.unselectApplicant(orderId, loaderId)
-            UseCaseResult.Success(Unit)
-        }.getOrElse { e ->
-            UseCaseResult.Failure(e.message ?: "Не удалось снять выбор грузчика")
+            Unit
         }
     }
 }

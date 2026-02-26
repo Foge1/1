@@ -49,11 +49,9 @@ class ApplyToOrderUseCase @Inject constructor(
             )
         }
 
-        return runCatching {
+        return runCatchingUseCase("Не удалось отправить отклик") {
             repository.applyToOrder(orderId, actor.id, now)
-            UseCaseResult.Success(Unit)
-        }.getOrElse { e ->
-            UseCaseResult.Failure(e.message ?: "Не удалось отправить отклик")
+            Unit
         }
     }
 }

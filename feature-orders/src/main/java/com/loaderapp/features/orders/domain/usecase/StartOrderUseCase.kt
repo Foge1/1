@@ -54,14 +54,16 @@ class StartOrderUseCase @Inject constructor(
     }
 
     suspend operator fun invoke(orderId: Long, now: Long = System.currentTimeMillis()): UseCaseResult<Unit> {
-        return runCatching {
+        return try {
             when (val result = start(orderId, now)) {
                 StartOrderResult.Success -> UseCaseResult.Success(Unit)
                 StartOrderResult.OrderNotFound -> UseCaseResult.Failure("Заказ не найден")
                 is StartOrderResult.Forbidden -> UseCaseResult.Failure(result.reason)
                 is StartOrderResult.AssigneeAlreadyBusy -> UseCaseResult.Failure("Грузчик уже в работе на другом заказе")
             }
-        }.getOrElse { e ->
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
+        } catch (e: Exception) {
             UseCaseResult.Failure(e.message ?: "Не удалось запустить заказ")
         }
     }
