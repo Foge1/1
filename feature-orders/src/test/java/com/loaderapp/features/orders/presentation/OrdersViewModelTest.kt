@@ -48,7 +48,6 @@ import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Assert.assertEquals
-import org.junit.After
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TestWatcher
@@ -62,8 +61,19 @@ class OrdersViewModelTest {
 
     private val createdViewModels = mutableListOf<OrdersViewModel>()
 
-    @After
-    fun tearDown() {
+    private fun runOrdersTest(
+        dispatchTimeoutMs: Long = 60_000L,
+        testBody: suspend TestScope.() -> Unit
+    ) = mainDispatcherRule.runTest(dispatchTimeoutMs = dispatchTimeoutMs) {
+        try {
+            testBody()
+        } finally {
+            clearCreatedViewModels()
+            advanceUntilIdle()
+        }
+    }
+
+    private fun TestScope.clearCreatedViewModels() {
         createdViewModels.forEach { it.clearForTest() }
         createdViewModels.clear()
     }
@@ -77,7 +87,7 @@ class OrdersViewModelTest {
     // ── OrderUiModel: canApply / canWithdraw correctness ─────────────────────
 
     @Test
-    fun `loader canApply false when activeAssignmentExists`() = mainDispatcherRule.runTest {
+    fun `loader canApply false when activeAssignmentExists`() = runOrdersTest {
         val repository = TestOrdersRepository(
             orders = listOf(testOrder(id = 1L, status = OrderStatus.STAFFING)),
             hasActiveAssignment = true
@@ -92,7 +102,7 @@ class OrdersViewModelTest {
     }
 
     @Test
-    fun `loader canApply false when activeApplicationsForLimitCount at limit`() = mainDispatcherRule.runTest {
+    fun `loader canApply false when activeApplicationsForLimitCount at limit`() = runOrdersTest {
         val repository = TestOrdersRepository(
             orders = listOf(testOrder(id = 1L, status = OrderStatus.STAFFING)),
             activeApplicationsForLimitCount = 3
@@ -106,7 +116,7 @@ class OrdersViewModelTest {
     }
 
     @Test
-    fun `loader canApply true when no active assignment and below limit`() = mainDispatcherRule.runTest {
+    fun `loader canApply true when no active assignment and below limit`() = runOrdersTest {
         val repository = TestOrdersRepository(
             orders = listOf(testOrder(id = 1L, status = OrderStatus.STAFFING)),
             hasActiveAssignment = false,
@@ -122,7 +132,7 @@ class OrdersViewModelTest {
     }
 
     @Test
-    fun `dispatcher creator canStart true only when selectedCount equals workersTotal`() = mainDispatcherRule.runTest {
+    fun `dispatcher creator canStart true only when selectedCount equals workersTotal`() = runOrdersTest {
         val applications = listOf(
             OrderApplication(orderId = 1L, loaderId = "l1", status = OrderApplicationStatus.SELECTED, appliedAtMillis = 0L),
             OrderApplication(orderId = 1L, loaderId = "l2", status = OrderApplicationStatus.SELECTED, appliedAtMillis = 0L)
@@ -142,7 +152,7 @@ class OrdersViewModelTest {
     }
 
     @Test
-    fun `dispatcher creator canStart false when not enough selected`() = mainDispatcherRule.runTest {
+    fun `dispatcher creator canStart false when not enough selected`() = runOrdersTest {
         val applications = listOf(
             OrderApplication(orderId = 1L, loaderId = "l1", status = OrderApplicationStatus.SELECTED, appliedAtMillis = 0L)
         )
@@ -161,7 +171,7 @@ class OrdersViewModelTest {
     }
 
     @Test
-    fun `non-creator dispatcher canSelect false`() = mainDispatcherRule.runTest {
+    fun `non-creator dispatcher canSelect false`() = runOrdersTest {
         val repository = TestOrdersRepository(
             orders = listOf(
                 testOrder(id = 1L, status = OrderStatus.STAFFING, createdBy = "other-dispatcher")
@@ -178,7 +188,7 @@ class OrdersViewModelTest {
 
 
     @Test
-    fun `not selected user updates ui state instead of crash`() = mainDispatcherRule.runTest {
+    fun `not selected user updates ui state instead of crash`() = runOrdersTest {
         val repository = TestOrdersRepository(
             orders = listOf(testOrder(id = 1L, status = OrderStatus.STAFFING))
         )
@@ -194,7 +204,7 @@ class OrdersViewModelTest {
     // ── Refresh ───────────────────────────────────────────────────────────────
 
     @Test
-    fun `refresh success toggles refreshing true to false`() = mainDispatcherRule.runTest {
+    fun `refresh success toggles refreshing true to false`() = runOrdersTest {
         val repository = TestOrdersRepository(refreshMode = ExecutionMode.Success)
         val viewModel = buildViewModel(repository, loaderUser)
         advanceUntilIdle()
@@ -208,7 +218,7 @@ class OrdersViewModelTest {
     }
 
     @Test
-    fun `refresh failure emits snackbar and clears refreshing`() = mainDispatcherRule.runTest {
+    fun `refresh failure emits snackbar and clears refreshing`() = runOrdersTest {
         val repository = TestOrdersRepository(refreshMode = ExecutionMode.Success)
         val viewModel = buildViewModel(repository, loaderUser)
         advanceUntilIdle()
@@ -225,7 +235,7 @@ class OrdersViewModelTest {
     }
 
     @Test
-    fun `refresh cancellation clears refreshing without snackbar`() = mainDispatcherRule.runTest {
+    fun `refresh cancellation clears refreshing without snackbar`() = runOrdersTest {
         val repository = TestOrdersRepository(refreshMode = ExecutionMode.Success)
         val viewModel = buildViewModel(repository, loaderUser)
         advanceUntilIdle()
@@ -245,7 +255,7 @@ class OrdersViewModelTest {
     // ── Pending actions ───────────────────────────────────────────────────────
 
     @Test
-    fun `pending action added then removed on success`() = mainDispatcherRule.runTest {
+    fun `pending action added then removed on success`() = runOrdersTest {
         val repository = TestOrdersRepository(
             orders = listOf(testOrder(id = 1L, status = OrderStatus.STAFFING)),
             applyMode = ExecutionMode.Success
@@ -259,7 +269,7 @@ class OrdersViewModelTest {
     }
 
     @Test
-    fun `pending action removed even after cancellation`() = mainDispatcherRule.runTest {
+    fun `pending action removed even after cancellation`() = runOrdersTest {
         val repository = TestOrdersRepository(
             orders = listOf(testOrder(id = 1L, status = OrderStatus.STAFFING)),
             applyMode = ExecutionMode.Cancel
@@ -281,7 +291,7 @@ class OrdersViewModelTest {
 
 
     @Test
-    fun `responses badge is zero for empty orders`() = mainDispatcherRule.runTest {
+    fun `responses badge is zero for empty orders`() = runOrdersTest {
         val repository = TestOrdersRepository(orders = emptyList())
         val viewModel = buildViewModel(repository, dispatcherUser)
         advanceUntilIdle()
@@ -290,7 +300,7 @@ class OrdersViewModelTest {
     }
 
     @Test
-    fun `responses badge counts available orders responses only`() = mainDispatcherRule.runTest {
+    fun `responses badge counts available orders responses only`() = runOrdersTest {
         val available = testOrder(
             id = 1L,
             status = OrderStatus.STAFFING,
@@ -312,18 +322,12 @@ class OrdersViewModelTest {
         val repository = TestOrdersRepository(orders = listOf(available, inProgress, history))
         val viewModel = buildViewModel(repository, dispatcherUser)
 
-        try {
-            advanceUntilIdle()
-            assertTrue(viewModel.uiState.value.responsesBadge.totalResponses == 1)
-        } finally {
-            viewModel.clearForTest()
-            createdViewModels -= viewModel
-            advanceUntilIdle()
-        }
+        advanceUntilIdle()
+        assertTrue(viewModel.uiState.value.responsesBadge.totalResponses == 1)
     }
 
     @Test
-    fun `responses badge resets to zero when user is not selected`() = mainDispatcherRule.runTest {
+    fun `responses badge resets to zero when user is not selected`() = runOrdersTest {
         val repository = TestOrdersRepository(
             orders = listOf(
                 testOrder(
@@ -346,7 +350,7 @@ class OrdersViewModelTest {
 
 
     @Test
-    fun `Given selected dispatcher When current user becomes null Then uiState requires user selection and clears order lists`() = mainDispatcherRule.runTest {
+    fun `Given selected dispatcher When current user becomes null Then uiState requires user selection and clears order lists`() = runOrdersTest {
         val repository = TestOrdersRepository(
             orders = listOf(testOrder(id = 1L, status = OrderStatus.STAFFING))
         )
