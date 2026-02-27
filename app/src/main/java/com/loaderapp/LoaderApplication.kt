@@ -1,8 +1,14 @@
 package com.loaderapp
 
 import android.app.Application
-import io.sentry.android.core.SentryAndroid
+import com.loaderapp.core.common.AppBuildInfo
+import com.loaderapp.core.common.AppConfig
+import dagger.hilt.EntryPoint
+import dagger.hilt.InstallIn
+import dagger.hilt.android.EntryPointAccessors
 import dagger.hilt.android.HiltAndroidApp
+import dagger.hilt.components.SingletonComponent
+import io.sentry.android.core.SentryAndroid
 
 /**
  * Application класс.
@@ -12,13 +18,27 @@ class LoaderApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        val configEntryPoint =
+            EntryPointAccessors.fromApplication(this, AppConfigEntryPoint::class.java)
+
         SentryAndroid.init(this) { options ->
-            options.dsn = BuildConfig.SENTRY_DSN
-            options.isEnabled = BuildConfig.SENTRY_ENABLED
-            options.environment = if (BuildConfig.DEBUG) "debug" else "release"
-            options.isDebug = BuildConfig.DEBUG
-            options.release = "${BuildConfig.APPLICATION_ID}@${BuildConfig.VERSION_NAME}+${BuildConfig.VERSION_CODE}"
+            options.dsn = configEntryPoint.appConfig().sentryDsn
+            options.isEnabled = configEntryPoint.appConfig().sentryDsn.isNotBlank()
+            options.environment = configEntryPoint.appConfig().envName
+            options.isDebug = configEntryPoint.appConfig().verboseLogging
+            options.release = buildReleaseName(configEntryPoint.appBuildInfo())
             options.tracesSampleRate = 0.0
         }
     }
+
+    private fun buildReleaseName(buildInfo: AppBuildInfo): String {
+        return "${buildInfo.applicationId}@${buildInfo.versionName}+${buildInfo.versionCode}"
+    }
+}
+
+@EntryPoint
+@InstallIn(SingletonComponent::class)
+interface AppConfigEntryPoint {
+    fun appConfig(): AppConfig
+    fun appBuildInfo(): AppBuildInfo
 }
