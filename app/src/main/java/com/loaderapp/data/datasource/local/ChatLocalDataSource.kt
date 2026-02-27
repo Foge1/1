@@ -9,15 +9,14 @@ import javax.inject.Inject
  * LocalDataSource для работы с чатом через Room
  */
 class ChatLocalDataSource @Inject constructor(
-    private val chatDao: ChatDao
+    private val chatDao: ChatDao,
 ) {
-    
-    fun getMessagesForOrder(orderId: Long): Flow<List<ChatMessage>> = 
+    fun getMessagesForOrder(orderId: Long): Flow<List<ChatMessage>> =
         chatDao.getMessagesForOrder(orderId)
-    
-    suspend fun insertMessage(message: ChatMessage): Long = 
+
+    suspend fun insertMessage(message: ChatMessage): Long =
         chatDao.insertMessage(message)
-    
-    fun getMessageCount(orderId: Long): Flow<Int> = 
+
+    fun getMessageCount(orderId: Long): Flow<Int> =
         chatDao.getMessageCount(orderId)
 }

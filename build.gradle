@@ -1,9 +1,14 @@
+import io.gitlab.arturbosch.detekt.Detekt
+
 // Top-level build file where you can add configuration options common to all sub-projects/modules.
 plugins {
+    id 'base'
     id 'com.android.application' version '8.1.2' apply false
     id 'com.android.library' version '8.1.2' apply false
     id 'org.jetbrains.kotlin.android' version '1.9.23' apply false
     id 'com.google.dagger.hilt.android' version '2.48' apply false
+    id 'io.gitlab.arturbosch.detekt' version '1.23.6' apply false
+    id 'org.jlleitschuh.gradle.ktlint' version '12.1.1' apply false
 }
 
 ext {
@@ -22,6 +27,64 @@ ext {
             junit4               : '4.13.2',
             androidxJunit        : '1.1.5',
             espresso             : '3.5.1',
-            sentry               : '7.8.0'
+            sentry               : '7.8.0',
+            ktlint               : '0.50.0'
     ]
+}
+
+subprojects {
+    apply plugin: 'io.gitlab.arturbosch.detekt'
+    apply plugin: 'org.jlleitschuh.gradle.ktlint'
+
+    detekt {
+        buildUponDefaultConfig = true
+        allRules = false
+        ignoreFailures = false
+        config.setFrom(rootProject.files('config/detekt/detekt.yml'))
+        source.setFrom(files('src/main/kotlin', 'src/debug/kotlin', 'src/release/kotlin', 'src/test/kotlin', 'src/androidTest/kotlin'))
+    }
+
+    tasks.withType(Detekt).configureEach {
+        jvmTarget = '17'
+        reports {
+            html.required.set(true)
+            sarif.required.set(true)
+            xml.required.set(false)
+            txt.required.set(false)
+            md.required.set(false)
+        }
+    }
+
+    ktlint {
+        version.set(rootProject.ext.versions.ktlint)
+        android.set(true)
+        ignoreFailures.set(false)
+        outputToConsole.set(true)
+        filter {
+            exclude('**/build/**')
+            exclude('**/generated/**')
+        }
+    }
+}
+
+tasks.register('detektAll') {
+    group = 'verification'
+    description = 'Runs detekt across all modules.'
+    dependsOn(subprojects.collect { "${it.path}:detekt" })
+}
+
+tasks.register('ktlintCheck') {
+    group = 'verification'
+    description = 'Runs ktlint check across all modules.'
+    dependsOn(subprojects.collect { "${it.path}:ktlintCheck" })
+}
+
+tasks.register('ktlintFormat') {
+    group = 'formatting'
+    description = 'Runs ktlint format across all modules.'
+    dependsOn(subprojects.collect { "${it.path}:ktlintFormat" })
+}
+
+tasks.named('check') {
+    dependsOn 'detektAll', 'ktlintCheck'
 }
