@@ -27,16 +27,47 @@ android {
         }
     }
 
+    flavorDimensions += "env"
+
+    productFlavors {
+        dev {
+            dimension "env"
+            applicationIdSuffix ".dev"
+            versionNameSuffix "-dev"
+            resValue "string", "app_name", "Loader App (Dev)"
+            buildConfigField "String", "BASE_URL", '"https://api-dev.loaderapp.local/"'
+            buildConfigField "boolean", "ENABLE_VERBOSE_LOGGING", "true"
+            buildConfigField "String", "SENTRY_DSN", '""'
+            buildConfigField "String", "ENV_NAME", '"dev"'
+        }
+
+        stage {
+            dimension "env"
+            applicationIdSuffix ".stage"
+            versionNameSuffix "-stage"
+            resValue "string", "app_name", "Loader App (Stage)"
+            buildConfigField "String", "BASE_URL", '"https://api-stage.loaderapp.local/"'
+            buildConfigField "boolean", "ENABLE_VERBOSE_LOGGING", "true"
+            buildConfigField "String", "SENTRY_DSN", '"${project.findProperty("SENTRY_DSN_STAGE") ?: project.findProperty("SENTRY_DSN") ?: ""}"'
+            buildConfigField "String", "ENV_NAME", '"stage"'
+        }
+
+        prod {
+            dimension "env"
+            resValue "string", "app_name", "Loader App"
+            buildConfigField "String", "BASE_URL", '"https://api.loaderapp.local/"'
+            buildConfigField "boolean", "ENABLE_VERBOSE_LOGGING", "false"
+            buildConfigField "String", "SENTRY_DSN", '"${project.findProperty("SENTRY_DSN_PROD") ?: project.findProperty("SENTRY_DSN") ?: ""}"'
+            buildConfigField "String", "ENV_NAME", '"prod"'
+        }
+    }
+
     buildTypes {
         debug {
-            buildConfigField "boolean", "SENTRY_ENABLED", "false"
-            buildConfigField "String", "SENTRY_DSN", "\"" + (project.findProperty("SENTRY_DSN") ?: "") + "\""
         }
 
         release {
             minifyEnabled false
-            buildConfigField "boolean", "SENTRY_ENABLED", "true"
-            buildConfigField "String", "SENTRY_DSN", "\"" + (project.findProperty("SENTRY_DSN") ?: "") + "\""
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
