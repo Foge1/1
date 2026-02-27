@@ -17,6 +17,29 @@ def sentryDsnProd = project.findProperty("SENTRY_DSN_PROD")
 def sentryDsnStageValue = sentryDsnStage ?: sentryDsnCommon ?: ""
 def sentryDsnProdValue = sentryDsnProd ?: sentryDsnCommon ?: ""
 
+def readSigningValue = { name ->
+    def envValue = System.getenv(name)
+    if (envValue != null && !envValue.trim().isEmpty()) {
+        return envValue
+    }
+    def gradleValue = project.findProperty(name)?.toString()
+    if (gradleValue != null && !gradleValue.trim().isEmpty()) {
+        return gradleValue
+    }
+    return null
+}
+
+def releaseKeystorePath = readSigningValue("KEYSTORE_PATH")
+def releaseKeystorePassword = readSigningValue("KEYSTORE_PASSWORD")
+def releaseKeyAlias = readSigningValue("KEY_ALIAS")
+def releaseKeyPassword = readSigningValue("KEY_PASSWORD")
+def hasReleaseSigning = [
+    releaseKeystorePath,
+    releaseKeystorePassword,
+    releaseKeyAlias,
+    releaseKeyPassword
+].every { value -> value != null }
+
 // IMPORTANT:
 // buildConfigField values must be precomputed.
 // Do NOT pass Gradle expressions directly — they break generated Java.
@@ -78,6 +101,17 @@ android {
         }
     }
 
+    signingConfigs {
+        if (hasReleaseSigning) {
+            release {
+                storeFile file(releaseKeystorePath)
+                storePassword releaseKeystorePassword
+                keyAlias releaseKeyAlias
+                keyPassword releaseKeyPassword
+            }
+        }
+    }
+
     buildTypes {
         debug {
         }
@@ -85,6 +119,9 @@ android {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            if (hasReleaseSigning) {
+                signingConfig signingConfigs.release
+            }
         }
     }
 
