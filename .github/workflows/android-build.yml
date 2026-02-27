@@ -40,14 +40,6 @@ jobs:
     name: Build Signed Prod Release APK
     runs-on: ubuntu-latest
     needs: build-debug
-    if: >
-      ${{
-        github.ref == 'refs/heads/master' &&
-        secrets.KEYSTORE_BASE64 != '' &&
-        secrets.KEYSTORE_PASSWORD != '' &&
-        secrets.KEY_ALIAS != '' &&
-        secrets.KEY_PASSWORD != ''
-      }}
 
     steps:
       # --- Source ---
@@ -58,8 +50,29 @@ jobs:
       - name: Setup Android build environment
         uses: ./.github/actions/android-build-setup
 
+      # --- Signing gate ---
+      - name: Check signing secrets
+        id: signing
+        shell: bash
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          if [[ -n "$KEYSTORE_BASE64" && -n "$KEYSTORE_PASSWORD" && -n "$KEY_ALIAS" && -n "$KEY_PASSWORD" ]]; then
+            echo "has_signing=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_signing=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Skip signing (missing secrets)
+        if: ${{ steps.signing.outputs.has_signing != 'true' }}
+        run: 'echo "Release signing skipped: missing secrets."'
+
       # --- Signing material ---
       - name: Decode release keystore
+        if: ${{ steps.signing.outputs.has_signing == 'true' && github.ref == 'refs/heads/master' }}
         shell: bash
         env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
@@ -67,17 +80,29 @@ jobs:
           echo "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/release.keystore"
           chmod 600 "$RUNNER_TEMP/release.keystore"
 
-      # --- Release build ---
-      - name: Assemble signed prod release
+      - name: Configure Gradle signing props
+        if: ${{ steps.signing.outputs.has_signing == 'true' && github.ref == 'refs/heads/master' }}
+        shell: bash
         env:
-          KEYSTORE_PATH: ${{ runner.temp }}/release.keystore
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          {
+            echo "KEYSTORE_PATH=$RUNNER_TEMP/release.keystore"
+            echo "KEYSTORE_PASSWORD=$KEYSTORE_PASSWORD"
+            echo "KEY_ALIAS=$KEY_ALIAS"
+            echo "KEY_PASSWORD=$KEY_PASSWORD"
+          } >> "$GITHUB_ENV"
+
+      # --- Release build ---
+      - name: Assemble signed prod release
+        if: ${{ steps.signing.outputs.has_signing == 'true' && github.ref == 'refs/heads/master' }}
         run: ./gradlew :app:assembleProdRelease --no-daemon --stacktrace
 
       # --- Artifacts ---
       - name: Upload signed release APK
+        if: ${{ steps.signing.outputs.has_signing == 'true' && github.ref == 'refs/heads/master' }}
         uses: actions/upload-artifact@v4
         with:
           name: app-prod-release
@@ -86,6 +111,6 @@ jobs:
 
       # --- Cleanup ---
       - name: Cleanup keystore
-        if: always()
+        if: ${{ always() && steps.signing.outputs.has_signing == 'true' && github.ref == 'refs/heads/master' }}
         shell: bash
         run: rm -f "$RUNNER_TEMP/release.keystore"
