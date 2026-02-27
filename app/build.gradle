@@ -5,6 +5,22 @@ plugins {
     id 'com.google.dagger.hilt.android'
 }
 
+def quoteBuildConfigString = { value ->
+    def escaped = value.toString().replace("\\", "\\\\").replace("\"", "\\\"")
+    return "\"${escaped}\""
+}
+
+def sentryDsnCommon = project.findProperty("SENTRY_DSN")
+def sentryDsnStage = project.findProperty("SENTRY_DSN_STAGE")
+def sentryDsnProd = project.findProperty("SENTRY_DSN_PROD")
+
+def sentryDsnStageValue = sentryDsnStage ?: sentryDsnCommon ?: ""
+def sentryDsnProdValue = sentryDsnProd ?: sentryDsnCommon ?: ""
+
+// IMPORTANT:
+// buildConfigField values must be precomputed.
+// Do NOT pass Gradle expressions directly — they break generated Java.
+
 android {
     namespace 'com.loaderapp'
     compileSdk 34
@@ -35,10 +51,10 @@ android {
             applicationIdSuffix ".dev"
             versionNameSuffix "-dev"
             resValue "string", "app_name", "Loader App (Dev)"
-            buildConfigField "String", "BASE_URL", '"https://api-dev.loaderapp.local/"'
+            buildConfigField "String", "BASE_URL", quoteBuildConfigString("https://api-dev.loaderapp.local/")
             buildConfigField "boolean", "ENABLE_VERBOSE_LOGGING", "true"
-            buildConfigField "String", "SENTRY_DSN", '""'
-            buildConfigField "String", "ENV_NAME", '"dev"'
+            buildConfigField "String", "SENTRY_DSN", quoteBuildConfigString("")
+            buildConfigField "String", "ENV_NAME", quoteBuildConfigString("dev")
         }
 
         stage {
@@ -46,19 +62,19 @@ android {
             applicationIdSuffix ".stage"
             versionNameSuffix "-stage"
             resValue "string", "app_name", "Loader App (Stage)"
-            buildConfigField "String", "BASE_URL", '"https://api-stage.loaderapp.local/"'
+            buildConfigField "String", "BASE_URL", quoteBuildConfigString("https://api-stage.loaderapp.local/")
             buildConfigField "boolean", "ENABLE_VERBOSE_LOGGING", "true"
-            buildConfigField "String", "SENTRY_DSN", '"${project.findProperty("SENTRY_DSN_STAGE") ?: project.findProperty("SENTRY_DSN") ?: ""}"'
-            buildConfigField "String", "ENV_NAME", '"stage"'
+            buildConfigField "String", "SENTRY_DSN", quoteBuildConfigString(sentryDsnStageValue)
+            buildConfigField "String", "ENV_NAME", quoteBuildConfigString("stage")
         }
 
         prod {
             dimension "env"
             resValue "string", "app_name", "Loader App"
-            buildConfigField "String", "BASE_URL", '"https://api.loaderapp.local/"'
+            buildConfigField "String", "BASE_URL", quoteBuildConfigString("https://api.loaderapp.local/")
             buildConfigField "boolean", "ENABLE_VERBOSE_LOGGING", "false"
-            buildConfigField "String", "SENTRY_DSN", '"${project.findProperty("SENTRY_DSN_PROD") ?: project.findProperty("SENTRY_DSN") ?: ""}"'
-            buildConfigField "String", "ENV_NAME", '"prod"'
+            buildConfigField "String", "SENTRY_DSN", quoteBuildConfigString(sentryDsnProdValue)
+            buildConfigField "String", "ENV_NAME", quoteBuildConfigString("prod")
         }
     }
 
