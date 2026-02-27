@@ -13,7 +13,7 @@ import com.loaderapp.domain.model.UserModel
 import com.loaderapp.domain.model.UserRoleModel
 import com.loaderapp.domain.repository.UserRepository
 import com.loaderapp.features.auth.domain.model.SessionState
-import com.loaderapp.core.logging.AppLogger
+import com.loaderapp.testing.TestAppLogger
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
@@ -36,11 +36,9 @@ class AuthRepositoryImplTest {
             users[7L] = testUser(7L, "Alex", UserRoleModel.LOADER)
         }
 
-        val repository = AuthRepositoryImpl(
+        val repository = makeRepository(
             userRepository = userRepository,
-            dataStore = dataStore,
-            appLogger = FakeAppLogger(),
-            ioDispatcher = StandardTestDispatcher(testScheduler)
+            dataStore = dataStore
         )
 
         repository.observeSession().test {
@@ -60,11 +58,9 @@ class AuthRepositoryImplTest {
 
     @Test
     fun `Given blank login name When login Then returns AppError Validation and SessionState Error`() = runTest {
-        val repository = AuthRepositoryImpl(
+        val repository = makeRepository(
             userRepository = FakeUserRepository(),
-            dataStore = testDataStore("blank-login"),
-            appLogger = FakeAppLogger(),
-            ioDispatcher = StandardTestDispatcher(testScheduler)
+            dataStore = testDataStore("blank-login")
         )
 
         val result = repository.login("   ", UserRoleModel.LOADER)
@@ -80,13 +76,11 @@ class AuthRepositoryImplTest {
     fun `Given authenticated session When logout Then clears datastore and emits unauthenticated`() = runTest {
         val dataStore = testDataStore("logout")
         dataStore.edit { it[CURRENT_USER_ID] = 1L }
-        val repository = AuthRepositoryImpl(
+        val repository = makeRepository(
             userRepository = FakeUserRepository().apply {
                 users[1L] = testUser(1L, "User", UserRoleModel.LOADER)
             },
-            dataStore = dataStore,
-            appLogger = FakeAppLogger(),
-            ioDispatcher = StandardTestDispatcher(testScheduler)
+            dataStore = dataStore
         )
 
         repository.observeSession().test {
@@ -102,6 +96,16 @@ class AuthRepositoryImplTest {
         }
     }
 
+
+    private fun makeRepository(
+        userRepository: UserRepository = FakeUserRepository(),
+        dataStore: DataStore<Preferences> = testDataStore("default")
+    ): AuthRepositoryImpl = AuthRepositoryImpl(
+        userRepository = userRepository,
+        dataStore = dataStore,
+        appLogger = TestAppLogger(),
+        ioDispatcher = StandardTestDispatcher(testScheduler)
+    )
 
     private fun testDataStore(name: String): DataStore<Preferences> {
         val file = File("build/tmp/test-datastore-$name-${System.nanoTime()}.preferences_pb")
@@ -148,15 +152,6 @@ class AuthRepositoryImplTest {
         override suspend fun updateUserRating(userId: Long, rating: Double): Result<Unit> = Result.Success(Unit)
     }
 
-
-    private class FakeAppLogger : AppLogger {
-        override fun d(tag: String, message: String) = Unit
-        override fun i(tag: String, message: String) = Unit
-        override fun w(tag: String, message: String) = Unit
-        override fun e(tag: String, message: String, throwable: Throwable?) = Unit
-        override fun breadcrumb(category: String, message: String, data: Map<String, String>) = Unit
-        override fun captureException(throwable: Throwable, tag: String, message: String) = Unit
-    }
 
     companion object {
         private val CURRENT_USER_ID = longPreferencesKey("current_user_id")

@@ -1,6 +1,5 @@
 package com.loaderapp.features.orders.presentation
 
-import com.loaderapp.core.logging.AppLogger
 import com.loaderapp.features.orders.domain.OrderStateMachine
 import com.loaderapp.features.orders.domain.OrdersLimits
 
@@ -26,6 +25,7 @@ import com.loaderapp.features.orders.domain.usecase.SelectApplicantUseCase
 import com.loaderapp.features.orders.domain.usecase.StartOrderUseCase
 import com.loaderapp.features.orders.domain.usecase.UnselectApplicantUseCase
 import com.loaderapp.features.orders.domain.usecase.WithdrawApplicationUseCase
+import com.loaderapp.features.orders.testing.TestAppLogger
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -60,6 +60,7 @@ class OrdersViewModelTest {
     val mainDispatcherRule = MainDispatcherRule()
 
     private val createdViewModels = mutableListOf<OrdersViewModel>()
+    private val testAppLogger = TestAppLogger()
 
     private fun runOrdersTest(
         dispatchTimeoutMs: Long = 60_000L,
@@ -393,7 +394,7 @@ class OrdersViewModelTest {
             cancelOrderUseCase = CancelOrderUseCase(repository, userProvider, stateMachine),
             completeOrderUseCase = CompleteOrderUseCase(repository, userProvider, stateMachine),
             refreshOrdersUseCase = RefreshOrdersUseCase(repository),
-            appLogger = TestAppLogger
+            appLogger = testAppLogger
         )
         return OrdersViewModel(
             observeOrderUiModels = ObserveOrderUiModelsUseCase(
@@ -401,7 +402,8 @@ class OrdersViewModelTest {
                 currentUserProvider = userProvider,
                 stateMachine = stateMachine,
             ),
-            ordersOrchestrator = orchestrator
+            ordersOrchestrator = orchestrator,
+            appLogger = testAppLogger
         ).also { createdViewModels += it }
     }
 
@@ -532,7 +534,3 @@ class OrdersViewModelTest {
     )
 }
 
-
-private object TestAppLogger : AppLogger {
-    override fun d(tag: String, message: String) = Unit
-}
