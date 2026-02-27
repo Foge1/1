@@ -311,9 +311,15 @@ class OrdersViewModelTest {
         )
         val repository = TestOrdersRepository(orders = listOf(available, inProgress, history))
         val viewModel = buildViewModel(repository, dispatcherUser)
-        advanceUntilIdle()
 
-        assertTrue(viewModel.uiState.value.responsesBadge.totalResponses == 1)
+        try {
+            advanceUntilIdle()
+            assertTrue(viewModel.uiState.value.responsesBadge.totalResponses == 1)
+        } finally {
+            viewModel.clearForTest()
+            createdViewModels -= viewModel
+            advanceUntilIdle()
+        }
     }
 
     @Test
