@@ -6,6 +6,9 @@ plugins {
 }
 
 android {
+    def roomSchemaDir = file("$projectDir/schemas")
+    roomSchemaDir.mkdirs()
+
     namespace 'com.loaderapp.feature.orders'
     compileSdk 34
 
@@ -15,7 +18,7 @@ android {
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         javaCompileOptions {
             annotationProcessorOptions {
-                arguments += ["room.schemaLocation": "$projectDir/schemas"]
+                arguments += ["room.schemaLocation": roomSchemaDir.path]
             }
         }
     }
@@ -34,14 +37,14 @@ android {
     }
 
     sourceSets {
-        androidTest.assets.srcDirs += files("$projectDir/schemas")
+        androidTest.assets.srcDirs += files(roomSchemaDir)
     }
 }
 
 kapt {
     correctErrorTypes true
     arguments {
-        arg("room.schemaLocation", "$projectDir/schemas")
+        arg("room.schemaLocation", file("$projectDir/schemas").path)
     }
 }
 
