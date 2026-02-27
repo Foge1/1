@@ -1,0 +1,29 @@
+build:
+  maxIssues: 0
+
+config:
+  validation: true
+
+complexity:
+  active: true
+  CyclomaticComplexMethod:
+    active: true
+    threshold: 15
+  ComplexCondition:
+    active: true
+    threshold: 4
+  LongMethod:
+    active: true
+    threshold: 80
+  LongParameterList:
+    active: false
+  TooManyFunctions:
+    active: false
+
+style:
+  active: true
+  UnusedPrivateMember:
+    active: true
+
+potential-bugs:
+  active: true
