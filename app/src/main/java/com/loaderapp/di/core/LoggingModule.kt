@@ -3,7 +3,7 @@ package com.loaderapp.di.core
 import com.loaderapp.core.common.AppBuildInfo
 import com.loaderapp.core.logging.AppLogger
 import com.loaderapp.core.logging.LogcatAppLogger
-import com.loaderapp.core.logging.NoOpAppLogger
+import com.loaderapp.core.logging.SentryAppLogger
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -17,6 +17,6 @@ object LoggingModule {
     @Provides
     @Singleton
     fun provideAppLogger(buildInfo: AppBuildInfo): AppLogger {
-        return if (buildInfo.isDebug) LogcatAppLogger() else NoOpAppLogger()
+        return if (buildInfo.isDebug) LogcatAppLogger() else SentryAppLogger()
     }
 }

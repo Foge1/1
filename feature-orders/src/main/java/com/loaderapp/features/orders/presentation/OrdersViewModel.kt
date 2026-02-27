@@ -3,6 +3,7 @@ package com.loaderapp.features.orders.presentation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.loaderapp.features.orders.domain.usecase.ObserveOrderUiModelsResult
+import com.loaderapp.core.logging.AppLogger
 import com.loaderapp.features.orders.domain.usecase.ObserveOrderUiModelsUseCase
 import com.loaderapp.features.orders.domain.usecase.UseCaseResult
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -34,7 +35,8 @@ import kotlinx.coroutines.withContext
 @HiltViewModel
 class OrdersViewModel @Inject constructor(
     private val observeOrderUiModels: ObserveOrderUiModelsUseCase,
-    private val ordersOrchestrator: OrdersOrchestrator
+    private val ordersOrchestrator: OrdersOrchestrator,
+    private val appLogger: AppLogger
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(OrdersUiState())
@@ -111,7 +113,10 @@ class OrdersViewModel @Inject constructor(
         }
     }
 
-    fun refresh() = submit(OrdersCommand.Refresh)
+    fun refresh() {
+        appLogger.breadcrumb("orders", "refresh_requested")
+        submit(OrdersCommand.Refresh)
+    }
 
     fun onHistoryQueryChanged(query: String) {
         historyQuery.value = query
@@ -224,6 +229,8 @@ class OrdersViewModel @Inject constructor(
                 failureReason = e.message ?: "cancelled"
                 shouldShowSnackbar = false
             } catch (e: Exception) {
+                appLogger.breadcrumb("orders", "command_failed", mapOf("command" to command::class.simpleName.orEmpty()))
+                appLogger.captureException(e, LOG_TAG, "Orders command failed")
                 failureReason = e.message ?: "Неизвестная ошибка"
             } finally {
                 finishExecution(command, pendingOrderId)
@@ -254,5 +261,8 @@ class OrdersViewModel @Inject constructor(
         pendingOrderId?.let { id ->
             _uiState.update { it.copy(pendingActions = it.pendingActions - id) }
         }
+    }
+    private companion object {
+        const val LOG_TAG = "OrdersViewModel"
     }
 }
