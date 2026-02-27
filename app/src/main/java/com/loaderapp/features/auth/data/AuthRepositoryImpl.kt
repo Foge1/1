@@ -15,6 +15,7 @@ import com.loaderapp.features.auth.domain.api.AuthSessionApi
 import com.loaderapp.features.auth.domain.model.SessionState
 import com.loaderapp.features.auth.domain.model.User
 import com.loaderapp.features.auth.domain.repository.AuthRepository
+import com.loaderapp.core.logging.AppLogger
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
@@ -33,6 +34,7 @@ import javax.inject.Singleton
 class AuthRepositoryImpl @Inject constructor(
     private val userRepository: UserRepository,
     private val dataStore: DataStore<Preferences>,
+    private val appLogger: AppLogger,
     @IoDispatcher ioDispatcher: CoroutineDispatcher
 ) : AuthRepository, AuthSessionApi {
 
@@ -44,6 +46,8 @@ class AuthRepositoryImpl @Inject constructor(
             dataStore.data
                 .map { preferences -> preferences[CURRENT_USER_ID] }
                 .catch {
+                    appLogger.breadcrumb("session", "restore_session_failed", mapOf("reason" to "datastore_read"))
+                    appLogger.e(LOG_TAG, "Session restore failed due to DataStore read error", it)
                     sessionState.value = SessionState.Error(AppError.Storage.Serialization(it))
                     emit(null)
                 }
@@ -58,9 +62,17 @@ class AuthRepositoryImpl @Inject constructor(
     }
 
     override suspend fun restoreSession(): AppResult<Unit> = withContext(repositoryScope.coroutineContext) {
+        appLogger.breadcrumb("session", "restore_session_requested")
         when (val state = sessionState.value) {
-            is SessionState.Error -> AppResult.Failure(state.error)
-            else -> AppResult.Success(Unit)
+            is SessionState.Error -> {
+                appLogger.breadcrumb("session", "restore_session_failed", mapOf("reason" to "state_error"))
+                AppResult.Failure(state.error)
+            }
+
+            else -> {
+                appLogger.breadcrumb("session", "restore_session_succeeded")
+                AppResult.Success(Unit)
+            }
         }
     }
 
@@ -69,19 +81,23 @@ class AuthRepositoryImpl @Inject constructor(
             sessionState.value = SessionState.Authenticating
 
             val normalizedName = name.trim()
+            appLogger.breadcrumb("auth", "login_requested", mapOf("role" to role.name))
             if (normalizedName.isBlank()) {
                 val error = AppError.Validation(message = "Введите имя")
                 sessionState.value = SessionState.Error(error)
+                appLogger.breadcrumb("auth", "login_failed", mapOf("reason" to "validation"))
                 return@withContext AppResult.Failure(error)
             }
 
             when (val resolvedUserResult = resolveOrCreateUser(normalizedName, role)) {
                 is AppResult.Success -> {
                     persistUserId(resolvedUserResult.data.id)
+                    appLogger.breadcrumb("auth", "login_succeeded", mapOf("role" to role.name))
                     AppResult.Success(resolvedUserResult.data)
                 }
 
                 is AppResult.Failure -> {
+                    appLogger.breadcrumb("auth", "login_failed", mapOf("reason" to resolvedUserResult.error::class.simpleName.orEmpty()))
                     sessionState.value = SessionState.Error(resolvedUserResult.error)
                     resolvedUserResult
                 }
@@ -89,8 +105,10 @@ class AuthRepositoryImpl @Inject constructor(
         }
 
     override suspend fun logout(): AppResult<Unit> = withContext(repositoryScope.coroutineContext) {
+        appLogger.breadcrumb("auth", "logout_requested")
         dataStore.edit { it.remove(CURRENT_USER_ID) }
         sessionState.value = SessionState.Unauthenticated
+        appLogger.breadcrumb("auth", "logout_succeeded")
         AppResult.Success(Unit)
     }
 
@@ -179,6 +197,8 @@ class AuthRepositoryImpl @Inject constructor(
     )
 
     companion object {
+        private const val LOG_TAG = "AuthRepository"
+
         private val CURRENT_USER_ID = longPreferencesKey("current_user_id")
     }
 }

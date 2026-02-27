@@ -6,6 +6,7 @@ import com.loaderapp.data.mapper.OrderMapper
 import com.loaderapp.data.model.OrderStatus
 import com.loaderapp.data.model.OrderWorker
 import com.loaderapp.domain.model.OrderModel
+import com.loaderapp.core.logging.AppLogger
 import com.loaderapp.domain.model.OrderStatusModel
 import com.loaderapp.domain.repository.OrderRepository
 import kotlinx.coroutines.flow.Flow
@@ -18,7 +19,8 @@ import javax.inject.Inject
  * Использует LocalDataSource и Mapper для работы с данными
  */
 class OrderRepositoryImpl @Inject constructor(
-    private val localDataSource: OrderLocalDataSource
+    private val localDataSource: OrderLocalDataSource,
+    private val appLogger: AppLogger
 ) : OrderRepository {
     
     override fun getAllOrders(): Flow<List<OrderModel>> {
@@ -63,6 +65,8 @@ class OrderRepositoryImpl @Inject constructor(
                 Result.Error("Заказ не найден")
             }
         } catch (e: Exception) {
+            appLogger.breadcrumb("storage", "order_get_failed", mapOf("operation" to "get_by_id"))
+            appLogger.e(LOG_TAG, "DB error while getting order", e)
             Result.Error("Ошибка получения заказа: ${e.message}", e)
         }
     }
@@ -90,8 +94,11 @@ class OrderRepositoryImpl @Inject constructor(
         return try {
             val entity = OrderMapper.toEntity(order)
             val id = localDataSource.insertOrder(entity)
+            appLogger.breadcrumb("orders", "order_created", mapOf("operation" to "create"))
             Result.Success(id)
         } catch (e: Exception) {
+            appLogger.breadcrumb("storage", "order_create_failed", mapOf("operation" to "create"))
+            appLogger.e(LOG_TAG, "DB error while creating order", e)
             Result.Error("Ошибка создания заказа: ${e.message}", e)
         }
     }
@@ -100,8 +107,11 @@ class OrderRepositoryImpl @Inject constructor(
         return try {
             val entity = OrderMapper.toEntity(order)
             localDataSource.updateOrder(entity)
+            appLogger.breadcrumb("orders", "order_updated", mapOf("operation" to "update"))
             Result.Success(Unit)
         } catch (e: Exception) {
+            appLogger.breadcrumb("storage", "order_update_failed", mapOf("operation" to "update"))
+            appLogger.e(LOG_TAG, "DB error while updating order", e)
             Result.Error("Ошибка обновления заказа: ${e.message}", e)
         }
     }
@@ -201,5 +211,8 @@ class OrderRepositoryImpl @Inject constructor(
     
     override fun getDispatcherActiveCount(dispatcherId: Long): Flow<Int> {
         return localDataSource.getDispatcherActiveCount(dispatcherId)
+    }
+    companion object {
+        private const val LOG_TAG = "OrderRepository"
     }
 }

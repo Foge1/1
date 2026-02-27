@@ -1,6 +1,5 @@
 package com.loaderapp.features.orders.domain
 
-import com.loaderapp.core.logging.AppLogger
 import com.loaderapp.features.orders.domain.OrderStateMachine
 import com.loaderapp.features.orders.domain.OrdersLimits
 
@@ -19,6 +18,7 @@ import com.loaderapp.features.orders.domain.usecase.UseCaseResult
 import com.loaderapp.features.orders.domain.usecase.WithdrawApplicationUseCase
 import com.loaderapp.features.orders.presentation.OrdersCommand
 import com.loaderapp.features.orders.presentation.OrdersOrchestrator
+import com.loaderapp.features.orders.testing.TestAppLogger
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.flowOf
@@ -27,6 +27,8 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class OrdersOrchestratorTest {
+
+    private val testAppLogger = TestAppLogger()
 
     // ── Core new-flow commands ────────────────────────────────────────────────
 
@@ -250,7 +252,7 @@ class OrdersOrchestratorTest {
             cancelOrderUseCase = CancelOrderUseCase(repo, userProvider, stateMachine),
             completeOrderUseCase = CompleteOrderUseCase(repo, userProvider, stateMachine),
             refreshOrdersUseCase = RefreshOrdersUseCase(repo),
-            appLogger = TestAppLogger
+            appLogger = testAppLogger
         )
     }
 
@@ -326,7 +328,3 @@ class OrdersOrchestratorTest {
     }
 }
 
-
-private object TestAppLogger : AppLogger {
-    override fun d(tag: String, message: String) = Unit
-}

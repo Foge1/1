@@ -49,7 +49,8 @@ class OrdersRepositoryImpl @Inject constructor(
             assignments = emptyList()
         )
         val orderId = ordersDao.insertOrder(newOrder.toEntity())
-        log("createOrder: id=$orderId, status=${newOrder.status}")
+        appLogger.breadcrumb("orders", "order_created", mapOf("source" to "feature_orders"))
+        log("createOrder")
     }
 
     override suspend fun cancelOrder(id: Long, reason: String?) {
@@ -57,7 +58,8 @@ class OrdersRepositoryImpl @Inject constructor(
             val entity = ordersDao.getOrderById(id) ?: return@withTransaction
             ordersDao.updateOrder(entity.copy(status = OrderStatus.CANCELED.toPersistedValue()))
             assignmentsDao.updateAssignmentsStatusByOrder(orderId = id, newStatus = OrderAssignmentStatus.CANCELED)
-            log("cancelOrder: id=$id, ${entity.status}->CANCELED")
+            appLogger.breadcrumb("orders", "order_updated", mapOf("action" to "cancel"))
+            log("cancelOrder")
         }
     }
 
@@ -66,7 +68,8 @@ class OrdersRepositoryImpl @Inject constructor(
             val entity = ordersDao.getOrderById(id) ?: return@withTransaction
             ordersDao.updateOrder(entity.copy(status = OrderStatus.COMPLETED.toPersistedValue()))
             assignmentsDao.updateAssignmentsStatusByOrder(orderId = id, newStatus = OrderAssignmentStatus.COMPLETED)
-            log("completeOrder: id=$id, ${entity.status}->COMPLETED")
+            appLogger.breadcrumb("orders", "order_updated", mapOf("action" to "complete"))
+            log("completeOrder")
         }
     }
 
@@ -79,7 +82,8 @@ class OrdersRepositoryImpl @Inject constructor(
             expirationThreshold = expirationThreshold
         )
         if (expiredCount > 0) {
-            log("refresh: expired=$expiredCount")
+            appLogger.breadcrumb("orders", "orders_refreshed", mapOf("expired_count" to expiredCount.toString()))
+            log("refresh")
         }
     }
 
@@ -94,13 +98,13 @@ class OrdersRepositoryImpl @Inject constructor(
         db.withTransaction {
             val order = ordersDao.getOrderById(orderId) ?: return@withTransaction
             if (order.status != OrderStatus.STAFFING.toPersistedValue()) {
-                log("applyToOrder: skipped order=$orderId status=${order.status}")
+                log("applyToOrder_skipped")
                 return@withTransaction
             }
 
             val existing = applicationsDao.getApplication(orderId, loaderId)
             if (existing != null) {
-                log("applyToOrder: idempotent hit order=$orderId loader=$loaderId")
+                log("applyToOrder_idempotent")
                 return@withTransaction
             }
 
@@ -113,7 +117,7 @@ class OrdersRepositoryImpl @Inject constructor(
                     ratingSnapshot = null
                 )
             )
-            log("applyToOrder: order=$orderId loader=$loaderId")
+            log("applyToOrder")
         }
     }
 
@@ -129,7 +133,7 @@ class OrdersRepositoryImpl @Inject constructor(
                 loaderId = loaderId,
                 newStatus = OrderApplicationStatus.WITHDRAWN
             )
-            log("withdrawApplication: order=$orderId loader=$loaderId")
+            log("withdrawApplication")
         }
     }
 
@@ -140,7 +144,7 @@ class OrdersRepositoryImpl @Inject constructor(
                 loaderId = loaderId,
                 newStatus = OrderApplicationStatus.SELECTED
             )
-            log("selectApplicant: order=$orderId loader=$loaderId")
+            log("selectApplicant")
         }
     }
 
@@ -151,7 +155,7 @@ class OrdersRepositoryImpl @Inject constructor(
                 loaderId = loaderId,
                 newStatus = OrderApplicationStatus.APPLIED
             )
-            log("unselectApplicant: order=$orderId loader=$loaderId")
+            log("unselectApplicant")
         }
     }
 
@@ -186,7 +190,8 @@ class OrdersRepositoryImpl @Inject constructor(
 
             ordersDao.updateOrder(orderEntity.copy(status = OrderStatus.IN_PROGRESS.toPersistedValue()))
 
-            log("startOrder: order=$orderId assignedLoaders=${selectedApplications.map { it.loaderId }}")
+            appLogger.breadcrumb("orders", "order_updated", mapOf("action" to "start"))
+            log("startOrder")
         }
     }
 
