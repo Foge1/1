@@ -40,12 +40,14 @@ jobs:
     name: Build Signed Prod Release APK
     runs-on: ubuntu-latest
     needs: build-debug
-    if: >-
-      github.ref == 'refs/heads/master' &&
-      secrets.KEYSTORE_BASE64 != '' &&
-      secrets.KEYSTORE_PASSWORD != '' &&
-      secrets.KEY_ALIAS != '' &&
-      secrets.KEY_PASSWORD != ''
+    if: >
+      ${{
+        github.ref == 'refs/heads/master' &&
+        secrets.KEYSTORE_BASE64 != '' &&
+        secrets.KEYSTORE_PASSWORD != '' &&
+        secrets.KEY_ALIAS != '' &&
+        secrets.KEY_PASSWORD != ''
+      }}
 
     steps:
       # --- Source ---
