@@ -27,7 +27,8 @@ ext {
             junit4               : '4.13.2',
             androidxJunit        : '1.1.5',
             espresso             : '3.5.1',
-            sentry               : '7.8.0'
+            sentry               : '7.8.0',
+            ktlint               : '0.50.0'
     ]
 }
 
@@ -55,6 +56,7 @@ subprojects {
     }
 
     ktlint {
+        version.set(rootProject.ext.versions.ktlint)
         android.set(true)
         ignoreFailures.set(false)
         outputToConsole.set(true)

@@ -10,7 +10,6 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class AppDatabaseMigrationTest {
-
     private val testDb = "migration-test"
 
     @get:Rule
@@ -18,7 +17,7 @@ class AppDatabaseMigrationTest {
         InstrumentationRegistry.getInstrumentation(),
         AppDatabase::class.java,
         emptyList(),
-        FrameworkSQLiteOpenHelperFactory()
+        FrameworkSQLiteOpenHelperFactory(),
     )
 
     @Test
