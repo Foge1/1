@@ -19,6 +19,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.TestCoroutineScheduler
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -37,6 +38,7 @@ class AuthRepositoryImplTest {
         }
 
         val repository = makeRepository(
+            scheduler = testScheduler,
             userRepository = userRepository,
             dataStore = dataStore
         )
@@ -59,6 +61,7 @@ class AuthRepositoryImplTest {
     @Test
     fun `Given blank login name When login Then returns AppError Validation and SessionState Error`() = runTest {
         val repository = makeRepository(
+            scheduler = testScheduler,
             userRepository = FakeUserRepository(),
             dataStore = testDataStore("blank-login")
         )
@@ -77,6 +80,7 @@ class AuthRepositoryImplTest {
         val dataStore = testDataStore("logout")
         dataStore.edit { it[CURRENT_USER_ID] = 1L }
         val repository = makeRepository(
+            scheduler = testScheduler,
             userRepository = FakeUserRepository().apply {
                 users[1L] = testUser(1L, "User", UserRoleModel.LOADER)
             },
@@ -98,13 +102,14 @@ class AuthRepositoryImplTest {
 
 
     private fun makeRepository(
+        scheduler: TestCoroutineScheduler,
         userRepository: UserRepository = FakeUserRepository(),
         dataStore: DataStore<Preferences> = testDataStore("default")
     ): AuthRepositoryImpl = AuthRepositoryImpl(
         userRepository = userRepository,
         dataStore = dataStore,
         appLogger = TestAppLogger(),
-        ioDispatcher = StandardTestDispatcher(testScheduler)
+        ioDispatcher = StandardTestDispatcher(scheduler)
     )
 
     private fun testDataStore(name: String): DataStore<Preferences> {
