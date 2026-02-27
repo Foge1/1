@@ -13,6 +13,7 @@ import com.loaderapp.domain.model.UserModel
 import com.loaderapp.domain.model.UserRoleModel
 import com.loaderapp.domain.repository.UserRepository
 import com.loaderapp.features.auth.domain.model.SessionState
+import com.loaderapp.core.logging.AppLogger
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
@@ -38,6 +39,7 @@ class AuthRepositoryImplTest {
         val repository = AuthRepositoryImpl(
             userRepository = userRepository,
             dataStore = dataStore,
+            appLogger = FakeAppLogger(),
             ioDispatcher = StandardTestDispatcher(testScheduler)
         )
 
@@ -61,6 +63,7 @@ class AuthRepositoryImplTest {
         val repository = AuthRepositoryImpl(
             userRepository = FakeUserRepository(),
             dataStore = testDataStore("blank-login"),
+            appLogger = FakeAppLogger(),
             ioDispatcher = StandardTestDispatcher(testScheduler)
         )
 
@@ -82,6 +85,7 @@ class AuthRepositoryImplTest {
                 users[1L] = testUser(1L, "User", UserRoleModel.LOADER)
             },
             dataStore = dataStore,
+            appLogger = FakeAppLogger(),
             ioDispatcher = StandardTestDispatcher(testScheduler)
         )
 
@@ -142,6 +146,16 @@ class AuthRepositoryImplTest {
         override suspend fun updateUser(user: UserModel): Result<Unit> = Result.Success(Unit)
         override suspend fun deleteUser(user: UserModel): Result<Unit> = Result.Success(Unit)
         override suspend fun updateUserRating(userId: Long, rating: Double): Result<Unit> = Result.Success(Unit)
+    }
+
+
+    private class FakeAppLogger : AppLogger {
+        override fun d(tag: String, message: String) = Unit
+        override fun i(tag: String, message: String) = Unit
+        override fun w(tag: String, message: String) = Unit
+        override fun e(tag: String, message: String, throwable: Throwable?) = Unit
+        override fun breadcrumb(category: String, message: String, data: Map<String, String>) = Unit
+        override fun captureException(throwable: Throwable, tag: String, message: String) = Unit
     }
 
     companion object {
