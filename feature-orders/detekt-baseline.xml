@@ -1,0 +1,24 @@
+<?xml version="1.0" ?>
+<SmellBaseline>
+  <ManuallySuppressedIssues></ManuallySuppressedIssues>
+  <CurrentIssues>
+    <ID>CyclomaticComplexMethod:OrderActionBlockReason.kt$fun OrderActionBlockReason.toDisplayMessage(): String</ID>
+    <ID>LongParameterList:OrdersOrchestrator.kt$OrdersOrchestrator$( private val createOrderUseCase: CreateOrderUseCase, private val applyToOrderUseCase: ApplyToOrderUseCase, private val withdrawApplicationUseCase: WithdrawApplicationUseCase, private val selectApplicantUseCase: SelectApplicantUseCase, private val unselectApplicantUseCase: UnselectApplicantUseCase, private val startOrderUseCase: StartOrderUseCase, private val cancelOrderUseCase: CancelOrderUseCase, private val completeOrderUseCase: CompleteOrderUseCase, private val refreshOrdersUseCase: RefreshOrdersUseCase, private val appLogger: AppLogger )</ID>
+    <ID>LongParameterList:OrdersOwnershipUseCasesTest.kt$OrdersOwnershipUseCasesTest$( id: Long = 0, createdBy: String = "d-1", status: OrderStatus = OrderStatus.STAFFING, workersTotal: Int = 1, applications: List&lt;OrderApplication&gt; = emptyList(), assignments: List&lt;OrderAssignment&gt; = emptyList() )</ID>
+    <ID>LongParameterList:OrdersViewModelTest.kt$OrdersViewModelTest$( id: Long, status: OrderStatus, createdBy: String = "dispatcher-1", workersTotal: Int = 2, applications: List&lt;OrderApplication&gt; = emptyList(), assignments: List&lt;OrderAssignment&gt; = emptyList() )</ID>
+    <ID>NestedBlockDepth:OrderStateMachineTest.kt$OrderStateMachineTest$@Test fun `actions and transitions stay consistent for all exposed actions`()</ID>
+    <ID>TooManyFunctions:CriticalOrderFlowUseCaseTest.kt$CriticalOrderFlowUseCaseTest$InMemoryOrdersRepository : OrdersRepository</ID>
+    <ID>TooManyFunctions:ObserveOrderUiModelsUseCaseTest.kt$ObserveOrderUiModelsUseCaseTest$InMemoryOrdersRepository : OrdersRepository</ID>
+    <ID>TooManyFunctions:OrdersOrchestratorTest.kt$OrdersOrchestratorTest</ID>
+    <ID>TooManyFunctions:OrdersOrchestratorTest.kt$OrdersOrchestratorTest$InMemoryOrdersRepository : OrdersRepository</ID>
+    <ID>TooManyFunctions:OrdersOwnershipUseCasesTest.kt$OrdersOwnershipUseCasesTest</ID>
+    <ID>TooManyFunctions:OrdersOwnershipUseCasesTest.kt$OrdersOwnershipUseCasesTest$InMemoryOrdersRepository : OrdersRepository</ID>
+    <ID>TooManyFunctions:OrdersRepository.kt$OrdersRepository</ID>
+    <ID>TooManyFunctions:OrdersRepositoryImpl.kt$OrdersRepositoryImpl : OrdersRepository</ID>
+    <ID>TooManyFunctions:OrdersViewModel.kt$OrdersViewModel : ViewModel</ID>
+    <ID>TooManyFunctions:OrdersViewModelTest.kt$OrdersViewModelTest</ID>
+    <ID>TooManyFunctions:OrdersViewModelTest.kt$OrdersViewModelTest$TestOrdersRepository : OrdersRepository</ID>
+    <ID>TooManyFunctions:SelectUnselectApplicantUseCaseTest.kt$SelectUnselectApplicantUseCaseTest$TrackingOrdersRepository : OrdersRepository</ID>
+    <ID>TooManyFunctions:StartOrderUseCaseBusyTest.kt$StartOrderUseCaseBusyTest$TrackingStartRepository : OrdersRepository</ID>
+  </CurrentIssues>
+</SmellBaseline>

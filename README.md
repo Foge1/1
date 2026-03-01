@@ -22,9 +22,8 @@ Android-приложение для управления грузчиками. K
 - **Грузчик**: принимает заказы, завершает (статус обновляется мгновенно), оценивает
 
 ## Static analysis (Detekt baseline policy)
-- `:app:detekt` uses baseline file `app/detekt-baseline.xml` to capture existing tech debt.
-- CI blocks **new** Detekt violations: issues not listed in baseline will fail the build.
-- Update baseline only consciously when paying down debt:
-  1. Fix targeted issues in code.
-  2. Regenerate baseline: `./gradlew :app:detektBaseline`.
-  3. Commit updated `app/detekt-baseline.xml` together with the refactor.
+- Detekt baselines are committed for modules with existing legacy findings:
+  - `app/detekt-baseline.xml`
+  - `feature-orders/detekt-baseline.xml`
+- CI blocks **new** Detekt violations: issues not listed in module baseline fail the build.
+- Baseline update process is documented in `docs/CONTRIBUTING.md`.
