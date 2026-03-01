@@ -40,6 +40,7 @@ subprojects { subproject ->
         subproject.detekt {
             toolVersion = detektVersion
             config.setFrom(rootProject.files("$rootDir/config/detekt/detekt.yml"))
+            baseline = subproject.file("detekt-baseline.xml")
             buildUponDefaultConfig = false
             allRules = false
             parallel = true
