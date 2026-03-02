@@ -1,11 +1,10 @@
 package com.loaderapp.architecture
 
-import java.io.File
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.io.File
 
 class FeatureDataImportBoundaryTest {
-
     @Test
     fun `Given feature source files When scanning imports Then cross-feature data imports are absent`() {
         val workingDir = File(requireNotNull(System.getProperty("user.dir")) { "user.dir is not set" })
@@ -22,23 +21,24 @@ class FeatureDataImportBoundaryTest {
 
                 sourceFile.useLines { lines ->
                     lines
-                    .map { it.trim() }
-                    .filter { it.startsWith("import com.loaderapp.features.") }
-                    .forEach { importLine ->
-                        val importedFeature = importLine.substringAfter("import com.loaderapp.features.")
-                            .substringBefore('.')
-                        val importsDataLayer = importLine.contains(".data.") || importLine.endsWith(".data")
+                        .map { it.trim() }
+                        .filter { it.startsWith("import com.loaderapp.features.") }
+                        .forEach { importLine ->
+                            val importedFeature =
+                                importLine.substringAfter("import com.loaderapp.features.")
+                                    .substringBefore('.')
+                            val importsDataLayer = importLine.contains(".data.") || importLine.endsWith(".data")
 
-                        if (importsDataLayer && importedFeature != sourceFeature) {
-                            forbiddenImports += "${sourceFile.relativeTo(repoRoot).path}: $importLine"
+                            if (importsDataLayer && importedFeature != sourceFeature) {
+                                forbiddenImports += "${sourceFile.relativeTo(repoRoot).path}: $importLine"
+                            }
                         }
-                    }
                 }
             }
 
         assertTrue(
             "Found forbidden cross-feature data imports:\n${forbiddenImports.joinToString("\n")}",
-            forbiddenImports.isEmpty()
+            forbiddenImports.isEmpty(),
         )
     }
 

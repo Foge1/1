@@ -12,9 +12,10 @@ data class SearchOrdersByDispatcherParams(val dispatcherId: Long, val query: Str
  * UseCase: Search orders for a specific dispatcher by address or cargo description.
  * Delegates to the DAO SQL query — no in-memory filtering.
  */
-class SearchOrdersByDispatcherUseCase @Inject constructor(
-    private val orderRepository: OrderRepository
-) : FlowUseCase<SearchOrdersByDispatcherParams, Flow<List<OrderModel>>>() {
-    override fun execute(params: SearchOrdersByDispatcherParams): Flow<List<OrderModel>> =
-        orderRepository.searchOrdersByDispatcher(params.dispatcherId, params.query)
-}
+class SearchOrdersByDispatcherUseCase
+    @Inject
+    constructor(
+        private val orderRepository: OrderRepository,
+    ) : FlowUseCase<SearchOrdersByDispatcherParams, Flow<List<OrderModel>>>() {
+        override fun execute(params: SearchOrdersByDispatcherParams): Flow<List<OrderModel>> = orderRepository.searchOrdersByDispatcher(params.dispatcherId, params.query)
+    }

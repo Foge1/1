@@ -4,7 +4,7 @@ import kotlinx.coroutines.CancellationException
 
 internal inline fun <T> runCatchingUseCase(
     defaultErrorMessage: String,
-    block: () -> T
+    block: () -> T,
 ): UseCaseResult<T> {
     return try {
         UseCaseResult.Success(block())

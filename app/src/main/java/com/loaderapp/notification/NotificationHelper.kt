@@ -11,7 +11,6 @@ import androidx.core.app.NotificationManagerCompat
 import com.loaderapp.MainActivity
 
 class NotificationHelper(private val context: Context) {
-    
     companion object {
         private const val CHANNEL_ID = "loader_orders_channel"
         private const val CHANNEL_NAME = "Заказы грузчиков"
@@ -19,94 +18,121 @@ class NotificationHelper(private val context: Context) {
         private const val NEW_ORDER_NOTIFICATION_ID = 1
         private const val CHAT_NOTIFICATION_ID = 3
     }
-    
+
     init {
         createNotificationChannel()
     }
-    
+
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val importance = NotificationManager.IMPORTANCE_HIGH
-            val channel = NotificationChannel(CHANNEL_ID, CHANNEL_NAME, importance).apply {
-                description = CHANNEL_DESCRIPTION
-                enableVibration(true)
-            }
-            
+            val channel =
+                NotificationChannel(CHANNEL_ID, CHANNEL_NAME, importance).apply {
+                    description = CHANNEL_DESCRIPTION
+                    enableVibration(true)
+                }
+
             val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             notificationManager.createNotificationChannel(channel)
         }
     }
-    
-    fun sendNewOrderNotification(address: String, pricePerHour: Double) {
-        val intent = Intent(context, MainActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-        }
-        
-        val pendingIntent = PendingIntent.getActivity(
-            context,
-            0,
-            intent,
-            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
-        )
-        
-        val notification = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(android.R.drawable.ic_dialog_info)
-            .setContentTitle("Новый заказ!")
-            .setContentText("Адрес: $address, Оплата: $pricePerHour ₽/час")
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .setContentIntent(pendingIntent)
-            .setAutoCancel(true)
-            .setVibrate(longArrayOf(0, 500, 200, 500))
-            .build()
-        
+
+    fun sendNewOrderNotification(
+        address: String,
+        pricePerHour: Double,
+    ) {
+        val intent =
+            Intent(context, MainActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            }
+
+        val pendingIntent =
+            PendingIntent.getActivity(
+                context,
+                0,
+                intent,
+                PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+            )
+
+        val notification =
+            NotificationCompat.Builder(context, CHANNEL_ID)
+                .setSmallIcon(android.R.drawable.ic_dialog_info)
+                .setContentTitle("Новый заказ!")
+                .setContentText("Адрес: $address, Оплата: $pricePerHour ₽/час")
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setContentIntent(pendingIntent)
+                .setAutoCancel(true)
+                .setVibrate(longArrayOf(0, 500, 200, 500))
+                .build()
+
         try {
             NotificationManagerCompat.from(context).notify(NEW_ORDER_NOTIFICATION_ID, notification)
         } catch (e: SecurityException) {
             // Пользователь не дал разрешение на уведомления
         }
     }
-    
-    fun sendChatMessageNotification(orderAddress: String, senderName: String, messageText: String) {
-        val intent = Intent(context, MainActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-        }
-        val pendingIntent = PendingIntent.getActivity(
-            context, 0, intent,
-            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
-        )
-        val notification = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(android.R.drawable.ic_dialog_info)
-            .setContentTitle("💬 Новое сообщение от $senderName")
-            .setContentText("Заказ: $orderAddress\n$messageText")
-            .setStyle(NotificationCompat.BigTextStyle().bigText("Заказ «$orderAddress»\n$messageText"))
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .setContentIntent(pendingIntent)
-            .setAutoCancel(true)
-            .setVibrate(longArrayOf(0, 200, 100, 200))
-            .build()
+
+    fun sendChatMessageNotification(
+        orderAddress: String,
+        senderName: String,
+        messageText: String,
+    ) {
+        val intent =
+            Intent(context, MainActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            }
+        val pendingIntent =
+            PendingIntent.getActivity(
+                context,
+                0,
+                intent,
+                PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+            )
+        val notification =
+            NotificationCompat.Builder(context, CHANNEL_ID)
+                .setSmallIcon(android.R.drawable.ic_dialog_info)
+                .setContentTitle("💬 Новое сообщение от $senderName")
+                .setContentText("Заказ: $orderAddress\n$messageText")
+                .setStyle(NotificationCompat.BigTextStyle().bigText("Заказ «$orderAddress»\n$messageText"))
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setContentIntent(pendingIntent)
+                .setAutoCancel(true)
+                .setVibrate(longArrayOf(0, 200, 100, 200))
+                .build()
         try {
             NotificationManagerCompat.from(context).notify(CHAT_NOTIFICATION_ID, notification)
-        } catch (e: SecurityException) { /* нет разрешения */ }
+        } catch (e: SecurityException) {
+            // нет разрешения
+        }
     }
 
-    fun sendOrderTakenNotification(address: String, workerName: String) {
-        val intent = Intent(context, MainActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-        }
-        val pendingIntent = PendingIntent.getActivity(
-            context, 0, intent,
-            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
-        )
-        val notification = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(android.R.drawable.ic_dialog_info)
-            .setContentTitle("Заказ принят")
-            .setContentText("Грузчик $workerName принял заказ на адрес: $address")
-            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-            .setContentIntent(pendingIntent)
-            .setAutoCancel(true)
-            .build()
+    fun sendOrderTakenNotification(
+        address: String,
+        workerName: String,
+    ) {
+        val intent =
+            Intent(context, MainActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            }
+        val pendingIntent =
+            PendingIntent.getActivity(
+                context,
+                0,
+                intent,
+                PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+            )
+        val notification =
+            NotificationCompat.Builder(context, CHANNEL_ID)
+                .setSmallIcon(android.R.drawable.ic_dialog_info)
+                .setContentTitle("Заказ принят")
+                .setContentText("Грузчик $workerName принял заказ на адрес: $address")
+                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                .setContentIntent(pendingIntent)
+                .setAutoCancel(true)
+                .build()
         try {
             NotificationManagerCompat.from(context).notify(NEW_ORDER_NOTIFICATION_ID + 1, notification)
-        } catch (e: SecurityException) { }
+        } catch (e: SecurityException) {
+        }
     }
 }

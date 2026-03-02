@@ -11,7 +11,7 @@ import kotlinx.coroutines.withContext
  * Automatically switches to [dispatcher] (default IO) and wraps exceptions.
  */
 abstract class UseCase<in Input, out Output>(
-    private val dispatcher: CoroutineDispatcher = Dispatchers.IO
+    private val dispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) {
     suspend operator fun invoke(params: Input): Result<@UnsafeVariance Output> {
         return try {
@@ -29,7 +29,7 @@ abstract class UseCase<in Input, out Output>(
  * UseCase without parameters.
  */
 abstract class NoParamsUseCase<out Output>(
-    dispatcher: CoroutineDispatcher = Dispatchers.IO
+    dispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) : UseCase<Unit, Output>(dispatcher) {
     suspend operator fun invoke(): Result<@UnsafeVariance Output> = invoke(Unit)
 }
@@ -42,6 +42,7 @@ abstract class NoParamsUseCase<out Output>(
  */
 abstract class FlowUseCase<in Input, out Output> {
     operator fun invoke(params: Input): Output = execute(params)
+
     protected abstract fun execute(params: Input): Output
 }
 

@@ -14,11 +14,12 @@ data class GetOrdersByDispatcherParams(val dispatcherId: Long)
 /**
  * UseCase: Получить заказы конкретного диспетчера
  */
-class GetOrdersByDispatcherUseCase @Inject constructor(
-    private val orderRepository: OrderRepository
-) : FlowUseCase<GetOrdersByDispatcherParams, Flow<List<OrderModel>>>() {
-    
-    override fun execute(params: GetOrdersByDispatcherParams): Flow<List<OrderModel>> {
-        return orderRepository.getOrdersByDispatcher(params.dispatcherId)
+class GetOrdersByDispatcherUseCase
+    @Inject
+    constructor(
+        private val orderRepository: OrderRepository,
+    ) : FlowUseCase<GetOrdersByDispatcherParams, Flow<List<OrderModel>>>() {
+        override fun execute(params: GetOrdersByDispatcherParams): Flow<List<OrderModel>> {
+            return orderRepository.getOrdersByDispatcher(params.dispatcherId)
+        }
     }
-}

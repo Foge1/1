@@ -33,7 +33,7 @@ import kotlinx.coroutines.launch
  */
 data class TabItem(
     val label: String,
-    val badgeCount: Int = 0
+    val badgeCount: Int = 0,
 )
 
 /**
@@ -71,10 +71,10 @@ fun SwipeableTabs(
     tabVerticalPadding: Dp = 10.dp,
     tabHorizontalPadding: Dp = 8.dp,
     tabRowHorizontalPadding: Dp = 16.dp,
-    content: @Composable (pageIndex: Int) -> Unit
+    content: @Composable (pageIndex: Int) -> Unit,
 ) {
     val pagerState = rememberPagerState(initialPage = initialPage, pageCount = { tabs.size })
-    val scope      = rememberCoroutineScope()
+    val scope = rememberCoroutineScope()
 
     LaunchedEffect(pagerState.currentPage) {
         onPageChanged(pagerState.currentPage)
@@ -82,14 +82,14 @@ fun SwipeableTabs(
 
     Column(modifier = modifier) {
         PillTabRow(
-            tabs          = tabs,
-            pagerState    = pagerState,
+            tabs = tabs,
+            pagerState = pagerState,
             tabVerticalPadding = tabVerticalPadding,
             tabHorizontalPadding = tabHorizontalPadding,
             tabRowHorizontalPadding = tabRowHorizontalPadding,
             onTabSelected = { index ->
                 scope.launch { pagerState.animateScrollToPage(index) }
-            }
+            },
         )
 
         Spacer(Modifier.height(tabsToPagerSpacing))
@@ -100,23 +100,25 @@ fun SwipeableTabs(
         // Верх: карточки «растворяются» под топбаром.
         // Низ: карточки «растворяются» перед навбаром — граница исчезает.
         HorizontalPager(
-            state    = pagerState,
-            modifier = Modifier
-                .weight(1f)
-                .graphicsLayer(compositingStrategy = CompositingStrategy.Offscreen)
-                .drawWithContent {
-                    drawContent()
-                    // Нижний fade: последние 36dp контента растворяются
-                    drawRect(
-                        brush = Brush.verticalGradient(
-                            colors = listOf(Color.Black, Color.Transparent),
-                            startY = size.height - 36.dp.toPx(),
-                            endY   = size.height
-                        ),
-                        blendMode = BlendMode.DstIn
-                    )
-                },
-            pageSpacing = 0.dp
+            state = pagerState,
+            modifier =
+                Modifier
+                    .weight(1f)
+                    .graphicsLayer(compositingStrategy = CompositingStrategy.Offscreen)
+                    .drawWithContent {
+                        drawContent()
+                        // Нижний fade: последние 36dp контента растворяются
+                        drawRect(
+                            brush =
+                                Brush.verticalGradient(
+                                    colors = listOf(Color.Black, Color.Transparent),
+                                    startY = size.height - 36.dp.toPx(),
+                                    endY = size.height,
+                                ),
+                            blendMode = BlendMode.DstIn,
+                        )
+                    },
+            pageSpacing = 0.dp,
         ) { page ->
             content(page)
         }
@@ -144,64 +146,66 @@ fun PillTabRow(
     tabHorizontalPadding: Dp = 8.dp,
     tabRowHorizontalPadding: Dp = 16.dp,
 ) {
-    val primary       = MaterialTheme.colorScheme.primary
-    val trackColor    = primary.copy(alpha = 0.10f)
+    val primary = MaterialTheme.colorScheme.primary
+    val trackColor = primary.copy(alpha = 0.10f)
     // Цвет капсулы активного таба — surface с лёгким оттенком
     val indicatorColor = MaterialTheme.colorScheme.surface
 
     Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = tabRowHorizontalPadding)
-            .clip(RoundedCornerShape(trackCornerRadius))
-            .drawBehind {
-                // Трек
-                drawRoundRect(
-                    color       = trackColor,
-                    cornerRadius = CornerRadius(trackCornerRadius.toPx())
-                )
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .padding(horizontal = tabRowHorizontalPadding)
+                .clip(RoundedCornerShape(trackCornerRadius))
+                .drawBehind {
+                    // Трек
+                    drawRoundRect(
+                        color = trackColor,
+                        cornerRadius = CornerRadius(trackCornerRadius.toPx()),
+                    )
 
-                if (tabs.isEmpty()) return@drawBehind
+                    if (tabs.isEmpty()) return@drawBehind
 
-                val tabWidth = size.width / tabs.size
-                val pad      = indicatorPadding.toPx()
+                    val tabWidth = size.width / tabs.size
+                    val pad = indicatorPadding.toPx()
 
-                // Текущая позиция с учётом фракции свайпа — плавная интерполяция
-                val currentPage   = pagerState.currentPage
-                val offsetFraction = pagerState.currentPageOffsetFraction
-                val indicatorLeft  = (currentPage + offsetFraction) * tabWidth + pad
+                    // Текущая позиция с учётом фракции свайпа — плавная интерполяция
+                    val currentPage = pagerState.currentPage
+                    val offsetFraction = pagerState.currentPageOffsetFraction
+                    val indicatorLeft = (currentPage + offsetFraction) * tabWidth + pad
 
-                // Капсула-индикатор
-                drawRoundRect(
-                    color        = indicatorColor,
-                    topLeft      = Offset(indicatorLeft, pad),
-                    size         = Size(tabWidth - pad * 2, size.height - pad * 2),
-                    cornerRadius = CornerRadius((trackCornerRadius - indicatorPadding).toPx())
-                )
-            }
-            .padding(indicatorPadding)
+                    // Капсула-индикатор
+                    drawRoundRect(
+                        color = indicatorColor,
+                        topLeft = Offset(indicatorLeft, pad),
+                        size = Size(tabWidth - pad * 2, size.height - pad * 2),
+                        cornerRadius = CornerRadius((trackCornerRadius - indicatorPadding).toPx()),
+                    )
+                }
+                .padding(indicatorPadding),
     ) {
         Row(modifier = Modifier.fillMaxWidth()) {
             tabs.forEachIndexed { index, tab ->
                 PillTab(
-                    label      = tab.label,
+                    label = tab.label,
                     badgeCount = tab.badgeCount,
                     isSelected = pagerState.currentPage == index,
                     // Дополнительно: плавный alpha при свайпе между соседними табами
-                    selectionFraction = when {
-                        pagerState.currentPage == index ->
-                            1f - kotlin.math.abs(pagerState.currentPageOffsetFraction)
-                        pagerState.currentPage == index - 1 && pagerState.currentPageOffsetFraction > 0f ->
-                            pagerState.currentPageOffsetFraction
-                        pagerState.currentPage == index + 1 && pagerState.currentPageOffsetFraction < 0f ->
-                            -pagerState.currentPageOffsetFraction
-                        else -> 0f
-                    },
-                    onClick  = { onTabSelected(index) },
+                    selectionFraction =
+                        when {
+                            pagerState.currentPage == index ->
+                                1f - kotlin.math.abs(pagerState.currentPageOffsetFraction)
+                            pagerState.currentPage == index - 1 && pagerState.currentPageOffsetFraction > 0f ->
+                                pagerState.currentPageOffsetFraction
+                            pagerState.currentPage == index + 1 && pagerState.currentPageOffsetFraction < 0f ->
+                                -pagerState.currentPageOffsetFraction
+                            else -> 0f
+                        },
+                    onClick = { onTabSelected(index) },
                     modifier = Modifier.weight(1f),
-                    primary  = primary,
+                    primary = primary,
                     verticalPadding = tabVerticalPadding,
-                    horizontalPadding = tabHorizontalPadding
+                    horizontalPadding = tabHorizontalPadding,
                 )
             }
         }
@@ -234,10 +238,10 @@ private fun PillTab(
     primary: Color = MaterialTheme.colorScheme.primary,
     unselectedColor: Color = MaterialTheme.colorScheme.onSurfaceVariant,
     verticalPadding: Dp = 10.dp,
-    horizontalPadding: Dp = 8.dp
+    horizontalPadding: Dp = 8.dp,
 ) {
     // Плавная интерполяция цвета текста синхронно со свайпом
-    val textColor  = lerp(unselectedColor, primary, selectionFraction)
+    val textColor = lerp(unselectedColor, primary, selectionFraction)
     val fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
 
     // Отдельный InteractionSource позволяет подавить ripple точечно,
@@ -245,36 +249,37 @@ private fun PillTab(
     val interactionSource = remember { MutableInteractionSource() }
 
     Row(
-        modifier = modifier
-            .clip(RoundedCornerShape(50))
-            // indication = null → никакого ripple / серой тени при нажатии
-            .clickable(
-                interactionSource = interactionSource,
-                indication        = null,
-                onClick           = onClick
-            )
-            .padding(vertical = verticalPadding, horizontal = horizontalPadding),
+        modifier =
+            modifier
+                .clip(RoundedCornerShape(50))
+                // indication = null → никакого ripple / серой тени при нажатии
+                .clickable(
+                    interactionSource = interactionSource,
+                    indication = null,
+                    onClick = onClick,
+                )
+                .padding(vertical = verticalPadding, horizontal = horizontalPadding),
         horizontalArrangement = Arrangement.Center,
-        verticalAlignment     = Alignment.CenterVertically
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
-            text       = label,
-            fontSize   = 14.sp,
+            text = label,
+            fontSize = 14.sp,
             fontWeight = fontWeight,
-            color      = textColor,
-            maxLines   = 1
+            color = textColor,
+            maxLines = 1,
         )
 
         if (badgeCount > 0) {
             Spacer(Modifier.width(6.dp))
             Badge(
                 containerColor = primary,
-                contentColor   = MaterialTheme.colorScheme.onPrimary
+                contentColor = MaterialTheme.colorScheme.onPrimary,
             ) {
                 Text(
-                    text       = if (badgeCount > 99) "99+" else "$badgeCount",
-                    fontSize   = 10.sp,
-                    fontWeight = FontWeight.Bold
+                    text = if (badgeCount > 99) "99+" else "$badgeCount",
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Bold,
                 )
             }
         }

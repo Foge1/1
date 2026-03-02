@@ -1,0 +1,8 @@
+<?xml version="1.0" ?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>CyclomaticComplexMethod:OrderActionBlockReason.kt$fun OrderActionBlockReason.toDisplayMessage(): String</ID>
+    <ID>LongParameterList:OrdersOrchestrator.kt$OrdersOrchestrator$( private val createOrderUseCase: CreateOrderUseCase, private val applyToOrderUseCase: ApplyToOrderUseCase, private val withdrawApplicationUseCase: WithdrawApplicationUseCase, private val selectApplicantUseCase: SelectApplicantUseCase, private val unselectApplicantUseCase: UnselectApplicantUseCase, private val startOrderUseCase: StartOrderUseCase, private val cancelOrderUseCase: CancelOrderUseCase, private val completeOrderUseCase: CompleteOrderUseCase, private val refreshOrdersUseCase: RefreshOrdersUseCase, private val appLogger: AppLogger, )</ID>
+  </CurrentIssues>
+</SmellBaseline>

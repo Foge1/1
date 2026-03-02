@@ -8,11 +8,12 @@ import javax.inject.Inject
 
 data class ObserveOrderChatMessagesParams(val orderId: Long)
 
-class ObserveOrderChatMessagesUseCase @Inject constructor(
-    private val chatRepository: ChatRepository
-) : FlowUseCase<ObserveOrderChatMessagesParams, Flow<List<ChatMessageModel>>>() {
-
-    override fun execute(params: ObserveOrderChatMessagesParams): Flow<List<ChatMessageModel>> {
-        return chatRepository.getMessagesForOrder(params.orderId)
+class ObserveOrderChatMessagesUseCase
+    @Inject
+    constructor(
+        private val chatRepository: ChatRepository,
+    ) : FlowUseCase<ObserveOrderChatMessagesParams, Flow<List<ChatMessageModel>>>() {
+        override fun execute(params: ObserveOrderChatMessagesParams): Flow<List<ChatMessageModel>> {
+            return chatRepository.getMessagesForOrder(params.orderId)
+        }
     }
-}

@@ -9,21 +9,24 @@ import kotlinx.coroutines.flow.map
  */
 sealed interface AppResult<out T> {
     data class Success<T>(val data: T) : AppResult<T>
+
     data class Failure(val error: AppError) : AppResult<Nothing>
 }
 
 /** Executes [block] and converts thrown exceptions to [AppResult.Failure]. */
-inline fun <T> appRunCatching(block: () -> T): AppResult<T> = try {
-    AppResult.Success(block())
-} catch (throwable: Throwable) {
-    AppResult.Failure(throwable.toAppError())
-}
+inline fun <T> appRunCatching(block: () -> T): AppResult<T> =
+    try {
+        AppResult.Success(block())
+    } catch (throwable: Throwable) {
+        AppResult.Failure(throwable.toAppError())
+    }
 
 /** Maps successful value and keeps failure as-is. */
-inline fun <T, R> AppResult<T>.mapResult(transform: (T) -> R): AppResult<R> = when (this) {
-    is AppResult.Success -> AppResult.Success(transform(data))
-    is AppResult.Failure -> this
-}
+inline fun <T, R> AppResult<T>.mapResult(transform: (T) -> R): AppResult<R> =
+    when (this) {
+        is AppResult.Success -> AppResult.Success(transform(data))
+        is AppResult.Failure -> this
+    }
 
 /** Converts a plain data [Flow] into [Flow] of [AppResult]. */
 fun <T> Flow<T>.asResult(): Flow<AppResult<T>> =
@@ -31,8 +34,7 @@ fun <T> Flow<T>.asResult(): Flow<AppResult<T>> =
         .catch { emit(AppResult.Failure(it.toAppError())) }
 
 /** Maps success values inside [Flow] of [AppResult]. */
-inline fun <T, R> Flow<AppResult<T>>.mapResult(
-    crossinline transform: (T) -> R
-): Flow<AppResult<R>> = map { result ->
-    result.mapResult(transform)
-}
+inline fun <T, R> Flow<AppResult<T>>.mapResult(crossinline transform: (T) -> R): Flow<AppResult<R>> =
+    map { result ->
+        result.mapResult(transform)
+    }

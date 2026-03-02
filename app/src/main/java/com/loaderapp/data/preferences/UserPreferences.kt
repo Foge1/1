@@ -14,7 +14,6 @@ import kotlinx.coroutines.flow.map
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "user_preferences")
 
 class UserPreferences(private val context: Context) {
-    
     companion object {
         private val CURRENT_USER_ID = longPreferencesKey("current_user_id")
         private val DARK_THEME_KEY = booleanPreferencesKey("dark_theme")
@@ -22,64 +21,69 @@ class UserPreferences(private val context: Context) {
         private val SOUND_KEY = booleanPreferencesKey("sound_enabled")
         private val VIBRATION_KEY = booleanPreferencesKey("vibration_enabled")
     }
-    
-    val currentUserId: Flow<Long?> = context.dataStore.data.map { preferences ->
-        preferences[CURRENT_USER_ID]
-    }
-    
+
+    val currentUserId: Flow<Long?> =
+        context.dataStore.data.map { preferences ->
+            preferences[CURRENT_USER_ID]
+        }
+
     /**
      * Получить текущий userId синхронно (suspend)
      */
     suspend fun getCurrentUserId(): Long? {
         return currentUserId.first()
     }
-    
-    val isDarkTheme: Flow<Boolean> = context.dataStore.data.map { preferences ->
-        preferences[DARK_THEME_KEY] ?: false
-    }
-    
-    val isNotificationsEnabled: Flow<Boolean> = context.dataStore.data.map { preferences ->
-        preferences[NOTIFICATIONS_KEY] ?: true
-    }
-    
-    val isSoundEnabled: Flow<Boolean> = context.dataStore.data.map { preferences ->
-        preferences[SOUND_KEY] ?: true
-    }
-    
-    val isVibrationEnabled: Flow<Boolean> = context.dataStore.data.map { preferences ->
-        preferences[VIBRATION_KEY] ?: true
-    }
-    
+
+    val isDarkTheme: Flow<Boolean> =
+        context.dataStore.data.map { preferences ->
+            preferences[DARK_THEME_KEY] ?: false
+        }
+
+    val isNotificationsEnabled: Flow<Boolean> =
+        context.dataStore.data.map { preferences ->
+            preferences[NOTIFICATIONS_KEY] ?: true
+        }
+
+    val isSoundEnabled: Flow<Boolean> =
+        context.dataStore.data.map { preferences ->
+            preferences[SOUND_KEY] ?: true
+        }
+
+    val isVibrationEnabled: Flow<Boolean> =
+        context.dataStore.data.map { preferences ->
+            preferences[VIBRATION_KEY] ?: true
+        }
+
     suspend fun setCurrentUserId(userId: Long) {
         context.dataStore.edit { preferences ->
             preferences[CURRENT_USER_ID] = userId
         }
     }
-    
+
     suspend fun clearCurrentUser() {
         context.dataStore.edit { preferences ->
             preferences.remove(CURRENT_USER_ID)
         }
     }
-    
+
     suspend fun setDarkTheme(enabled: Boolean) {
         context.dataStore.edit { preferences ->
             preferences[DARK_THEME_KEY] = enabled
         }
     }
-    
+
     suspend fun setNotificationsEnabled(enabled: Boolean) {
         context.dataStore.edit { preferences ->
             preferences[NOTIFICATIONS_KEY] = enabled
         }
     }
-    
+
     suspend fun setSoundEnabled(enabled: Boolean) {
         context.dataStore.edit { preferences ->
             preferences[SOUND_KEY] = enabled
         }
     }
-    
+
     suspend fun setVibrationEnabled(enabled: Boolean) {
         context.dataStore.edit { preferences ->
             preferences[VIBRATION_KEY] = enabled

@@ -12,5 +12,5 @@ data class ChatMessage(
     val senderName: String,
     val senderRole: UserRole,
     val text: String,
-    val sentAt: Long = System.currentTimeMillis()
+    val sentAt: Long = System.currentTimeMillis(),
 )

@@ -18,5 +18,5 @@ enum class OrderEvent {
 
     CANCEL,
     COMPLETE,
-    EXPIRE
+    EXPIRE,
 }

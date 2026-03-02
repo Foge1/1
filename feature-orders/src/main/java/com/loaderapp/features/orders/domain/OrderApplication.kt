@@ -14,12 +14,12 @@ data class OrderApplication(
     val status: OrderApplicationStatus,
     val appliedAtMillis: Long,
     /** Snapshot of the loader's rating at the time of application. Null if unavailable. */
-    val ratingSnapshot: Float? = null
+    val ratingSnapshot: Float? = null,
 )
 
 enum class OrderApplicationStatus {
     APPLIED,
     SELECTED,
     REJECTED,
-    WITHDRAWN
+    WITHDRAWN,
 }

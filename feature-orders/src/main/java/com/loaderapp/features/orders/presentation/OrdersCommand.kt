@@ -4,9 +4,11 @@ import com.loaderapp.features.orders.domain.OrderDraft
 
 sealed class OrdersCommand {
     data object Refresh : OrdersCommand()
+
     data class Create(val orderDraft: OrderDraft) : OrdersCommand()
 
     // ── New staffing flow ────────────────────────────────────────────────────
+
     /** Грузчик откликается на заказ. */
     data class Apply(val orderId: Long) : OrdersCommand()
 
@@ -24,6 +26,6 @@ sealed class OrdersCommand {
 
     // ── Common lifecycle ─────────────────────────────────────────────────────
     data class Cancel(val orderId: Long, val reason: String?) : OrdersCommand()
-    data class Complete(val orderId: Long) : OrdersCommand()
 
+    data class Complete(val orderId: Long) : OrdersCommand()
 }

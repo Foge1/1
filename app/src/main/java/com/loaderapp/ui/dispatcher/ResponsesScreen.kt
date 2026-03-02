@@ -18,7 +18,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ExpandLess
@@ -71,46 +70,51 @@ fun ResponsesScreen(viewModel: ResponsesViewModel) {
 
     AppScaffold(title = "Отклики") {
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(top = topBarHeight + 8.dp)
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(top = topBarHeight + 8.dp),
         ) {
             Spacer(modifier = Modifier.height(4.dp))
 
             when {
                 state.loading -> LoadingView()
-                state.items.isEmpty() -> EmptyStateView(
-                    icon = Icons.Outlined.Person,
-                    title = "Нет откликов",
-                    message = "Когда грузчики откликнутся — они появятся здесь"
-                )
+                state.items.isEmpty() ->
+                    EmptyStateView(
+                        icon = Icons.Outlined.Person,
+                        title = "Нет откликов",
+                        message = "Когда грузчики откликнутся — они появятся здесь",
+                    )
 
                 else -> {
-                    val expandedMap = rememberSaveable(
-                        saver = listSaver(
-                            save = { state ->
-                                state.entries.flatMap { entry ->
-                                    listOf(entry.key, if (entry.value) 1L else 0L)
-                                }
-                            },
-                            restore = { restored ->
-                                mutableStateMapOf<Long, Boolean>().apply {
-                                    restored.chunked(2).forEach { (orderId, expandedFlag) ->
-                                        put(orderId, expandedFlag == 1L)
-                                    }
-                                }
-                            }
-                        )
-                    ) { mutableStateMapOf<Long, Boolean>() }
+                    val expandedMap =
+                        rememberSaveable(
+                            saver =
+                                listSaver(
+                                    save = { state ->
+                                        state.entries.flatMap { entry ->
+                                            listOf(entry.key, if (entry.value) 1L else 0L)
+                                        }
+                                    },
+                                    restore = { restored ->
+                                        mutableStateMapOf<Long, Boolean>().apply {
+                                            restored.chunked(2).forEach { (orderId, expandedFlag) ->
+                                                put(orderId, expandedFlag == 1L)
+                                            }
+                                        }
+                                    },
+                                ),
+                        ) { mutableStateMapOf<Long, Boolean>() }
                     LazyColumn(
                         modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(
-                            start = 16.dp,
-                            end = 16.dp,
-                            top = 0.dp,
-                            bottom = bottomNavHeight + 16.dp
-                        ),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                        contentPadding =
+                            PaddingValues(
+                                start = 16.dp,
+                                end = 16.dp,
+                                top = 0.dp,
+                                bottom = bottomNavHeight + 16.dp,
+                            ),
+                        verticalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
                         items(state.items, key = { it.orderId }) { item ->
                             ResponseOrderCard(
@@ -121,7 +125,7 @@ fun ResponsesScreen(viewModel: ResponsesViewModel) {
                                 onToggle = { loaderId, isSelected ->
                                     viewModel.onToggleApplicant(item.orderId, loaderId, isSelected)
                                 },
-                                onStart = { viewModel.onStartClicked(item.orderId) }
+                                onStart = { viewModel.onStartClicked(item.orderId) },
                             )
                         }
                     }
@@ -131,9 +135,10 @@ fun ResponsesScreen(viewModel: ResponsesViewModel) {
 
         SnackbarHost(
             hostState = snackbarHostState,
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(bottom = bottomNavHeight + 8.dp)
+            modifier =
+                Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = bottomNavHeight + 8.dp),
         )
     }
 }
@@ -148,16 +153,18 @@ private fun ResponseOrderCard(
     onStart: () -> Unit,
 ) {
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .animateContentSize(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .animateContentSize(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(item.address, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
@@ -167,20 +174,21 @@ private fun ResponseOrderCard(
                     style = MaterialTheme.typography.bodyMedium,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Spacer(Modifier.height(6.dp))
                 Text(
                     text = "Выбрано: ${item.selectedCount}/${item.requiredCount}",
                     style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Spacer(Modifier.height(8.dp))
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { onExpandedChange(!expanded) },
-                    verticalAlignment = Alignment.CenterVertically
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .clickable { onExpandedChange(!expanded) },
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text("Отклики: ${item.responsesCount}", style = MaterialTheme.typography.labelLarge)
                     Spacer(Modifier.width(4.dp))
@@ -193,7 +201,7 @@ private fun ResponseOrderCard(
                         ResponseRow(
                             item = response,
                             actionsBlocked = pending,
-                            onToggle = { onToggle(response.loaderId, response.isSelected) }
+                            onToggle = { onToggle(response.loaderId, response.isSelected) },
                         )
                     }
                 }
@@ -216,7 +224,7 @@ private fun ResponseOrderCard(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.width(110.dp)
+                        modifier = Modifier.width(110.dp),
                     )
                 }
             }
@@ -231,16 +239,18 @@ private fun ResponseRow(
     onToggle: () -> Unit,
 ) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp),
-        verticalAlignment = Alignment.CenterVertically
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(
-            modifier = Modifier
-                .size(24.dp)
-                .background(MaterialTheme.colorScheme.surfaceVariant, CircleShape),
-            contentAlignment = Alignment.Center
+            modifier =
+                Modifier
+                    .size(24.dp)
+                    .background(MaterialTheme.colorScheme.surfaceVariant, CircleShape),
+            contentAlignment = Alignment.Center,
         ) {
             Icon(Icons.Outlined.Person, null, modifier = Modifier.size(14.dp))
         }
@@ -251,7 +261,7 @@ private fun ResponseRow(
                 Text(
                     text = "В работе",
                     style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.error
+                    color = MaterialTheme.colorScheme.error,
                 )
             }
         }

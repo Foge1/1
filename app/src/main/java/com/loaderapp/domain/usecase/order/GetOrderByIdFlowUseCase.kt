@@ -8,11 +8,12 @@ import javax.inject.Inject
 
 data class GetOrderByIdFlowParams(val orderId: Long)
 
-class GetOrderByIdFlowUseCase @Inject constructor(
-    private val orderRepository: OrderRepository
-) : FlowUseCase<GetOrderByIdFlowParams, Flow<OrderModel?>>() {
-
-    override fun execute(params: GetOrderByIdFlowParams): Flow<OrderModel?> {
-        return orderRepository.getOrderByIdFlow(params.orderId)
+class GetOrderByIdFlowUseCase
+    @Inject
+    constructor(
+        private val orderRepository: OrderRepository,
+    ) : FlowUseCase<GetOrderByIdFlowParams, Flow<OrderModel?>>() {
+        override fun execute(params: GetOrderByIdFlowParams): Flow<OrderModel?> {
+            return orderRepository.getOrderByIdFlow(params.orderId)
+        }
     }
-}

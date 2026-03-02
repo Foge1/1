@@ -8,10 +8,12 @@ import javax.inject.Inject
 
 data class LoginParams(val name: String, val role: UserRoleModel)
 
-class LoginUseCase @Inject constructor(
-    private val authRepository: AuthRepository
-) {
-    suspend operator fun invoke(params: LoginParams): AppResult<User> {
-        return authRepository.login(params.name, params.role)
+class LoginUseCase
+    @Inject
+    constructor(
+        private val authRepository: AuthRepository,
+    ) {
+        suspend operator fun invoke(params: LoginParams): AppResult<User> {
+            return authRepository.login(params.name, params.role)
+        }
     }
-}

@@ -9,12 +9,13 @@ object OrderAssignmentTestFactory {
         loaderId: String,
         status: OrderAssignmentStatus = OrderAssignmentStatus.ACTIVE,
         assignedAtMillis: Long = 1_000L,
-        startedAtMillis: Long? = null
-    ): OrderAssignment = OrderAssignment(
-        orderId = orderId,
-        loaderId = loaderId,
-        status = status,
-        assignedAtMillis = assignedAtMillis,
-        startedAtMillis = startedAtMillis
-    )
+        startedAtMillis: Long? = null,
+    ): OrderAssignment =
+        OrderAssignment(
+            orderId = orderId,
+            loaderId = loaderId,
+            status = status,
+            assignedAtMillis = assignedAtMillis,
+            startedAtMillis = startedAtMillis,
+        )
 }

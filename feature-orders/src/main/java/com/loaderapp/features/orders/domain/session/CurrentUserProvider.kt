@@ -5,11 +5,13 @@ import kotlinx.coroutines.flow.Flow
 
 data class CurrentUser(
     val id: String,
-    val role: Role
+    val role: Role,
 )
 
 interface CurrentUserProvider {
     fun observeCurrentUser(): Flow<CurrentUser?>
+
     suspend fun getCurrentUserOrNull(): CurrentUser?
+
     suspend fun requireCurrentUserOnce(): CurrentUser
 }

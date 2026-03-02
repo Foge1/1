@@ -14,7 +14,6 @@ import androidx.sqlite.db.SupportSQLiteDatabase
  * Data safety: all existing orders are copied; none are deleted.
  */
 object Migration2To3 : Migration(2, 3) {
-
     override fun migrate(db: SupportSQLiteDatabase) {
         // 1. Rename the old table
         db.execSQL("ALTER TABLE orders RENAME TO orders_old")
@@ -38,7 +37,7 @@ object Migration2To3 : Migration(2, 3) {
                 status          TEXT    NOT NULL,
                 createdByUserId TEXT    NOT NULL
             )
-            """.trimIndent()
+            """.trimIndent(),
         )
 
         // 3. Copy data, remapping AVAILABLE → STAFFING and TAKEN → IN_PROGRESS
@@ -59,7 +58,7 @@ object Migration2To3 : Migration(2, 3) {
                 END,
                 createdByUserId
             FROM orders_old
-            """.trimIndent()
+            """.trimIndent(),
         )
 
         // 4. Drop old table
@@ -76,10 +75,10 @@ object Migration2To3 : Migration(2, 3) {
                 ratingSnapshot  REAL,
                 PRIMARY KEY (orderId, loaderId)
             )
-            """.trimIndent()
+            """.trimIndent(),
         )
         db.execSQL(
-            "CREATE INDEX IF NOT EXISTS idx_order_applications_loader_status ON order_applications (loaderId, status)"
+            "CREATE INDEX IF NOT EXISTS idx_order_applications_loader_status ON order_applications (loaderId, status)",
         )
 
         // 6. Create order_assignments table
@@ -93,10 +92,10 @@ object Migration2To3 : Migration(2, 3) {
                 startedAtMillis  INTEGER,
                 PRIMARY KEY (orderId, loaderId)
             )
-            """.trimIndent()
+            """.trimIndent(),
         )
         db.execSQL(
-            "CREATE INDEX IF NOT EXISTS idx_order_assignments_loader_status ON order_assignments (loaderId, status)"
+            "CREATE INDEX IF NOT EXISTS idx_order_assignments_loader_status ON order_assignments (loaderId, status)",
         )
     }
 }

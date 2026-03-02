@@ -11,12 +11,13 @@ import javax.inject.Inject
  */
 @Deprecated(
     message = "Use ApplyToOrderUseCase. This shim will be removed in Step 5.",
-    replaceWith = ReplaceWith("ApplyToOrderUseCase(orderId)")
+    replaceWith = ReplaceWith("ApplyToOrderUseCase(orderId)"),
 )
-class AcceptOrderUseCase @Inject constructor(
-    private val applyToOrderUseCase: ApplyToOrderUseCase
-) {
-    @Suppress("DEPRECATION")
-    suspend operator fun invoke(orderId: Long): UseCaseResult<Unit> =
-        applyToOrderUseCase(orderId)
-}
+class AcceptOrderUseCase
+    @Inject
+    constructor(
+        private val applyToOrderUseCase: ApplyToOrderUseCase,
+    ) {
+        @Suppress("DEPRECATION")
+        suspend operator fun invoke(orderId: Long): UseCaseResult<Unit> = applyToOrderUseCase(orderId)
+    }

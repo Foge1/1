@@ -17,14 +17,16 @@ import com.loaderapp.data.model.User
 @Database(
     entities = [Order::class, User::class, OrderWorker::class, ChatMessage::class],
     version = 5,
-    exportSchema = true
+    exportSchema = true,
 )
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
-
     abstract fun orderDao(): OrderDao
+
     abstract fun userDao(): UserDao
+
     abstract fun orderWorkerDao(): OrderWorkerDao
+
     abstract fun chatDao(): ChatDao
 
     companion object {
@@ -33,13 +35,14 @@ abstract class AppDatabase : RoomDatabase() {
 
         fun getDatabase(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
-                val instance = Room.databaseBuilder(
-                    context.applicationContext,
-                    AppDatabase::class.java,
-                    "loader_app_database"
-                )
-                    .addMigrations(*AppMigrations.ALL)
-                    .build()
+                val instance =
+                    Room.databaseBuilder(
+                        context.applicationContext,
+                        AppDatabase::class.java,
+                        "loader_app_database",
+                    )
+                        .addMigrations(*AppMigrations.ALL)
+                        .build()
                 INSTANCE = instance
                 instance
             }

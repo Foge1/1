@@ -9,17 +9,18 @@ import javax.inject.Inject
 
 data class GetUserByNameAndRoleParams(
     val name: String,
-    val role: UserRoleModel
+    val role: UserRoleModel,
 )
 
-class GetUserByNameAndRoleUseCase @Inject constructor(
-    private val userRepository: UserRepository
-) : UseCase<GetUserByNameAndRoleParams, UserModel?>() {
-
-    override suspend fun execute(params: GetUserByNameAndRoleParams): Result<UserModel?> {
-        return userRepository.getUserByNameAndRole(
-            name = params.name,
-            role = params.role
-        )
+class GetUserByNameAndRoleUseCase
+    @Inject
+    constructor(
+        private val userRepository: UserRepository,
+    ) : UseCase<GetUserByNameAndRoleParams, UserModel?>() {
+        override suspend fun execute(params: GetUserByNameAndRoleParams): Result<UserModel?> {
+            return userRepository.getUserByNameAndRole(
+                name = params.name,
+                role = params.role,
+            )
+        }
     }
-}

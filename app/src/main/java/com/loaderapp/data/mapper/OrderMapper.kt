@@ -9,7 +9,6 @@ import com.loaderapp.domain.model.OrderStatusModel
  * Mapper для конвертации Order между data и domain слоями
  */
 object OrderMapper {
-    
     /**
      * Конвертация Data Entity -> Domain Model
      */
@@ -29,10 +28,10 @@ object OrderMapper {
             workerId = entity.workerId,
             dispatcherId = entity.dispatcherId,
             workerRating = entity.workerRating,
-            comment = entity.comment
+            comment = entity.comment,
         )
     }
-    
+
     /**
      * Конвертация Domain Model -> Data Entity
      */
@@ -52,17 +51,17 @@ object OrderMapper {
             workerId = model.workerId,
             dispatcherId = model.dispatcherId,
             workerRating = model.workerRating,
-            comment = model.comment
+            comment = model.comment,
         )
     }
-    
+
     /**
      * Конвертация списка Entity -> Domain
      */
     fun toDomainList(entities: List<Order>): List<OrderModel> {
         return entities.map { toDomain(it) }
     }
-    
+
     /**
      * Конвертация списка Domain -> Entity
      */

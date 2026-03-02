@@ -11,7 +11,6 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class CreateOrderViewModelTest {
-
     @Test
     fun `SELECT_SOON then SELECT_TODAY always ends with TODAY mode`() {
         val viewModel = buildViewModel()
@@ -24,19 +23,20 @@ class CreateOrderViewModelTest {
     }
 
     private fun buildViewModel(): CreateOrderViewModel {
-        val currentUserProvider = object : CurrentUserProvider {
-            private val user = CurrentUser(id = "dispatcher-1", role = Role.DISPATCHER)
+        val currentUserProvider =
+            object : CurrentUserProvider {
+                private val user = CurrentUser(id = "dispatcher-1", role = Role.DISPATCHER)
 
-            override fun observeCurrentUser(): Flow<CurrentUser?> = flowOf(user)
+                override fun observeCurrentUser(): Flow<CurrentUser?> = flowOf(user)
 
-            override suspend fun getCurrentUserOrNull(): CurrentUser? = user
+                override suspend fun getCurrentUserOrNull(): CurrentUser? = user
 
-            override suspend fun requireCurrentUserOnce(): CurrentUser = user
-        }
+                override suspend fun requireCurrentUserOnce(): CurrentUser = user
+            }
 
         return CreateOrderViewModel(
             createOrderUseCase = CreateOrderUseCase(FakeOrdersRepository(), currentUserProvider),
-            currentUserProvider = currentUserProvider
+            currentUserProvider = currentUserProvider,
         )
     }
 }

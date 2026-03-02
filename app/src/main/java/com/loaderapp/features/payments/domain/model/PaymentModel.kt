@@ -11,19 +11,21 @@ data class PaymentModel(
     val amount: Double,
     val status: PaymentStatus,
     val createdAt: Long = System.currentTimeMillis(),
-    val paidAt: Long? = null
+    val paidAt: Long? = null,
 )
 
 enum class PaymentStatus {
     PENDING,
     COMPLETED,
     FAILED,
-    REFUNDED;
+    REFUNDED,
+    ;
 
-    fun getDisplayName(): String = when (this) {
-        PENDING -> "Ожидает оплаты"
-        COMPLETED -> "Оплачено"
-        FAILED -> "Ошибка оплаты"
-        REFUNDED -> "Возвращено"
-    }
+    fun getDisplayName(): String =
+        when (this) {
+            PENDING -> "Ожидает оплаты"
+            COMPLETED -> "Оплачено"
+            FAILED -> "Ошибка оплаты"
+            REFUNDED -> "Возвращено"
+        }
 }

@@ -26,7 +26,7 @@ import androidx.compose.ui.unit.sp
 data class BottomNavItem(
     val icon: ImageVector,
     val label: String,
-    val badgeCount: Int = 0
+    val badgeCount: Int = 0,
 )
 
 // ── Панель ────────────────────────────────────────────────────────────────────
@@ -36,48 +36,52 @@ fun AppBottomBar(
     items: List<BottomNavItem>,
     selectedIndex: Int,
     onItemSelected: (Int) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     val shadowColor = MaterialTheme.colorScheme.background
 
     Surface(
-        modifier = modifier
-            .fillMaxWidth()
-            // Тень вверх — рисуем градиентную полосу НАД навбаром через drawBehind.
-            // drawBehind рисует до отрисовки самой Surface, поэтому полоса
-            // визуально «уходит» выше навбара, создавая плавный переход к контенту.
-            // Высота 24dp достаточна для мягкого fade без агрессивного затемнения.
-            .drawBehind {
-                drawRect(
-                    brush = Brush.verticalGradient(
-                        colors = listOf(
-                            Color.Transparent,
-                            shadowColor.copy(alpha = 0.55f)
-                        ),
-                        startY = -24.dp.toPx(),
-                        endY   = 0f
+        modifier =
+            modifier
+                .fillMaxWidth()
+                // Тень вверх — рисуем градиентную полосу НАД навбаром через drawBehind.
+                // drawBehind рисует до отрисовки самой Surface, поэтому полоса
+                // визуально «уходит» выше навбара, создавая плавный переход к контенту.
+                // Высота 24dp достаточна для мягкого fade без агрессивного затемнения.
+                .drawBehind {
+                    drawRect(
+                        brush =
+                            Brush.verticalGradient(
+                                colors =
+                                    listOf(
+                                        Color.Transparent,
+                                        shadowColor.copy(alpha = 0.55f),
+                                    ),
+                                startY = -24.dp.toPx(),
+                                endY = 0f,
+                            ),
                     )
-                )
-            },
-        shape           = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp),
-        color           = MaterialTheme.colorScheme.surface,
-        tonalElevation  = 0.dp,
-        shadowElevation = 12.dp
+                },
+        shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp),
+        color = MaterialTheme.colorScheme.surface,
+        tonalElevation = 0.dp,
+        shadowElevation = 12.dp,
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .windowInsetsPadding(WindowInsets.navigationBars)
-                .padding(horizontal = 4.dp, vertical = 8.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .windowInsetsPadding(WindowInsets.navigationBars)
+                    .padding(horizontal = 4.dp, vertical = 8.dp),
             horizontalArrangement = Arrangement.SpaceEvenly,
-            verticalAlignment = Alignment.Top
+            verticalAlignment = Alignment.Top,
         ) {
             items.forEachIndexed { index, item ->
                 BottomNavItemView(
-                    item       = item,
+                    item = item,
                     isSelected = index == selectedIndex,
-                    onClick    = { onItemSelected(index) },
-                    modifier   = Modifier.weight(1f)
+                    onClick = { onItemSelected(index) },
+                    modifier = Modifier.weight(1f),
                 )
             }
         }
@@ -91,56 +95,66 @@ private fun BottomNavItemView(
     item: BottomNavItem,
     isSelected: Boolean,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
 
     // Масштаб капсулы — пружинная анимация при нажатии
     val scale by animateFloatAsState(
-        targetValue    = if (isSelected) 1.08f else 1f,
-        animationSpec  = spring(
-            dampingRatio = Spring.DampingRatioMediumBouncy,
-            stiffness    = Spring.StiffnessMedium
-        ),
-        label = "scale"
+        targetValue = if (isSelected) 1.08f else 1f,
+        animationSpec =
+            spring(
+                dampingRatio = Spring.DampingRatioMediumBouncy,
+                stiffness = Spring.StiffnessMedium,
+            ),
+        label = "scale",
     )
 
     // Цвет иконки и подписи
     val contentColor by animateColorAsState(
-        targetValue   = if (isSelected) MaterialTheme.colorScheme.primary
-                        else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+        targetValue =
+            if (isSelected) {
+                MaterialTheme.colorScheme.primary
+            } else {
+                MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+            },
         animationSpec = tween(200, easing = FastOutSlowInEasing),
-        label         = "contentColor"
+        label = "contentColor",
     )
 
     // Прозрачность фона капсулы
     val capsuleAlpha by animateFloatAsState(
-        targetValue   = if (isSelected) 1f else 0f,
+        targetValue = if (isSelected) 1f else 0f,
         animationSpec = tween(200, easing = FastOutSlowInEasing),
-        label         = "capsuleAlpha"
+        label = "capsuleAlpha",
     )
 
     Column(
-        modifier = modifier
-            .clickable(
-                interactionSource = interactionSource,
-                indication        = null,
-                onClick           = onClick
-            )
-            .padding(vertical = 4.dp),
+        modifier =
+            modifier
+                .clickable(
+                    interactionSource = interactionSource,
+                    indication = null,
+                    onClick = onClick,
+                )
+                .padding(vertical = 4.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Top
+        verticalArrangement = Arrangement.Top,
     ) {
         // Линия-индикатор сверху (точно как на скриншоте)
         Box(
-            modifier = Modifier
-                .width(24.dp)
-                .height(2.dp)
-                .clip(RoundedCornerShape(1.dp))
-                .background(
-                    if (isSelected) MaterialTheme.colorScheme.primary
-                    else Color.Transparent
-                )
+            modifier =
+                Modifier
+                    .width(24.dp)
+                    .height(2.dp)
+                    .clip(RoundedCornerShape(1.dp))
+                    .background(
+                        if (isSelected) {
+                            MaterialTheme.colorScheme.primary
+                        } else {
+                            Color.Transparent
+                        },
+                    ),
         )
 
         Spacer(Modifier.height(4.dp))
@@ -148,15 +162,16 @@ private fun BottomNavItemView(
         // Капсула с иконкой
         Box(
             contentAlignment = Alignment.Center,
-            modifier = Modifier
-                .scale(scale)
-                .clip(RoundedCornerShape(50))
-                .background(
-                    MaterialTheme.colorScheme.primaryContainer.copy(
-                        alpha = capsuleAlpha * 0.6f
+            modifier =
+                Modifier
+                    .scale(scale)
+                    .clip(RoundedCornerShape(50))
+                    .background(
+                        MaterialTheme.colorScheme.primaryContainer.copy(
+                            alpha = capsuleAlpha * 0.6f,
+                        ),
                     )
-                )
-                .padding(horizontal = 14.dp, vertical = 6.dp)
+                    .padding(horizontal = 14.dp, vertical = 6.dp),
         ) {
             // Badge
             if (item.badgeCount > 0) {
@@ -165,24 +180,24 @@ private fun BottomNavItemView(
                         Badge {
                             Text(
                                 text = if (item.badgeCount > 99) "99+" else "${item.badgeCount}",
-                                fontSize = 8.sp
+                                fontSize = 8.sp,
                             )
                         }
-                    }
+                    },
                 ) {
                     Icon(
-                        imageVector    = item.icon,
+                        imageVector = item.icon,
                         contentDescription = item.label,
-                        tint           = contentColor,
-                        modifier       = Modifier.size(22.dp)
+                        tint = contentColor,
+                        modifier = Modifier.size(22.dp),
                     )
                 }
             } else {
                 Icon(
-                    imageVector    = item.icon,
+                    imageVector = item.icon,
                     contentDescription = item.label,
-                    tint           = contentColor,
-                    modifier       = Modifier.size(22.dp)
+                    tint = contentColor,
+                    modifier = Modifier.size(22.dp),
                 )
             }
         }
@@ -191,11 +206,11 @@ private fun BottomNavItemView(
 
         // Подпись
         Text(
-            text       = item.label,
-            fontSize   = 10.sp,
+            text = item.label,
+            fontSize = 10.sp,
             fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
-            color      = contentColor,
-            maxLines   = 1
+            color = contentColor,
+            maxLines = 1,
         )
     }
 }

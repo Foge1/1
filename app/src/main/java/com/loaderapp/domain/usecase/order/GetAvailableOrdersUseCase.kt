@@ -9,11 +9,12 @@ import javax.inject.Inject
 /**
  * UseCase: Получить список доступных заказов
  */
-class GetAvailableOrdersUseCase @Inject constructor(
-    private val orderRepository: OrderRepository
-) : FlowUseCase<Unit, Flow<List<OrderModel>>>() {
-    
-    override fun execute(params: Unit): Flow<List<OrderModel>> {
-        return orderRepository.getAvailableOrders()
+class GetAvailableOrdersUseCase
+    @Inject
+    constructor(
+        private val orderRepository: OrderRepository,
+    ) : FlowUseCase<Unit, Flow<List<OrderModel>>>() {
+        override fun execute(params: Unit): Flow<List<OrderModel>> {
+            return orderRepository.getAvailableOrders()
+        }
     }
-}

@@ -20,28 +20,28 @@ data class OrderModel(
     val dispatcherId: Long,
     val workerRating: Float?,
     val comment: String,
-    val isAsap: Boolean = false
+    val isAsap: Boolean = false,
 ) {
     /**
      * Вычисляемое свойство: общая стоимость заказа
      */
     val totalPrice: Double
         get() = pricePerHour * estimatedHours
-    
+
     /**
      * Проверка, доступен ли заказ для взятия
      */
     fun isAvailableForWorker(workerRating: Float): Boolean {
         return status == OrderStatusModel.AVAILABLE && workerRating >= minWorkerRating
     }
-    
+
     /**
      * Проверка, можно ли завершить заказ
      */
     fun canBeCompleted(): Boolean {
         return status == OrderStatusModel.TAKEN || status == OrderStatusModel.IN_PROGRESS
     }
-    
+
     /**
      * Проверка, можно ли отменить заказ
      */
@@ -55,16 +55,18 @@ enum class OrderStatusModel {
     TAKEN,
     IN_PROGRESS,
     COMPLETED,
-    CANCELLED;
-    
+    CANCELLED,
+    ;
+
     /**
      * Получить человеко-читаемое название статуса
      */
-    fun getDisplayName(): String = when (this) {
-        AVAILABLE -> "Доступен"
-        TAKEN -> "Взят"
-        IN_PROGRESS -> "В работе"
-        COMPLETED -> "Завершён"
-        CANCELLED -> "Отменён"
-    }
+    fun getDisplayName(): String =
+        when (this) {
+            AVAILABLE -> "Доступен"
+            TAKEN -> "Взят"
+            IN_PROGRESS -> "В работе"
+            COMPLETED -> "Завершён"
+            CANCELLED -> "Отменён"
+        }
 }

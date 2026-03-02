@@ -10,10 +10,12 @@ data class SendMessageParams(val orderId: Long, val senderId: Long, val text: St
  * UseCase для отправки сообщения в чат заказа.
  * TODO: Подключить real-time когда будет реализован ChatFeatureRepository.
  */
-class SendMessageUseCase @Inject constructor(
-    private val chatRepository: ChatFeatureRepository
-) {
-    suspend operator fun invoke(params: SendMessageParams): Result<ChatMessageModel> {
-        return chatRepository.sendMessage(params.orderId, params.senderId, params.text)
+class SendMessageUseCase
+    @Inject
+    constructor(
+        private val chatRepository: ChatFeatureRepository,
+    ) {
+        suspend operator fun invoke(params: SendMessageParams): Result<ChatMessageModel> {
+            return chatRepository.sendMessage(params.orderId, params.senderId, params.text)
+        }
     }
-}

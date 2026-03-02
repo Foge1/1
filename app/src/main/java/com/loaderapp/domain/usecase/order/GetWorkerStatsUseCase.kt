@@ -17,29 +17,30 @@ data class GetWorkerStatsParams(val workerId: Long)
 data class WorkerStats(
     val completedOrders: Int,
     val totalEarnings: Double,
-    val averageRating: Float
+    val averageRating: Float,
 )
 
 /**
  * UseCase: Получить статистику грузчика
- * 
+ *
  * Объединяет данные из разных источников в единую модель
  */
-class GetWorkerStatsUseCase @Inject constructor(
-    private val orderRepository: OrderRepository
-) : FlowUseCase<GetWorkerStatsParams, Flow<WorkerStats>>() {
-    
-    override fun execute(params: GetWorkerStatsParams): Flow<WorkerStats> {
-        return combine(
-            orderRepository.getCompletedOrdersCount(params.workerId),
-            orderRepository.getTotalEarnings(params.workerId),
-            orderRepository.getAverageRating(params.workerId)
-        ) { completed, earnings, rating ->
-            WorkerStats(
-                completedOrders = completed,
-                totalEarnings = earnings ?: 0.0,
-                averageRating = rating ?: 5.0f
-            )
+class GetWorkerStatsUseCase
+    @Inject
+    constructor(
+        private val orderRepository: OrderRepository,
+    ) : FlowUseCase<GetWorkerStatsParams, Flow<WorkerStats>>() {
+        override fun execute(params: GetWorkerStatsParams): Flow<WorkerStats> {
+            return combine(
+                orderRepository.getCompletedOrdersCount(params.workerId),
+                orderRepository.getTotalEarnings(params.workerId),
+                orderRepository.getAverageRating(params.workerId),
+            ) { completed, earnings, rating ->
+                WorkerStats(
+                    completedOrders = completed,
+                    totalEarnings = earnings ?: 0.0,
+                    averageRating = rating ?: 5.0f,
+                )
+            }
         }
     }
-}

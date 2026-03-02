@@ -7,7 +7,6 @@ import com.loaderapp.domain.model.ChatMessageModel
  * Mapper для конвертации ChatMessage между data и domain слоями
  */
 object ChatMessageMapper {
-    
     /**
      * Конвертация Data Entity -> Domain Model
      */
@@ -17,20 +16,21 @@ object ChatMessageMapper {
             orderId = entity.orderId,
             senderId = entity.senderId,
             senderName = entity.senderName,
-            senderRole = UserMapper.toDomain(
-                com.loaderapp.data.model.User(
-                    id = 0,
-                    name = "",
-                    phone = "",
-                    role = entity.senderRole,
-                    rating = 0.0
-                )
-            ).role,
+            senderRole =
+                UserMapper.toDomain(
+                    com.loaderapp.data.model.User(
+                        id = 0,
+                        name = "",
+                        phone = "",
+                        role = entity.senderRole,
+                        rating = 0.0,
+                    ),
+                ).role,
             text = entity.text,
-            sentAt = entity.sentAt
+            sentAt = entity.sentAt,
         )
     }
-    
+
     /**
      * Конвертация Domain Model -> Data Entity
      */
@@ -40,30 +40,31 @@ object ChatMessageMapper {
             orderId = model.orderId,
             senderId = model.senderId,
             senderName = model.senderName,
-            senderRole = UserMapper.toEntity(
-                com.loaderapp.domain.model.UserModel(
-                    id = 0,
-                    name = "",
-                    phone = "",
-                    role = model.senderRole,
-                    rating = 0.0,
-                    birthDate = null,
-                    avatarInitials = "",
-                    createdAt = 0
-                )
-            ).role,
+            senderRole =
+                UserMapper.toEntity(
+                    com.loaderapp.domain.model.UserModel(
+                        id = 0,
+                        name = "",
+                        phone = "",
+                        role = model.senderRole,
+                        rating = 0.0,
+                        birthDate = null,
+                        avatarInitials = "",
+                        createdAt = 0,
+                    ),
+                ).role,
             text = model.text,
-            sentAt = model.sentAt
+            sentAt = model.sentAt,
         )
     }
-    
+
     /**
      * Конвертация списка Entity -> Domain
      */
     fun toDomainList(entities: List<ChatMessage>): List<ChatMessageModel> {
         return entities.map { toDomain(it) }
     }
-    
+
     /**
      * Конвертация списка Domain -> Entity
      */

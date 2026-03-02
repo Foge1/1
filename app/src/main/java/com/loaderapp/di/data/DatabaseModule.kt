@@ -18,18 +18,18 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object DatabaseModule {
-
     @Provides
     @Singleton
     fun provideAppDatabase(
-        @ApplicationContext context: Context
-    ): AppDatabase = Room.databaseBuilder(
-        context,
-        AppDatabase::class.java,
-        "loader_app_database"
-    )
-        .addMigrations(*AppMigrations.ALL)
-        .build()
+        @ApplicationContext context: Context,
+    ): AppDatabase =
+        Room.databaseBuilder(
+            context,
+            AppDatabase::class.java,
+            "loader_app_database",
+        )
+            .addMigrations(*AppMigrations.ALL)
+            .build()
 
     @Provides
     @Singleton

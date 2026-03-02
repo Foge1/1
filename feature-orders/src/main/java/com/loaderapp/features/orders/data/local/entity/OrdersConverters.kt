@@ -5,7 +5,6 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 class OrdersConverters {
-
     @TypeConverter
     fun fromTags(value: List<String>): String = JSONArray(value).toString()
 

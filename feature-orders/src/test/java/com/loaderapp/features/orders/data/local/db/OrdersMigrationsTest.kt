@@ -6,7 +6,6 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class OrdersMigrationsTest {
-
     @Test
     fun `orders migrations target schema version 3`() {
         assertTrue(OrdersMigrations.ALL.any { it.endVersion == 3 })

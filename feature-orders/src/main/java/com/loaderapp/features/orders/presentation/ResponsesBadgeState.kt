@@ -1,5 +1,5 @@
 package com.loaderapp.features.orders.presentation
 
 data class ResponsesBadgeState(
-    val totalResponses: Int = 0
+    val totalResponses: Int = 0,
 )

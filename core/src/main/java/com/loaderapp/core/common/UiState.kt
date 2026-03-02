@@ -9,22 +9,22 @@ sealed class UiState<out T> {
      * Начальное состояние (ничего не загружено)
      */
     object Idle : UiState<Nothing>()
-    
+
     /**
      * Загрузка данных
      */
     object Loading : UiState<Nothing>()
-    
+
     /**
      * Успешная загрузка с данными
      */
     data class Success<T>(val data: T) : UiState<T>()
-    
+
     /**
      * Ошибка загрузки
      */
     data class Error(val message: UiText) : UiState<Nothing>()
-    
+
     /**
      * Проверка состояний
      */
@@ -32,14 +32,15 @@ sealed class UiState<out T> {
     val isSuccess: Boolean get() = this is Success
     val isError: Boolean get() = this is Error
     val isIdle: Boolean get() = this is Idle
-    
+
     /**
      * Получить данные или null
      */
-    fun getDataOrNull(): T? = when (this) {
-        is Success -> data
-        else -> null
-    }
+    fun getDataOrNull(): T? =
+        when (this) {
+            is Success -> data
+            else -> null
+        }
 }
 
 /**

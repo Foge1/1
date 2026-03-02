@@ -1,0 +1,32 @@
+<?xml version="1.0" ?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>CyclomaticComplexMethod:AppErrorUiTextMapper.kt$fun AppError.toUiText(): UiText</ID>
+    <ID>CyclomaticComplexMethod:AuthViewModel.kt$private fun AppError?.toHumanMessage(): String?</ID>
+    <ID>CyclomaticComplexMethod:CreateOrderDialog.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun CreateOrderDialog( onDismiss: () -&gt; Unit, onCreate: (OrderModel) -&gt; Unit, )</ID>
+    <ID>CyclomaticComplexMethod:CreateOrderScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun CreateOrderScreen( onBack: () -&gt; Unit, viewModel: CreateOrderViewModel = hiltViewModel(), )</ID>
+    <ID>CyclomaticComplexMethod:ProfileScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable private fun ProfileContent( user: UserModel, stats: ProfileStats, topPadding: androidx.compose.ui.unit.Dp, bottomPadding: androidx.compose.ui.unit.Dp, onSaveProfile: (name: String, phone: String, birthDate: Long?) -&gt; Unit, )</ID>
+    <ID>CyclomaticComplexMethod:SessionViewModel.kt$private fun AppError.toHumanMessage(): String</ID>
+    <ID>LongMethod:AppBottomBar.kt$@Composable private fun BottomNavItemView( item: BottomNavItem, isSelected: Boolean, onClick: () -&gt; Unit, modifier: Modifier = Modifier, )</ID>
+    <ID>LongMethod:AppNavGraph.kt$@Composable fun AppNavGraph( navController: NavHostController, startDestination: String = Route.Splash.route, onRequestNotificationPermission: () -&gt; Unit = {}, )</ID>
+    <ID>LongMethod:CreateOrderDialog.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun CreateOrderDialog( onDismiss: () -&gt; Unit, onCreate: (OrderModel) -&gt; Unit, )</ID>
+    <ID>LongMethod:CreateOrderScreen.kt$@Composable fun AppField( icon: ImageVector, label: String, value: String, onValueChange: (String) -&gt; Unit, placeholder: String = "", isError: Boolean = false, maxLines: Int = 1, modifier: Modifier = Modifier, keyboardOptions: KeyboardOptions = KeyboardOptions.Default, leadingText: String? = null, )</ID>
+    <ID>LongMethod:CreateOrderScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun CreateOrderScreen( onBack: () -&gt; Unit, viewModel: CreateOrderViewModel = hiltViewModel(), )</ID>
+    <ID>LongMethod:DispatcherScreen.kt$@Composable fun DispatcherScreen( viewModel: OrdersViewModel, onOrderClick: (Long) -&gt; Unit, onNavigateToCreateOrder: () -&gt; Unit, )</ID>
+    <ID>LongMethod:LoaderScreen.kt$@Composable fun LoaderScreen( viewModel: OrdersViewModel, onOrderClick: (Long) -&gt; Unit, )</ID>
+    <ID>LongMethod:MainScreen.kt$@Composable fun MainScreen( sessionViewModel: SessionViewModel, onOrderClick: (orderId: Long, isDispatcher: Boolean) -&gt; Unit, )</ID>
+    <ID>LongMethod:ProfileScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable private fun ProfileContent( user: UserModel, stats: ProfileStats, topPadding: androidx.compose.ui.unit.Dp, bottomPadding: androidx.compose.ui.unit.Dp, onSaveProfile: (name: String, phone: String, birthDate: Long?) -&gt; Unit, )</ID>
+    <ID>LongMethod:ResponsesScreen.kt$@Composable fun ResponsesScreen(viewModel: ResponsesViewModel)</ID>
+    <ID>LongMethod:RoleSelectionScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun RoleSelectionScreen( isLoading: Boolean = false, error: String? = null, onLogin: (name: String, role: UserRoleModel) -&gt; Unit, )</ID>
+    <ID>LongMethod:SettingsScreen.kt$@Composable fun SettingsScreen( onSwitchRole: () -&gt; Unit, viewModel: SettingsViewModel = hiltViewModel(), )</ID>
+    <ID>LongMethod:SplashScreen.kt$@Composable fun SplashScreen( isSessionResolved: Boolean, onFinished: () -&gt; Unit, )</ID>
+    <ID>LongParameterList:CreateOrderScreen.kt$( icon: ImageVector, label: String, value: String, onValueChange: (String) -&gt; Unit, placeholder: String = "", isError: Boolean = false, maxLines: Int = 1, modifier: Modifier = Modifier, keyboardOptions: KeyboardOptions = KeyboardOptions.Default, leadingText: String? = null, )</ID>
+    <ID>LongParameterList:DispatcherScreen.kt$( orders: List&lt;OrderUiModel&gt;, bottomNavHeight: Dp, emptyIcon: ImageVector, emptyTitle: String, emptyMessage: String, pendingActions: Set&lt;Long&gt;, onOrderClick: (Long) -&gt; Unit, actionSlot: @Composable (OrderUiModel) -&gt; Unit, )</ID>
+    <ID>LongParameterList:LoaderScreen.kt$( orders: List&lt;OrderUiModel&gt;, bottomNavHeight: androidx.compose.ui.unit.Dp, emptyTitle: String, emptyMessage: String, emptyIcon: androidx.compose.ui.graphics.vector.ImageVector, pendingActions: Set&lt;Long&gt;, onOrderClick: (Long) -&gt; Unit, actionSlot: @Composable (OrderUiModel) -&gt; Unit, )</ID>
+    <ID>LongParameterList:SwipeableTabs.kt$( label: String, badgeCount: Int, isSelected: Boolean, selectionFraction: Float, onClick: () -&gt; Unit, modifier: Modifier = Modifier, primary: Color = MaterialTheme.colorScheme.primary, unselectedColor: Color = MaterialTheme.colorScheme.onSurfaceVariant, verticalPadding: Dp = 10.dp, horizontalPadding: Dp = 8.dp, )</ID>
+    <ID>LongParameterList:SwipeableTabs.kt$( tabs: List&lt;TabItem&gt;, modifier: Modifier = Modifier, initialPage: Int = 0, onPageChanged: (Int) -&gt; Unit = {}, tabsToPagerSpacing: Dp = 8.dp, tabVerticalPadding: Dp = 10.dp, tabHorizontalPadding: Dp = 8.dp, tabRowHorizontalPadding: Dp = 16.dp, content: @Composable (pageIndex: Int) -&gt; Unit, )</ID>
+    <ID>LongParameterList:SwipeableTabs.kt$( tabs: List&lt;TabItem&gt;, pagerState: PagerState, onTabSelected: (Int) -&gt; Unit, modifier: Modifier = Modifier, trackCornerRadius: Dp = 50.dp, indicatorPadding: Dp = 4.dp, tabVerticalPadding: Dp = 10.dp, tabHorizontalPadding: Dp = 8.dp, tabRowHorizontalPadding: Dp = 16.dp, )</ID>
+    <ID>UnusedPrivateMember:OrderCard.kt$@Preview(showBackground = true) @Composable private fun OrderCardPreview()</ID>
+  </CurrentIssues>
+</SmellBaseline>

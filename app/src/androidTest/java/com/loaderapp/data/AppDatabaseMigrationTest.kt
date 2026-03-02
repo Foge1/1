@@ -10,16 +10,16 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class AppDatabaseMigrationTest {
-
     private val testDb = "migration-test"
 
     @get:Rule
-    val helper: MigrationTestHelper = MigrationTestHelper(
-        InstrumentationRegistry.getInstrumentation(),
-        AppDatabase::class.java,
-        emptyList(),
-        FrameworkSQLiteOpenHelperFactory()
-    )
+    val helper: MigrationTestHelper =
+        MigrationTestHelper(
+            InstrumentationRegistry.getInstrumentation(),
+            AppDatabase::class.java,
+            emptyList(),
+            FrameworkSQLiteOpenHelperFactory(),
+        )
 
     @Test
     fun migrate1To2_keepsExistingOrdersAndAddsUsersTable() {
@@ -38,14 +38,14 @@ class AppDatabaseMigrationTest {
                     `completedAt` INTEGER,
                     `workerId` INTEGER
                 )
-                """.trimIndent()
+                """.trimIndent(),
             )
             execSQL(
                 """
                 INSERT INTO `orders`
                 (`id`,`address`,`dateTime`,`cargoDescription`,`pricePerHour`,`estimatedHours`,`status`,`createdAt`,`completedAt`,`workerId`)
                 VALUES (1,'Street 1',1710000000,'Boxes',100.0,2,'AVAILABLE',1710000000,NULL,NULL)
-                """.trimIndent()
+                """.trimIndent(),
             )
             close()
         }
@@ -75,7 +75,7 @@ class AppDatabaseMigrationTest {
                     `workerRating` REAL,
                     `comment` TEXT NOT NULL
                 )
-                """.trimIndent()
+                """.trimIndent(),
             )
             execSQL(
                 """
@@ -89,7 +89,7 @@ class AppDatabaseMigrationTest {
                     `avatarInitials` TEXT NOT NULL,
                     `createdAt` INTEGER NOT NULL
                 )
-                """.trimIndent()
+                """.trimIndent(),
             )
             execSQL(
                 """
@@ -99,7 +99,7 @@ class AppDatabaseMigrationTest {
                     `takenAt` INTEGER NOT NULL,
                     PRIMARY KEY(`orderId`, `workerId`)
                 )
-                """.trimIndent()
+                """.trimIndent(),
             )
             close()
         }
@@ -124,7 +124,7 @@ class AppDatabaseMigrationTest {
                     `completedAt` INTEGER,
                     `workerId` INTEGER
                 )
-                """.trimIndent()
+                """.trimIndent(),
             )
             close()
         }

@@ -21,15 +21,16 @@ data class GetOrderHistoryParams(val userId: Long)
  * Возвращает завершённые и отменённые заказы,
  * отсортированные по дате завершения (новые первыми).
  */
-class GetOrderHistoryUseCase @Inject constructor(
-    private val orderRepository: OrderRepository
-) : FlowUseCase<GetOrderHistoryParams, Flow<List<OrderModel>>>() {
-
-    override fun execute(params: GetOrderHistoryParams): Flow<List<OrderModel>> =
-        orderRepository.getOrdersByWorker(params.userId)
-            .map { orders ->
-                orders
-                    .filter { it.status == OrderStatusModel.COMPLETED || it.status == OrderStatusModel.CANCELLED }
-                    .sortedByDescending { it.completedAt ?: it.createdAt }
-            }
-}
+class GetOrderHistoryUseCase
+    @Inject
+    constructor(
+        private val orderRepository: OrderRepository,
+    ) : FlowUseCase<GetOrderHistoryParams, Flow<List<OrderModel>>>() {
+        override fun execute(params: GetOrderHistoryParams): Flow<List<OrderModel>> =
+            orderRepository.getOrdersByWorker(params.userId)
+                .map { orders ->
+                    orders
+                        .filter { it.status == OrderStatusModel.COMPLETED || it.status == OrderStatusModel.CANCELLED }
+                        .sortedByDescending { it.completedAt ?: it.createdAt }
+                }
+    }

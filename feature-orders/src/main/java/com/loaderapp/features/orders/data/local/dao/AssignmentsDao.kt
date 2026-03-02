@@ -19,20 +19,34 @@ interface AssignmentsDao {
     suspend fun upsertAssignments(assignments: List<OrderAssignmentEntity>)
 
     @Query("UPDATE order_assignments SET status = :newStatus WHERE orderId = :orderId")
-    suspend fun updateAssignmentsStatusByOrder(orderId: Long, newStatus: String)
+    suspend fun updateAssignmentsStatusByOrder(
+        orderId: Long,
+        newStatus: String,
+    )
 
     @Query("SELECT COUNT(*) FROM order_assignments WHERE loaderId = :loaderId AND status = :status")
-    suspend fun countAssignmentsByLoaderAndStatus(loaderId: String, status: String): Int
+    suspend fun countAssignmentsByLoaderAndStatus(
+        loaderId: String,
+        status: String,
+    ): Int
 
     @Query("SELECT loaderId, orderId FROM order_assignments WHERE loaderId IN (:loaderIds) AND status = :status")
-    suspend fun findActiveAssignmentsByLoaders(loaderIds: List<String>, status: String): List<LoaderOrderPair>
+    suspend fun findActiveAssignmentsByLoaders(
+        loaderIds: List<String>,
+        status: String,
+    ): List<LoaderOrderPair>
 
-    @Query("SELECT COUNT(*) FROM order_assignments WHERE orderId = :orderId AND loaderId = :loaderId AND status IN (:statuses)")
-    suspend fun countAssignmentsByOrderLoaderAndStatuses(orderId: Long, loaderId: String, statuses: List<String>): Int
+    @Query(
+        "SELECT COUNT(*) FROM order_assignments WHERE orderId = :orderId AND loaderId = :loaderId AND status IN (:statuses)",
+    )
+    suspend fun countAssignmentsByOrderLoaderAndStatuses(
+        orderId: Long,
+        loaderId: String,
+        statuses: List<String>,
+    ): Int
 }
-
 
 data class LoaderOrderPair(
     val loaderId: String,
-    val orderId: Long
+    val orderId: Long,
 )

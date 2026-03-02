@@ -1,10 +1,7 @@
 package com.loaderapp.domain.usecase
 
 import com.loaderapp.domain.repository.OrderRepository
-import com.loaderapp.domain.usecase.order.CreateOrderParams
 import com.loaderapp.domain.usecase.order.CreateOrderUseCase
-// import io.mockk.coEvery
-// import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -20,7 +17,6 @@ import org.junit.Test
  *   app.cash.turbine:turbine:1.0.0
  */
 class CreateOrderUseCaseTest {
-
     private lateinit var orderRepository: OrderRepository
     private lateinit var useCase: CreateOrderUseCase
 
@@ -31,14 +27,16 @@ class CreateOrderUseCaseTest {
     }
 
     @Test
-    fun `createOrder returns success when repository succeeds`() = runTest {
-        // TODO: Implement
-        assertTrue(true)
-    }
+    fun `createOrder returns success when repository succeeds`() =
+        runTest {
+            // TODO: Implement
+            assertTrue(true)
+        }
 
     @Test
-    fun `createOrder returns error when repository throws`() = runTest {
-        // TODO: Implement
-        assertTrue(true)
-    }
+    fun `createOrder returns error when repository throws`() =
+        runTest {
+            // TODO: Implement
+            assertTrue(true)
+        }
 }

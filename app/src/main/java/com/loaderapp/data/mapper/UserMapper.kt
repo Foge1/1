@@ -9,7 +9,6 @@ import com.loaderapp.domain.model.UserRoleModel
  * Mapper для конвертации User между data и domain слоями
  */
 object UserMapper {
-    
     /**
      * Конвертация Data Entity -> Domain Model
      */
@@ -22,10 +21,10 @@ object UserMapper {
             rating = entity.rating,
             birthDate = entity.birthDate,
             avatarInitials = entity.avatarInitials,
-            createdAt = entity.createdAt
+            createdAt = entity.createdAt,
         )
     }
-    
+
     /**
      * Конвертация Domain Model -> Data Entity
      */
@@ -38,17 +37,17 @@ object UserMapper {
             rating = model.rating,
             birthDate = model.birthDate,
             avatarInitials = model.avatarInitials,
-            createdAt = model.createdAt
+            createdAt = model.createdAt,
         )
     }
-    
+
     /**
      * Конвертация списка Entity -> Domain
      */
     fun toDomainList(entities: List<User>): List<UserModel> {
         return entities.map { toDomain(it) }
     }
-    
+
     /**
      * Конвертация списка Domain -> Entity
      */

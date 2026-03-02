@@ -16,25 +16,26 @@ data class GetDispatcherStatsParams(val dispatcherId: Long)
  */
 data class DispatcherStats(
     val completedOrders: Int,
-    val activeOrders: Int
+    val activeOrders: Int,
 )
 
 /**
  * UseCase: Получить статистику диспетчера
  */
-class GetDispatcherStatsUseCase @Inject constructor(
-    private val orderRepository: OrderRepository
-) : FlowUseCase<GetDispatcherStatsParams, Flow<DispatcherStats>>() {
-    
-    override fun execute(params: GetDispatcherStatsParams): Flow<DispatcherStats> {
-        return combine(
-            orderRepository.getDispatcherCompletedCount(params.dispatcherId),
-            orderRepository.getDispatcherActiveCount(params.dispatcherId)
-        ) { completed, active ->
-            DispatcherStats(
-                completedOrders = completed,
-                activeOrders = active
-            )
+class GetDispatcherStatsUseCase
+    @Inject
+    constructor(
+        private val orderRepository: OrderRepository,
+    ) : FlowUseCase<GetDispatcherStatsParams, Flow<DispatcherStats>>() {
+        override fun execute(params: GetDispatcherStatsParams): Flow<DispatcherStats> {
+            return combine(
+                orderRepository.getDispatcherCompletedCount(params.dispatcherId),
+                orderRepository.getDispatcherActiveCount(params.dispatcherId),
+            ) { completed, active ->
+                DispatcherStats(
+                    completedOrders = completed,
+                    activeOrders = active,
+                )
+            }
         }
     }
-}

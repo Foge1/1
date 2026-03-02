@@ -10,5 +10,5 @@ data class OrdersUiState(
     val pendingActions: Set<Long> = emptySet(),
     val requiresUserSelection: Boolean = false,
     val responsesBadge: ResponsesBadgeState = ResponsesBadgeState(),
-    val history: DispatcherHistoryUiState = DispatcherHistoryUiState()
+    val history: DispatcherHistoryUiState = DispatcherHistoryUiState(),
 )

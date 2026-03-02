@@ -9,4 +9,6 @@ import javax.inject.Inject
  * Готова к наполнению: подключить RatingRepository когда появится бэкенд.
  */
 @HiltViewModel
-class RatingViewModel @Inject constructor() : ViewModel()
+class RatingViewModel
+    @Inject
+    constructor() : ViewModel()

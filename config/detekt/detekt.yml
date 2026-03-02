@@ -1,0 +1,33 @@
+build:
+  maxIssues: 0
+  weights:
+    complexity: 2
+
+config:
+  validation: true
+
+complexity:
+  active: true
+  CyclomaticComplexMethod:
+    active: true
+    threshold: 15
+  LongMethod:
+    active: true
+    threshold: 80
+  LongParameterList:
+    active: true
+    functionThreshold: 8
+    constructorThreshold: 9
+
+style:
+  active: true
+  UnusedImports:
+    active: true
+  UnusedPrivateMember:
+    active: true
+
+formatting:
+  active: true
+  autoCorrect: false
+  NoWildcardImports:
+    active: false

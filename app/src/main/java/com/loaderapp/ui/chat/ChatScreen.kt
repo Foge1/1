@@ -39,7 +39,7 @@ fun ChatScreen(
     userName: String,
     userRole: UserRoleModel,
     onBack: () -> Unit,
-    viewModel: ChatViewModel = hiltViewModel()
+    viewModel: ChatViewModel = hiltViewModel(),
 ) {
     LaunchedEffect(userId, userName, userRole) {
         viewModel.initialize(userId, userName, userRole)
@@ -55,44 +55,46 @@ fun ChatScreen(
                     IconButton(onClick = onBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Назад")
                     }
-                }
+                },
             )
-        }
+        },
     ) { padding ->
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .padding(horizontal = 16.dp, vertical = 8.dp)
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
         ) {
             if (uiState.error != null) {
                 Text(
                     text = uiState.error ?: "",
                     color = MaterialTheme.colorScheme.error,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 16.dp),
-                    textAlign = TextAlign.Center
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 16.dp),
+                    textAlign = TextAlign.Center,
                 )
             }
 
             LazyColumn(
                 modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 items(uiState.messages, key = { it.id }) { message ->
                     MessageBubble(
                         sender = message.senderName,
                         text = message.text,
                         time = message.sentAt,
-                        isMine = message.senderId == userId
+                        isMine = message.senderId == userId,
                     )
                 }
             }
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 OutlinedTextField(
                     value = uiState.draftMessage,
@@ -100,11 +102,11 @@ fun ChatScreen(
                     modifier = Modifier.weight(1f),
                     enabled = uiState.canChat,
                     placeholder = { Text("Введите сообщение") },
-                    maxLines = 4
+                    maxLines = 4,
                 )
                 IconButton(
                     onClick = viewModel::sendMessage,
-                    enabled = uiState.canChat && uiState.draftMessage.isNotBlank()
+                    enabled = uiState.canChat && uiState.draftMessage.isNotBlank(),
                 ) {
                     Icon(Icons.Default.Send, contentDescription = "Отправить")
                 }
@@ -118,29 +120,29 @@ private fun MessageBubble(
     sender: String,
     text: String,
     time: Long,
-    isMine: Boolean
+    isMine: Boolean,
 ) {
     val formatter = SimpleDateFormat("HH:mm", Locale.getDefault())
     Column(
         modifier = Modifier.fillMaxWidth(),
-        horizontalAlignment = if (isMine) Alignment.End else Alignment.Start
+        horizontalAlignment = if (isMine) Alignment.End else Alignment.Start,
     ) {
         Text(
             text = sender,
             style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Text(
             text = text,
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.padding(top = 2.dp)
+            modifier = Modifier.padding(top = 2.dp),
         )
         Text(
             text = formatter.format(Date(time)),
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(top = 2.dp)
+            modifier = Modifier.padding(top = 2.dp),
         )
     }
 }
