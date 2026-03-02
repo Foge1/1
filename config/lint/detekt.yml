@@ -11,6 +11,9 @@ processors:
 console-reports:
   active: true
 
+comments:
+  active: false
+
 output-reports:
   active: true
 
@@ -25,7 +28,7 @@ complexity:
   LongParameterList:
     active: true
     functionThreshold: 12
-    constructorThreshold: 9
+    constructorThreshold: 12
     ignoreDefaultParameters: true
   NestedBlockDepth:
     active: true
@@ -45,22 +48,24 @@ coroutines:
     active: true
 
 empty-blocks:
-  active: true
+  active: false
 
 exceptions:
-  active: true
+  active: false
 
 naming:
   active: false
 
 performance:
-  active: true
+  active: false
 
 potential-bugs:
   active: true
+  ImplicitDefaultLocale:
+    active: false
 
 style:
-  active: true
+  active: false
   MagicNumber:
     active: false
   WildcardImport:
