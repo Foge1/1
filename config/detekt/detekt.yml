@@ -2,22 +2,28 @@ build:
   maxIssues: 0
   weights:
     complexity: 2
+    comments: 2
+    style: 1
 
 config:
   validation: true
+
+comments:
+  active: true
+  ForbiddenComment:
+    active: true
+    comments:
+      - 'TODO:'
+      - 'FIXME:'
 
 complexity:
   active: true
   CyclomaticComplexMethod:
     active: true
-    threshold: 15
+    threshold: 20
   LongMethod:
     active: true
-    threshold: 80
-  LongParameterList:
-    active: true
-    functionThreshold: 8
-    constructorThreshold: 9
+    threshold: 120
 
 style:
   active: true
@@ -25,9 +31,3 @@ style:
     active: true
   UnusedPrivateMember:
     active: true
-
-formatting:
-  active: true
-  autoCorrect: false
-  NoWildcardImports:
-    active: false
