@@ -20,35 +20,35 @@ fun PlaceholderContent(
     icon: ImageVector,
     title: String,
     subtitle: String,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     Box(
-        modifier          = modifier.fillMaxSize(),
-        contentAlignment  = Alignment.Center
+        modifier = modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center,
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(12.dp),
-            modifier            = Modifier.padding(32.dp)
+            modifier = Modifier.padding(32.dp),
         ) {
             Icon(
-                imageVector        = icon,
+                imageVector = icon,
                 contentDescription = null,
-                modifier           = Modifier.size(64.dp),
-                tint               = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f)
+                modifier = Modifier.size(64.dp),
+                tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
             )
             Text(
-                text       = title,
-                fontSize   = 20.sp,
+                text = title,
+                fontSize = 20.sp,
                 fontWeight = FontWeight.SemiBold,
-                color      = MaterialTheme.colorScheme.onSurface
+                color = MaterialTheme.colorScheme.onSurface,
             )
             Text(
-                text      = subtitle,
-                fontSize  = 14.sp,
-                color     = MaterialTheme.colorScheme.onSurfaceVariant,
+                text = subtitle,
+                fontSize = 14.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,
-                lineHeight = 20.sp
+                lineHeight = 20.sp,
             )
         }
     }

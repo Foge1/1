@@ -20,34 +20,28 @@ data class OrderModel(
     val dispatcherId: Long,
     val workerRating: Float?,
     val comment: String,
-    val isAsap: Boolean = false
+    val isAsap: Boolean = false,
 ) {
     /**
      * Вычисляемое свойство: общая стоимость заказа
      */
     val totalPrice: Double
         get() = pricePerHour * estimatedHours
-    
+
     /**
      * Проверка, доступен ли заказ для взятия
      */
-    fun isAvailableForWorker(workerRating: Float): Boolean {
-        return status == OrderStatusModel.AVAILABLE && workerRating >= minWorkerRating
-    }
-    
+    fun isAvailableForWorker(workerRating: Float): Boolean = status == OrderStatusModel.AVAILABLE && workerRating >= minWorkerRating
+
     /**
      * Проверка, можно ли завершить заказ
      */
-    fun canBeCompleted(): Boolean {
-        return status == OrderStatusModel.TAKEN || status == OrderStatusModel.IN_PROGRESS
-    }
-    
+    fun canBeCompleted(): Boolean = status == OrderStatusModel.TAKEN || status == OrderStatusModel.IN_PROGRESS
+
     /**
      * Проверка, можно ли отменить заказ
      */
-    fun canBeCancelled(): Boolean {
-        return status != OrderStatusModel.COMPLETED && status != OrderStatusModel.CANCELLED
-    }
+    fun canBeCancelled(): Boolean = status != OrderStatusModel.COMPLETED && status != OrderStatusModel.CANCELLED
 }
 
 enum class OrderStatusModel {
@@ -55,16 +49,18 @@ enum class OrderStatusModel {
     TAKEN,
     IN_PROGRESS,
     COMPLETED,
-    CANCELLED;
-    
+    CANCELLED,
+    ;
+
     /**
      * Получить человеко-читаемое название статуса
      */
-    fun getDisplayName(): String = when (this) {
-        AVAILABLE -> "Доступен"
-        TAKEN -> "Взят"
-        IN_PROGRESS -> "В работе"
-        COMPLETED -> "Завершён"
-        CANCELLED -> "Отменён"
-    }
+    fun getDisplayName(): String =
+        when (this) {
+            AVAILABLE -> "Доступен"
+            TAKEN -> "Взят"
+            IN_PROGRESS -> "В работе"
+            COMPLETED -> "Завершён"
+            CANCELLED -> "Отменён"
+        }
 }

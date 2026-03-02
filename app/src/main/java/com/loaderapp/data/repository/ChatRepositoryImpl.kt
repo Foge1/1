@@ -12,26 +12,24 @@ import javax.inject.Inject
 /**
  * Реализация ChatRepository
  */
-class ChatRepositoryImpl @Inject constructor(
-    private val localDataSource: ChatLocalDataSource
-) : ChatRepository {
-    
-    override fun getMessagesForOrder(orderId: Long): Flow<List<ChatMessageModel>> {
-        return localDataSource.getMessagesForOrder(orderId)
-            .map { ChatMessageMapper.toDomainList(it) }
+class ChatRepositoryImpl
+    @Inject
+    constructor(
+        private val localDataSource: ChatLocalDataSource,
+    ) : ChatRepository {
+        override fun getMessagesForOrder(orderId: Long): Flow<List<ChatMessageModel>> =
+            localDataSource
+                .getMessagesForOrder(orderId)
+                .map { ChatMessageMapper.toDomainList(it) }
+
+        override suspend fun sendMessage(message: ChatMessageModel): Result<Long> =
+            try {
+                val entity = ChatMessageMapper.toEntity(message)
+                val id = localDataSource.insertMessage(entity)
+                Result.Success(id)
+            } catch (e: Exception) {
+                Result.Error("Ошибка отправки сообщения: ${e.message}", e)
+            }
+
+        override fun getMessageCount(orderId: Long): Flow<Int> = localDataSource.getMessageCount(orderId)
     }
-    
-    override suspend fun sendMessage(message: ChatMessageModel): Result<Long> {
-        return try {
-            val entity = ChatMessageMapper.toEntity(message)
-            val id = localDataSource.insertMessage(entity)
-            Result.Success(id)
-        } catch (e: Exception) {
-            Result.Error("Ошибка отправки сообщения: ${e.message}", e)
-        }
-    }
-    
-    override fun getMessageCount(orderId: Long): Flow<Int> {
-        return localDataSource.getMessageCount(orderId)
-    }
-}

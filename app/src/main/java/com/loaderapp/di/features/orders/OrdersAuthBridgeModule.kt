@@ -10,7 +10,6 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 abstract class OrdersAuthBridgeModule {
-
     @Binds
     @Singleton
     abstract fun bindOrdersUserSession(impl: AuthOrdersUserSession): OrdersUserSession

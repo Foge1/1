@@ -17,18 +17,18 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 internal object OrdersDataModule {
-
     @Provides
     @Singleton
     fun provideOrdersDatabase(
-        @ApplicationContext context: Context
-    ): OrdersDatabase = Room.databaseBuilder(
-        context,
-        OrdersDatabase::class.java,
-        "orders_feature_database"
-    )
-        .addMigrations(*OrdersMigrations.ALL)
-        .build()
+        @ApplicationContext context: Context,
+    ): OrdersDatabase =
+        Room
+            .databaseBuilder(
+                context,
+                OrdersDatabase::class.java,
+                "orders_feature_database",
+            ).addMigrations(*OrdersMigrations.ALL)
+            .build()
 
     @Provides
     @Singleton

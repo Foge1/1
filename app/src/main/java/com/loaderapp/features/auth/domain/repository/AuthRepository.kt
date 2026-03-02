@@ -9,7 +9,10 @@ import kotlinx.coroutines.flow.Flow
 interface AuthRepository {
     suspend fun restoreSession(): AppResult<Unit>
 
-    suspend fun login(name: String, role: UserRoleModel): AppResult<User>
+    suspend fun login(
+        name: String,
+        role: UserRoleModel,
+    ): AppResult<User>
 
     suspend fun logout(): AppResult<Unit>
 

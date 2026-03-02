@@ -8,4 +8,3 @@ interface AuthSessionApi {
 
     suspend fun getCurrentUserOrNull(): User?
 }
-

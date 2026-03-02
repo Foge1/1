@@ -9,11 +9,10 @@ import javax.inject.Inject
 /**
  * UseCase: Получить список всех грузчиков
  */
-class GetLoadersUseCase @Inject constructor(
-    private val userRepository: UserRepository
-) : FlowUseCase<Unit, Flow<List<UserModel>>>() {
-    
-    override fun execute(params: Unit): Flow<List<UserModel>> {
-        return userRepository.getLoaders()
+class GetLoadersUseCase
+    @Inject
+    constructor(
+        private val userRepository: UserRepository,
+    ) : FlowUseCase<Unit, Flow<List<UserModel>>>() {
+        override fun execute(params: Unit): Flow<List<UserModel>> = userRepository.getLoaders()
     }
-}

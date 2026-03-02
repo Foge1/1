@@ -12,36 +12,37 @@ data class SendOrderChatMessageParams(
     val senderId: Long,
     val senderName: String,
     val senderRole: UserRoleModel,
-    val text: String
+    val text: String,
 )
 
-class SendOrderChatMessageUseCase @Inject constructor(
-    private val canAccessOrderChatUseCase: CanAccessOrderChatUseCase,
-    private val chatRepository: ChatRepository
-) : UseCase<SendOrderChatMessageParams, Long>() {
+class SendOrderChatMessageUseCase
+    @Inject
+    constructor(
+        private val canAccessOrderChatUseCase: CanAccessOrderChatUseCase,
+        private val chatRepository: ChatRepository,
+    ) : UseCase<SendOrderChatMessageParams, Long>() {
+        override suspend fun execute(params: SendOrderChatMessageParams): Result<Long> {
+            val content = params.text.trim()
+            if (content.isEmpty()) {
+                return Result.Error("Сообщение не может быть пустым")
+            }
 
-    override suspend fun execute(params: SendOrderChatMessageParams): Result<Long> {
-        val content = params.text.trim()
-        if (content.isEmpty()) {
-            return Result.Error("Сообщение не может быть пустым")
-        }
+            when (val access = canAccessOrderChatUseCase(CanAccessOrderChatParams(params.orderId, params.senderId))) {
+                is Result.Success -> if (!access.data) return Result.Error("Чат недоступен для этого заказа")
+                is Result.Error -> return Result.Error(access.message, access.exception)
+                is Result.Loading -> return Result.Loading
+            }
 
-        when (val access = canAccessOrderChatUseCase(CanAccessOrderChatParams(params.orderId, params.senderId))) {
-            is Result.Success -> if (!access.data) return Result.Error("Чат недоступен для этого заказа")
-            is Result.Error -> return Result.Error(access.message, access.exception)
-            is Result.Loading -> return Result.Loading
-        }
-
-        return chatRepository.sendMessage(
-            ChatMessageModel(
-                id = 0,
-                orderId = params.orderId,
-                senderId = params.senderId,
-                senderName = params.senderName,
-                senderRole = params.senderRole,
-                text = content,
-                sentAt = System.currentTimeMillis()
+            return chatRepository.sendMessage(
+                ChatMessageModel(
+                    id = 0,
+                    orderId = params.orderId,
+                    senderId = params.senderId,
+                    senderName = params.senderName,
+                    senderRole = params.senderRole,
+                    text = content,
+                    sentAt = System.currentTimeMillis(),
+                ),
             )
-        )
+        }
     }
-}

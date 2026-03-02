@@ -8,8 +8,7 @@ enum class OrderStatus {
     IN_PROGRESS,
     COMPLETED,
     CANCELED,
-    EXPIRED
-
+    EXPIRED,
     ;
 
     companion object {

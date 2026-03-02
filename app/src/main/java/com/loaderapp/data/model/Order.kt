@@ -12,15 +12,15 @@ data class Order(
     val cargoDescription: String,
     val pricePerHour: Double,
     val estimatedHours: Int = 1,
-    val requiredWorkers: Int = 1,       // сколько грузчиков нужно
-    val minWorkerRating: Float = 0f,    // минимальный рейтинг грузчика
+    val requiredWorkers: Int = 1, // сколько грузчиков нужно
+    val minWorkerRating: Float = 0f, // минимальный рейтинг грузчика
     val status: OrderStatus = OrderStatus.AVAILABLE,
     val createdAt: Long = System.currentTimeMillis(),
     val completedAt: Long? = null,
-    val workerId: Long? = null,         // первый взявший (для обратной совместимости)
+    val workerId: Long? = null, // первый взявший (для обратной совместимости)
     val dispatcherId: Long = 0,
     val workerRating: Float? = null,
-    val comment: String = ""
+    val comment: String = "",
 )
 
 enum class OrderStatus {
@@ -28,5 +28,5 @@ enum class OrderStatus {
     TAKEN,
     IN_PROGRESS,
     COMPLETED,
-    CANCELLED
+    CANCELLED,
 }

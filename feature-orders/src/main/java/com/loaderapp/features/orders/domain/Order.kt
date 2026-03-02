@@ -1,7 +1,10 @@
 package com.loaderapp.features.orders.domain
 
 sealed interface OrderTime {
-    data class Exact(val dateTimeMillis: Long) : OrderTime
+    data class Exact(
+        val dateTimeMillis: Long,
+    ) : OrderTime
+
     data object Soon : OrderTime
 }
 
@@ -21,13 +24,14 @@ data class Order(
     val createdByUserId: String,
     // New staffing model
     val applications: List<OrderApplication> = emptyList(),
-    val assignments: List<OrderAssignment> = emptyList()
+    val assignments: List<OrderAssignment> = emptyList(),
 ) {
     val dateTime: Long
-        get() = when (val time = orderTime) {
-            is OrderTime.Exact -> time.dateTimeMillis
-            OrderTime.Soon -> meta[CREATED_AT_KEY]?.toLongOrNull() ?: System.currentTimeMillis()
-        }
+        get() =
+            when (val time = orderTime) {
+                is OrderTime.Exact -> time.dateTimeMillis
+                OrderTime.Soon -> meta[CREATED_AT_KEY]?.toLongOrNull() ?: System.currentTimeMillis()
+            }
 
     companion object {
         const val CREATED_AT_KEY = "createdAt"
@@ -46,5 +50,5 @@ data class OrderDraft(
     val workersTotal: Int,
     val tags: List<String>,
     val meta: Map<String, String>,
-    val comment: String? = null
+    val comment: String? = null,
 )

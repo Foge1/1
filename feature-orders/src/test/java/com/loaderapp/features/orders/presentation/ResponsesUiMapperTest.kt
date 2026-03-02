@@ -12,7 +12,6 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class ResponsesUiMapperTest {
-
     @Test
     fun `required 1 with 0 selected should disable start with selection hint`() {
         val item = listOf(orderUiModel(selected = false)).toResponsesItems(emptyMap()).single()
@@ -31,28 +30,30 @@ class ResponsesUiMapperTest {
     private fun orderUiModel(selected: Boolean): OrderUiModel {
         val status = if (selected) OrderApplicationStatus.SELECTED else OrderApplicationStatus.APPLIED
         return OrderUiModel(
-            order = Order(
-                id = 1L,
-                title = "Переезд",
-                address = "ул. Пушкина",
-                pricePerHour = 100.0,
-                orderTime = OrderTime.Soon,
-                durationMin = 60,
-                workersCurrent = if (selected) 1 else 0,
-                workersTotal = 1,
-                tags = emptyList(),
-                meta = mapOf(Order.CREATED_AT_KEY to "0"),
-                status = OrderStatus.STAFFING,
-                createdByUserId = "dispatcher-1",
-                applications = listOf(
-                    OrderApplication(
-                        orderId = 1L,
-                        loaderId = "loader-1",
-                        status = status,
-                        appliedAtMillis = 0L,
-                    )
-                )
-            ),
+            order =
+                Order(
+                    id = 1L,
+                    title = "Переезд",
+                    address = "ул. Пушкина",
+                    pricePerHour = 100.0,
+                    orderTime = OrderTime.Soon,
+                    durationMin = 60,
+                    workersCurrent = if (selected) 1 else 0,
+                    workersTotal = 1,
+                    tags = emptyList(),
+                    meta = mapOf(Order.CREATED_AT_KEY to "0"),
+                    status = OrderStatus.STAFFING,
+                    createdByUserId = "dispatcher-1",
+                    applications =
+                        listOf(
+                            OrderApplication(
+                                orderId = 1L,
+                                loaderId = "loader-1",
+                                status = status,
+                                appliedAtMillis = 0L,
+                            ),
+                        ),
+                ),
             currentUserId = "dispatcher-1",
             currentUserRole = Role.DISPATCHER,
             canApply = false,
@@ -67,7 +68,7 @@ class ResponsesUiMapperTest {
             cancelBlockReason = null,
             canComplete = false,
             completeBlockReason = null,
-            canOpenChat = false
+            canOpenChat = false,
         )
     }
 }

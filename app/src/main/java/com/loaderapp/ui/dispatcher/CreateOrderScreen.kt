@@ -39,7 +39,7 @@ import java.util.Locale
 @Composable
 fun CreateOrderScreen(
     onBack: () -> Unit,
-    viewModel: CreateOrderViewModel = hiltViewModel()
+    viewModel: CreateOrderViewModel = hiltViewModel(),
 ) {
     val haptic = LocalHapticFeedback.current
     val uiState by viewModel.uiState.collectAsState()
@@ -69,12 +69,13 @@ fun CreateOrderScreen(
     val primary = MaterialTheme.colorScheme.primary
 
     fun validate(): Boolean {
-        val errors = buildSet {
-            if (address.isBlank()) add("address")
-            if (cargo.isBlank()) add("cargo")
-            val parsedPrice = price.toDoubleOrNull()
-            if (parsedPrice == null || parsedPrice <= 0.0) add("price")
-        }
+        val errors =
+            buildSet {
+                if (address.isBlank()) add("address")
+                if (cargo.isBlank()) add("cargo")
+                val parsedPrice = price.toDoubleOrNull()
+                if (parsedPrice == null || parsedPrice <= 0.0) add("price")
+            }
         errorFields = errors
         showValidationBanner = errors.isNotEmpty()
         return errors.isEmpty()
@@ -85,27 +86,31 @@ fun CreateOrderScreen(
             GradientTopBar(
                 title = "Новый заказ",
                 navigationIcon = Icons.Default.ArrowBack,
-                onNavigationClick = onBack
+                onNavigationClick = onBack,
             )
-        }
+        },
     ) { padding ->
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp, vertical = 12.dp)
-                .imePadding(),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 16.dp, vertical = 12.dp)
+                    .imePadding(),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             AppField(
                 icon = Icons.Default.LocationOn,
                 label = "Адрес *",
                 value = address,
-                onValueChange = { address = it; errorFields = errorFields - "address" },
+                onValueChange = {
+                    address = it
+                    errorFields = errorFields - "address"
+                },
                 placeholder = "Например: ул. Ленина, 15",
                 isError = "address" in errorFields,
-                keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences)
+                keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
             )
 
             SectionLabel("Дата и время")
@@ -114,14 +119,14 @@ fun CreateOrderScreen(
                 onSelect = { option ->
                     viewModel.onDayOptionSelected(option)
                     if (option == OrderDayOption.OTHER_DATE) showDatePicker = true
-                }
+                },
             )
 
             if (uiState.selectedDayOption == OrderDayOption.SOON) {
                 Text(
                     text = "Режим: Ближайшее время",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.primary
+                    color = MaterialTheme.colorScheme.primary,
                 )
             }
 
@@ -131,14 +136,14 @@ fun CreateOrderScreen(
                     label = dateFormatter.format(Date(uiState.selectedDateMillis)),
                     modifier = Modifier.weight(1f),
                     onClick = { showDatePicker = true },
-                    enabled = uiState.selectedDayOption == OrderDayOption.OTHER_DATE
+                    enabled = uiState.selectedDayOption == OrderDayOption.OTHER_DATE,
                 )
                 AppPickerButton(
                     icon = Icons.Default.AccessTime,
                     label = "%02d:%02d".format(uiState.selectedHour, uiState.selectedMinute),
                     modifier = Modifier.weight(0.7f),
                     onClick = { showTimePicker = true },
-                    enabled = uiState.selectedDayOption != OrderDayOption.SOON
+                    enabled = uiState.selectedDayOption != OrderDayOption.SOON,
                 )
             }
 
@@ -146,11 +151,14 @@ fun CreateOrderScreen(
                 icon = Icons.Default.Inventory,
                 label = "Описание груза *",
                 value = cargo,
-                onValueChange = { cargo = it; errorFields = errorFields - "cargo" },
+                onValueChange = {
+                    cargo = it
+                    errorFields = errorFields - "cargo"
+                },
                 placeholder = "Что нужно перевезти",
                 isError = "cargo" in errorFields,
                 maxLines = 3,
-                keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences)
+                keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
             )
 
             SectionLabel("Стоимость")
@@ -160,12 +168,15 @@ fun CreateOrderScreen(
                         icon = Icons.Default.CurrencyRuble,
                         label = "₽/час *",
                         value = price,
-                        onValueChange = { price = it; errorFields = errorFields - "price" },
+                        onValueChange = {
+                            price = it
+                            errorFields = errorFields - "price"
+                        },
                         placeholder = "0",
                         isError = "price" in errorFields,
                         modifier = Modifier.weight(1f),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                        leadingText = "₽"
+                        leadingText = "₽",
                     )
                     HoursStepper(
                         value = uiState.estimatedHours,
@@ -173,14 +184,14 @@ fun CreateOrderScreen(
                         maxValue = OrderRules.MAX_ESTIMATED_HOURS,
                         onDecrement = viewModel::decrementHours,
                         onIncrement = viewModel::incrementHours,
-                        modifier = Modifier.weight(0.65f)
+                        modifier = Modifier.weight(0.65f),
                     )
                 }
                 Text(
                     text = "Минимальный заказ — от ${OrderRules.MIN_ESTIMATED_HOURS} часов",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(start = 4.dp)
+                    modifier = Modifier.padding(start = 4.dp),
                 )
             }
 
@@ -193,14 +204,14 @@ fun CreateOrderScreen(
             WorkerCountStepper(
                 value = requiredWorkers,
                 onDecrement = { if (requiredWorkers > 1) requiredWorkers-- },
-                onIncrement = { if (requiredWorkers < 50) requiredWorkers++ }
+                onIncrement = { if (requiredWorkers < 50) requiredWorkers++ },
             )
 
             SectionLabel("Минимальный рейтинг грузчика")
             RatingSlider(
                 value = minWorkerRating,
                 onValueChange = { minWorkerRating = it },
-                primary = primary
+                primary = primary,
             )
 
             AppField(
@@ -210,7 +221,7 @@ fun CreateOrderScreen(
                 onValueChange = { comment = it },
                 placeholder = "Дополнительная информация для грузчика",
                 maxLines = 3,
-                keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences)
+                keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
             )
 
             if (showValidationBanner) {
@@ -227,14 +238,15 @@ fun CreateOrderScreen(
                             pricePerHour = price.toDouble(),
                             requiredWorkers = requiredWorkers,
                             minWorkerRating = minWorkerRating,
-                            comment = comment
+                            comment = comment,
                         )
                     }
                 },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(54.dp),
-                shape = RoundedCornerShape(14.dp)
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .height(54.dp),
+                shape = RoundedCornerShape(14.dp),
             ) {
                 Icon(Icons.Default.Add, null, modifier = Modifier.size(20.dp))
                 Spacer(Modifier.width(8.dp))
@@ -257,16 +269,17 @@ fun CreateOrderScreen(
             },
             dismissButton = {
                 TextButton(onClick = { showDatePicker = false }) { Text("Отмена") }
-            }
+            },
         ) { DatePicker(state = dpState) }
     }
 
     if (showTimePicker) {
-        val tpState = rememberTimePickerState(
-            initialHour = uiState.selectedHour,
-            initialMinute = uiState.selectedMinute,
-            is24Hour = true
-        )
+        val tpState =
+            rememberTimePickerState(
+                initialHour = uiState.selectedHour,
+                initialMinute = uiState.selectedMinute,
+                is24Hour = true,
+            )
         AlertDialog(
             onDismissRequest = { showTimePicker = false },
             confirmButton = {
@@ -278,7 +291,7 @@ fun CreateOrderScreen(
             dismissButton = {
                 TextButton(onClick = { showTimePicker = false }) { Text("Отмена") }
             },
-            text = { TimePicker(state = tpState) }
+            text = { TimePicker(state = tpState) },
         )
     }
 }
@@ -288,37 +301,41 @@ fun CreateOrderScreen(
 @Composable
 private fun DayOptionSelector(
     selected: OrderDayOption,
-    onSelect: (OrderDayOption) -> Unit
+    onSelect: (OrderDayOption) -> Unit,
 ) {
     SingleChoiceSegmentedButtonRow(
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier.fillMaxWidth(),
     ) {
         DayOption.entries.forEachIndexed { index, option ->
             SegmentedButton(
                 selected = selected == option.value,
                 onClick = { onSelect(option.value) },
-                shape = SegmentedButtonDefaults.itemShape(
-                    index = index,
-                    count = DayOption.entries.size
-                ),
+                shape =
+                    SegmentedButtonDefaults.itemShape(
+                        index = index,
+                        count = DayOption.entries.size,
+                    ),
                 modifier = Modifier.weight(1f),
                 label = {
                     Text(
                         text = option.label,
                         maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+                        overflow = TextOverflow.Ellipsis,
                     )
-                }
+                },
             )
         }
     }
 }
 
-private enum class DayOption(val value: OrderDayOption, val label: String) {
+private enum class DayOption(
+    val value: OrderDayOption,
+    val label: String,
+) {
     TODAY(OrderDayOption.TODAY, "Сегодня"),
     TOMORROW(OrderDayOption.TOMORROW, "Завтра"),
     SOON(OrderDayOption.SOON, "Ближайшее"),
-    OTHER_DATE(OrderDayOption.OTHER_DATE, "Дата")
+    OTHER_DATE(OrderDayOption.OTHER_DATE, "Дата"),
 }
 
 @Composable
@@ -328,58 +345,62 @@ private fun HoursStepper(
     maxValue: Int,
     onDecrement: () -> Unit,
     onIncrement: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     val primary = MaterialTheme.colorScheme.primary
     Column(
-        modifier             = modifier,
-        horizontalAlignment  = Alignment.CenterHorizontally
+        modifier = modifier,
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text(
-            text       = "Часов",
-            fontSize   = 12.sp,
+            text = "Часов",
+            fontSize = 12.sp,
             fontWeight = FontWeight.SemiBold,
-            color      = primary,
-            modifier   = Modifier
-                .padding(bottom = 6.dp, start = 2.dp)
-                .fillMaxWidth()
+            color = primary,
+            modifier =
+                Modifier
+                    .padding(bottom = 6.dp, start = 2.dp)
+                    .fillMaxWidth(),
         )
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(12.dp))
-                .border(1.5.dp, primary.copy(0.5f), RoundedCornerShape(12.dp))
-                .background(MaterialTheme.colorScheme.surface)
-                .padding(horizontal = 4.dp, vertical = 4.dp),
-            verticalAlignment     = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(12.dp))
+                    .border(1.5.dp, primary.copy(0.5f), RoundedCornerShape(12.dp))
+                    .background(MaterialTheme.colorScheme.surface)
+                    .padding(horizontal = 4.dp, vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             IconButton(
-                onClick  = onDecrement,
-                enabled  = value > minValue,
-                modifier = Modifier.size(28.dp)
+                onClick = onDecrement,
+                enabled = value > minValue,
+                modifier = Modifier.size(28.dp),
             ) {
                 Icon(
-                    Icons.Default.Remove, null,
-                    tint     = if (value > minValue) primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(16.dp)
+                    Icons.Default.Remove,
+                    null,
+                    tint = if (value > minValue) primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(16.dp),
                 )
             }
             Text(
-                text       = "$value",
-                fontSize   = 18.sp,
+                text = "$value",
+                fontSize = 18.sp,
                 fontWeight = FontWeight.ExtraBold,
-                color      = primary
+                color = primary,
             )
             IconButton(
-                onClick  = onIncrement,
-                enabled  = value < maxValue,
-                modifier = Modifier.size(28.dp)
+                onClick = onIncrement,
+                enabled = value < maxValue,
+                modifier = Modifier.size(28.dp),
             ) {
                 Icon(
-                    Icons.Default.Add, null,
-                    tint     = if (value < maxValue) primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(16.dp)
+                    Icons.Default.Add,
+                    null,
+                    tint = if (value < maxValue) primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(16.dp),
                 )
             }
         }
@@ -387,26 +408,31 @@ private fun HoursStepper(
 }
 
 @Composable
-private fun TotalRow(pricePerHour: Double, hours: Int, primary: androidx.compose.ui.graphics.Color) {
+private fun TotalRow(
+    pricePerHour: Double,
+    hours: Int,
+    primary: androidx.compose.ui.graphics.Color,
+) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(10.dp))
-            .background(primary.copy(alpha = 0.08f))
-            .padding(horizontal = 16.dp, vertical = 10.dp),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(10.dp))
+                .background(primary.copy(alpha = 0.08f))
+                .padding(horizontal = 16.dp, vertical = 10.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment     = Alignment.CenterVertically
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
             "Итого за ~$hours ч:",
             fontSize = 14.sp,
-            color    = MaterialTheme.colorScheme.onSurfaceVariant
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Text(
-            text       = "${(pricePerHour * hours).toInt()} ₽",
-            fontSize   = 18.sp,
+            text = "${(pricePerHour * hours).toInt()} ₽",
+            fontSize = 18.sp,
             fontWeight = FontWeight.ExtraBold,
-            color      = primary
+            color = primary,
         )
     }
 }
@@ -415,17 +441,18 @@ private fun TotalRow(pricePerHour: Double, hours: Int, primary: androidx.compose
 private fun WorkerCountStepper(
     value: Int,
     onDecrement: () -> Unit,
-    onIncrement: () -> Unit
+    onIncrement: () -> Unit,
 ) {
     val primary = MaterialTheme.colorScheme.primary
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(12.dp))
-            .padding(horizontal = 16.dp, vertical = 8.dp),
-        verticalAlignment     = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(12.dp))
+                .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(12.dp))
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween,
     ) {
         IconButton(onClick = onDecrement, enabled = value > 1, modifier = Modifier.size(40.dp)) {
             Icon(Icons.Default.Remove, null, tint = if (value > 1) primary else MaterialTheme.colorScheme.onSurfaceVariant)
@@ -444,48 +471,50 @@ private fun WorkerCountStepper(
 private fun RatingSlider(
     value: Float,
     onValueChange: (Float) -> Unit,
-    primary: androidx.compose.ui.graphics.Color
+    primary: androidx.compose.ui.graphics.Color,
 ) {
     Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(12.dp))
-            .padding(horizontal = 16.dp, vertical = 12.dp)
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(12.dp))
+                .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(12.dp))
+                .padding(horizontal = 16.dp, vertical = 12.dp),
     ) {
         Row(
-            verticalAlignment     = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Icon(Icons.Default.Star, null, tint = GoldStar, modifier = Modifier.size(20.dp))
             Text(
-                text       = if (value == 0f) "Без ограничений" else "от ${"%.1f".format(value)}",
-                fontSize   = 16.sp,
+                text = if (value == 0f) "Без ограничений" else "от ${"%.1f".format(value)}",
+                fontSize = 16.sp,
                 fontWeight = FontWeight.SemiBold,
-                color      = if (value == 0f) MaterialTheme.colorScheme.onSurfaceVariant else primary,
-                modifier   = Modifier.weight(1f)
+                color = if (value == 0f) MaterialTheme.colorScheme.onSurfaceVariant else primary,
+                modifier = Modifier.weight(1f),
             )
             if (value > 0f) {
                 TextButton(
-                    onClick         = { onValueChange(0f) },
-                    contentPadding  = PaddingValues(horizontal = 8.dp, vertical = 0.dp)
+                    onClick = { onValueChange(0f) },
+                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
                 ) { Text("Сбросить", fontSize = 12.sp) }
             }
         }
         Spacer(Modifier.height(4.dp))
         Slider(
-            value          = value,
-            onValueChange  = { onValueChange((Math.round(it * 10) / 10f)) },
-            valueRange     = 0f..5f,
-            steps          = 49,
-            colors         = SliderDefaults.colors(
-                thumbColor       = primary,
-                activeTrackColor = primary
-            )
+            value = value,
+            onValueChange = { onValueChange((Math.round(it * 10) / 10f)) },
+            valueRange = 0f..5f,
+            steps = 49,
+            colors =
+                SliderDefaults.colors(
+                    thumbColor = primary,
+                    activeTrackColor = primary,
+                ),
         )
         Row(
-            modifier              = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             Text("0", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Text("5.0", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -496,23 +525,25 @@ private fun RatingSlider(
 @Composable
 private fun ValidationBanner() {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(8.dp))
-            .background(MaterialTheme.colorScheme.errorContainer)
-            .padding(12.dp),
-        verticalAlignment     = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(8.dp))
+                .background(MaterialTheme.colorScheme.errorContainer)
+                .padding(12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Icon(
-            Icons.Default.Error, null,
-            tint     = MaterialTheme.colorScheme.error,
-            modifier = Modifier.size(18.dp)
+            Icons.Default.Error,
+            null,
+            tint = MaterialTheme.colorScheme.error,
+            modifier = Modifier.size(18.dp),
         )
         Text(
             "Заполните все обязательные поля",
-            color    = MaterialTheme.colorScheme.error,
-            fontSize = 13.sp
+            color = MaterialTheme.colorScheme.error,
+            fontSize = 13.sp,
         )
     }
 }
@@ -534,84 +565,89 @@ fun AppField(
     maxLines: Int = 1,
     modifier: Modifier = Modifier,
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
-    leadingText: String? = null
+    leadingText: String? = null,
 ) {
     val primary = MaterialTheme.colorScheme.primary
-    val borderColor = when {
-        isError        -> MaterialTheme.colorScheme.error
-        value.isNotEmpty() -> primary
-        else           -> MaterialTheme.colorScheme.outlineVariant
-    }
+    val borderColor =
+        when {
+            isError -> MaterialTheme.colorScheme.error
+            value.isNotEmpty() -> primary
+            else -> MaterialTheme.colorScheme.outlineVariant
+        }
 
     Column(modifier = modifier) {
         Text(
-            text       = label,
-            fontSize   = 12.sp,
+            text = label,
+            fontSize = 12.sp,
             fontWeight = FontWeight.SemiBold,
-            color      = if (isError) MaterialTheme.colorScheme.error else primary,
-            modifier   = Modifier.padding(bottom = 6.dp, start = 2.dp)
+            color = if (isError) MaterialTheme.colorScheme.error else primary,
+            modifier = Modifier.padding(bottom = 6.dp, start = 2.dp),
         )
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(12.dp))
-                .border(1.5.dp, borderColor, RoundedCornerShape(12.dp))
-                .background(MaterialTheme.colorScheme.surface)
-                .padding(
-                    horizontal = 12.dp,
-                    vertical   = if (maxLines > 1) 10.dp else 4.dp
-                ),
-            verticalAlignment = if (maxLines > 1) Alignment.Top else Alignment.CenterVertically
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(12.dp))
+                    .border(1.5.dp, borderColor, RoundedCornerShape(12.dp))
+                    .background(MaterialTheme.colorScheme.surface)
+                    .padding(
+                        horizontal = 12.dp,
+                        vertical = if (maxLines > 1) 10.dp else 4.dp,
+                    ),
+            verticalAlignment = if (maxLines > 1) Alignment.Top else Alignment.CenterVertically,
         ) {
             if (leadingText != null) {
                 Text(
-                    text       = leadingText,
-                    fontSize   = 17.sp,
+                    text = leadingText,
+                    fontSize = 17.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color      = if (value.isNotEmpty()) primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier   = Modifier.padding(top = if (maxLines > 1) 4.dp else 0.dp)
+                    color = if (value.isNotEmpty()) primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = if (maxLines > 1) 4.dp else 0.dp),
                 )
             } else {
                 Icon(
-                    icon, null,
-                    tint     = if (value.isNotEmpty()) primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier
-                        .size(20.dp)
-                        .padding(top = if (maxLines > 1) 4.dp else 0.dp)
+                    icon,
+                    null,
+                    tint = if (value.isNotEmpty()) primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier =
+                        Modifier
+                            .size(20.dp)
+                            .padding(top = if (maxLines > 1) 4.dp else 0.dp),
                 )
             }
             Spacer(Modifier.width(10.dp))
             androidx.compose.foundation.text.BasicTextField(
-                value          = value,
-                onValueChange  = onValueChange,
-                maxLines       = maxLines,
-                singleLine     = maxLines == 1,
+                value = value,
+                onValueChange = onValueChange,
+                maxLines = maxLines,
+                singleLine = maxLines == 1,
                 keyboardOptions = keyboardOptions,
-                textStyle      = MaterialTheme.typography.bodyLarge.copy(
-                    color    = MaterialTheme.colorScheme.onSurface,
-                    fontSize = 15.sp
-                ),
-                modifier       = Modifier.fillMaxWidth(),
-                decorationBox  = { inner ->
+                textStyle =
+                    MaterialTheme.typography.bodyLarge.copy(
+                        color = MaterialTheme.colorScheme.onSurface,
+                        fontSize = 15.sp,
+                    ),
+                modifier = Modifier.fillMaxWidth(),
+                decorationBox = { inner ->
                     Box {
                         if (value.isEmpty()) {
                             Text(
                                 placeholder,
                                 fontSize = 15.sp,
-                                color    = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
                             )
                         }
                         inner()
                     }
-                }
+                },
             )
         }
         if (isError) {
             Text(
                 "Обязательное поле",
                 fontSize = 11.sp,
-                color    = MaterialTheme.colorScheme.error,
-                modifier = Modifier.padding(top = 3.dp, start = 4.dp)
+                color = MaterialTheme.colorScheme.error,
+                modifier = Modifier.padding(top = 3.dp, start = 4.dp),
             )
         }
     }
@@ -626,31 +662,37 @@ fun AppPickerButton(
     label: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    enabled: Boolean = true
+    enabled: Boolean = true,
 ) {
     val primary = MaterialTheme.colorScheme.primary
     Row(
-        modifier = modifier
-            .clip(RoundedCornerShape(12.dp))
-            .border(1.5.dp, primary.copy(alpha = 0.5f), RoundedCornerShape(12.dp))
-            .background(primary.copy(alpha = 0.06f))
-            .clickable(enabled = enabled, onClick = onClick)
-            .padding(horizontal = 12.dp, vertical = 12.dp),
-        verticalAlignment     = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+        modifier =
+            modifier
+                .clip(RoundedCornerShape(12.dp))
+                .border(1.5.dp, primary.copy(alpha = 0.5f), RoundedCornerShape(12.dp))
+                .background(primary.copy(alpha = 0.06f))
+                .clickable(enabled = enabled, onClick = onClick)
+                .padding(horizontal = 12.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Icon(icon, null, tint = if (enabled) primary else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
-        Text(label, fontSize = 14.sp, fontWeight = FontWeight.Medium, color = if (enabled) primary else MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(
+            label,
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Medium,
+            color = if (enabled) primary else MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }
 
 @Composable
 private fun SectionLabel(text: String) {
     Text(
-        text       = text,
-        fontSize   = 13.sp,
+        text = text,
+        fontSize = 13.sp,
         fontWeight = FontWeight.SemiBold,
-        color      = MaterialTheme.colorScheme.primary,
-        modifier   = Modifier.padding(bottom = 2.dp)
+        color = MaterialTheme.colorScheme.primary,
+        modifier = Modifier.padding(bottom = 2.dp),
     )
 }

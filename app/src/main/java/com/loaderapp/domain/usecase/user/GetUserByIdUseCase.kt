@@ -9,16 +9,17 @@ import javax.inject.Inject
 /**
  * Параметры для получения пользователя
  */
-data class GetUserByIdParams(val userId: Long)
+data class GetUserByIdParams(
+    val userId: Long,
+)
 
 /**
  * UseCase: Получить пользователя по ID
  */
-class GetUserByIdUseCase @Inject constructor(
-    private val userRepository: UserRepository
-) : UseCase<GetUserByIdParams, UserModel>() {
-    
-    override suspend fun execute(params: GetUserByIdParams): Result<UserModel> {
-        return userRepository.getUserById(params.userId)
+class GetUserByIdUseCase
+    @Inject
+    constructor(
+        private val userRepository: UserRepository,
+    ) : UseCase<GetUserByIdParams, UserModel>() {
+        override suspend fun execute(params: GetUserByIdParams): Result<UserModel> = userRepository.getUserById(params.userId)
     }
-}

@@ -21,7 +21,7 @@ import com.loaderapp.domain.model.OrderStatusModel
 @Composable
 fun CreateOrderDialog(
     onDismiss: () -> Unit,
-    onCreate: (OrderModel) -> Unit
+    onCreate: (OrderModel) -> Unit,
 ) {
     var address by remember { mutableStateOf("") }
     var cargoDescription by remember { mutableStateOf("") }
@@ -29,19 +29,19 @@ fun CreateOrderDialog(
     var estimatedHours by remember { mutableStateOf("") }
     var requiredWorkers by remember { mutableStateOf("") }
     var minWorkerRating by remember { mutableStateOf("3.0") }
-    
+
     var addressError by remember { mutableStateOf(false) }
     var cargoError by remember { mutableStateOf(false) }
     var priceError by remember { mutableStateOf(false) }
     var hoursError by remember { mutableStateOf(false) }
     var workersError by remember { mutableStateOf(false) }
-    
+
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
             Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
             ) {
                 Icon(Icons.Default.Add, null)
                 Text("Новый заказ")
@@ -49,10 +49,11 @@ fun CreateOrderDialog(
         },
         text = {
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 // Адрес
                 OutlinedTextField(
@@ -64,13 +65,16 @@ fun CreateOrderDialog(
                     label = { Text("Адрес*") },
                     leadingIcon = { Icon(Icons.Default.LocationOn, null) },
                     isError = addressError,
-                    supportingText = if (addressError) {
-                        { Text("Введите адрес") }
-                    } else null,
+                    supportingText =
+                        if (addressError) {
+                            { Text("Введите адрес") }
+                        } else {
+                            null
+                        },
                     modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
+                    singleLine = true,
                 )
-                
+
                 // Описание груза
                 OutlinedTextField(
                     value = cargoDescription,
@@ -81,14 +85,17 @@ fun CreateOrderDialog(
                     label = { Text("Описание груза*") },
                     leadingIcon = { Icon(Icons.Default.Inventory, null) },
                     isError = cargoError,
-                    supportingText = if (cargoError) {
-                        { Text("Опишите груз") }
-                    } else null,
+                    supportingText =
+                        if (cargoError) {
+                            { Text("Опишите груз") }
+                        } else {
+                            null
+                        },
                     modifier = Modifier.fillMaxWidth(),
                     minLines = 2,
-                    maxLines = 3
+                    maxLines = 3,
                 )
-                
+
                 // Цена за час
                 OutlinedTextField(
                     value = pricePerHour,
@@ -102,16 +109,19 @@ fun CreateOrderDialog(
                     leadingIcon = { Icon(Icons.Default.AttachMoney, null) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     isError = priceError,
-                    supportingText = if (priceError) {
-                        { Text("Введите цену > 0") }
-                    } else null,
+                    supportingText =
+                        if (priceError) {
+                            { Text("Введите цену > 0") }
+                        } else {
+                            null
+                        },
                     modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
+                    singleLine = true,
                 )
-                
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     // Часы работы
                     OutlinedTextField(
@@ -126,13 +136,16 @@ fun CreateOrderDialog(
                         leadingIcon = { Icon(Icons.Default.Schedule, null) },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         isError = hoursError,
-                        supportingText = if (hoursError) {
-                            { Text("≥1") }
-                        } else null,
+                        supportingText =
+                            if (hoursError) {
+                                { Text("≥1") }
+                            } else {
+                                null
+                            },
                         modifier = Modifier.weight(1f),
-                        singleLine = true
+                        singleLine = true,
                     )
-                    
+
                     // Количество грузчиков
                     OutlinedTextField(
                         value = requiredWorkers,
@@ -146,32 +159,35 @@ fun CreateOrderDialog(
                         leadingIcon = { Icon(Icons.Default.Person, null) },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         isError = workersError,
-                        supportingText = if (workersError) {
-                            { Text("≥1") }
-                        } else null,
+                        supportingText =
+                            if (workersError) {
+                                { Text("≥1") }
+                            } else {
+                                null
+                            },
                         modifier = Modifier.weight(1f),
-                        singleLine = true
+                        singleLine = true,
                     )
                 }
-                
+
                 // Минимальный рейтинг
                 Column {
                     Text(
-                        text = "Минимальный рейтинг: ${minWorkerRating}",
-                        style = MaterialTheme.typography.bodyMedium
+                        text = "Минимальный рейтинг: $minWorkerRating",
+                        style = MaterialTheme.typography.bodyMedium,
                     )
                     Slider(
                         value = minWorkerRating.toFloatOrNull() ?: 3.0f,
                         onValueChange = { minWorkerRating = String.format("%.1f", it) },
                         valueRange = 0f..5f,
-                        steps = 9 // 0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5
+                        steps = 9, // 0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5
                     )
                 }
-                
+
                 Text(
                     text = "* Обязательные поля",
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         },
@@ -180,7 +196,7 @@ fun CreateOrderDialog(
                 onClick = {
                     // Валидация
                     var hasErrors = false
-                    
+
                     if (address.isBlank()) {
                         addressError = true
                         hasErrors = true
@@ -201,28 +217,29 @@ fun CreateOrderDialog(
                         workersError = true
                         hasErrors = true
                     }
-                    
+
                     if (!hasErrors) {
-                        val order = OrderModel(
-                            id = 0, // Будет установлен БД
-                            address = address.trim(),
-                            dateTime = System.currentTimeMillis(),
-                            cargoDescription = cargoDescription.trim(),
-                            pricePerHour = pricePerHour.toDouble(),
-                            estimatedHours = estimatedHours.toInt(),
-                            requiredWorkers = requiredWorkers.toInt(),
-                            minWorkerRating = minWorkerRating.toFloat(),
-                            status = OrderStatusModel.AVAILABLE,
-                            createdAt = System.currentTimeMillis(),
-                            completedAt = null,
-                            workerId = null,
-                            dispatcherId = 0, // Будет установлен ViewModel
-                            workerRating = null,
-                            comment = ""
-                        )
+                        val order =
+                            OrderModel(
+                                id = 0, // Будет установлен БД
+                                address = address.trim(),
+                                dateTime = System.currentTimeMillis(),
+                                cargoDescription = cargoDescription.trim(),
+                                pricePerHour = pricePerHour.toDouble(),
+                                estimatedHours = estimatedHours.toInt(),
+                                requiredWorkers = requiredWorkers.toInt(),
+                                minWorkerRating = minWorkerRating.toFloat(),
+                                status = OrderStatusModel.AVAILABLE,
+                                createdAt = System.currentTimeMillis(),
+                                completedAt = null,
+                                workerId = null,
+                                dispatcherId = 0, // Будет установлен ViewModel
+                                workerRating = null,
+                                comment = "",
+                            )
                         onCreate(order)
                     }
-                }
+                },
             ) {
                 Text("Создать")
             }
@@ -231,6 +248,6 @@ fun CreateOrderDialog(
             TextButton(onClick = onDismiss) {
                 Text("Отмена")
             }
-        }
+        },
     )
 }

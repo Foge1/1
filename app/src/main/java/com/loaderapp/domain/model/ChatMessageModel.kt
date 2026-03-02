@@ -10,5 +10,5 @@ data class ChatMessageModel(
     val senderName: String,
     val senderRole: UserRoleModel,
     val text: String,
-    val sentAt: Long
+    val sentAt: Long,
 )

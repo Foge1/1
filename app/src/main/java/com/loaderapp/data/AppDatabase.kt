@@ -17,32 +17,34 @@ import com.loaderapp.data.model.User
 @Database(
     entities = [Order::class, User::class, OrderWorker::class, ChatMessage::class],
     version = 5,
-    exportSchema = true
+    exportSchema = true,
 )
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
-
     abstract fun orderDao(): OrderDao
+
     abstract fun userDao(): UserDao
+
     abstract fun orderWorkerDao(): OrderWorkerDao
+
     abstract fun chatDao(): ChatDao
 
     companion object {
         @Volatile
         private var INSTANCE: AppDatabase? = null
 
-        fun getDatabase(context: Context): AppDatabase {
-            return INSTANCE ?: synchronized(this) {
-                val instance = Room.databaseBuilder(
-                    context.applicationContext,
-                    AppDatabase::class.java,
-                    "loader_app_database"
-                )
-                    .addMigrations(*AppMigrations.ALL)
-                    .build()
+        fun getDatabase(context: Context): AppDatabase =
+            INSTANCE ?: synchronized(this) {
+                val instance =
+                    Room
+                        .databaseBuilder(
+                            context.applicationContext,
+                            AppDatabase::class.java,
+                            "loader_app_database",
+                        ).addMigrations(*AppMigrations.ALL)
+                        .build()
                 INSTANCE = instance
                 instance
             }
-        }
     }
 }

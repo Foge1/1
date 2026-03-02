@@ -5,7 +5,6 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class AppConfigImplTest {
-
     @Test
     fun `provides values from generated BuildConfig`() {
         val config = AppConfigImpl()

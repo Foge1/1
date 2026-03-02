@@ -15,20 +15,21 @@ import javax.inject.Inject
  * слои соблюдены, маппинг Entity→Model скрыт в репозитории.
  */
 @HiltViewModel
-class CreateUserViewModel @Inject constructor(
-    private val userRepository: UserRepository
-) : ViewModel() {
-
-    /**
-     * Создаёт пользователя и возвращает его ID.
-     * [user] — data.model.User из RoleSelectionScreen;
-     * конвертируется в domain-модель через UserMapper.
-     */
-    suspend fun createUser(user: User): Long? {
-        val domainModel = UserMapper.toDomain(user)
-        return when (val result = userRepository.createUser(domainModel)) {
-            is Result.Success -> result.data
-            else -> null
+class CreateUserViewModel
+    @Inject
+    constructor(
+        private val userRepository: UserRepository,
+    ) : ViewModel() {
+        /**
+         * Создаёт пользователя и возвращает его ID.
+         * [user] — data.model.User из RoleSelectionScreen;
+         * конвертируется в domain-модель через UserMapper.
+         */
+        suspend fun createUser(user: User): Long? {
+            val domainModel = UserMapper.toDomain(user)
+            return when (val result = userRepository.createUser(domainModel)) {
+                is Result.Success -> result.data
+                else -> null
+            }
         }
     }
-}

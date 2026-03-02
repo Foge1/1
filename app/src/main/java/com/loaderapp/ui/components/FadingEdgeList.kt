@@ -36,31 +36,32 @@ fun FadingEdgeLazyColumn(
     bottomFadeHeight: Dp = 36.dp,
     contentPadding: PaddingValues = PaddingValues(0.dp),
     state: LazyListState = rememberLazyListState(),
-    content: LazyListScope.() -> Unit
+    content: LazyListScope.() -> Unit,
 ) {
     val bgColor = androidx.compose.material3.MaterialTheme.colorScheme.background
 
     Box(modifier = modifier) {
         LazyColumn(
-            state          = state,
+            state = state,
             contentPadding = contentPadding,
-            modifier       = Modifier.fillMaxSize(),
-            content        = content
+            modifier = Modifier.fillMaxSize(),
+            content = content,
         )
 
         // Нижний fade-оверлей: прозрачный → фоновый цвет
         // Только визуальный намёк на продолжение, не затрагивает текст карточек
         if (bottomFadeHeight > 0.dp) {
             Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(bottomFadeHeight)
-                    .align(androidx.compose.ui.Alignment.BottomCenter)
-                    .background(
-                        Brush.verticalGradient(
-                            colors = listOf(Color.Transparent, bgColor)
-                        )
-                    )
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .height(bottomFadeHeight)
+                        .align(androidx.compose.ui.Alignment.BottomCenter)
+                        .background(
+                            Brush.verticalGradient(
+                                colors = listOf(Color.Transparent, bgColor),
+                            ),
+                        ),
             )
         }
     }

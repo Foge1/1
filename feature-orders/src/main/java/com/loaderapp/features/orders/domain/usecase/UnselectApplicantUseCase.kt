@@ -11,30 +11,36 @@ import javax.inject.Inject
  *
  * Правила: актор — DISPATCHER и создатель заказа, заказ — STAFFING.
  */
-class UnselectApplicantUseCase @Inject constructor(
-    private val repository: OrdersRepository,
-    private val currentUserProvider: CurrentUserProvider,
-    private val stateMachine: OrderStateMachine
-) {
-    suspend operator fun invoke(orderId: Long, loaderId: String): UseCaseResult<Unit> {
-        val actor = currentUserProvider.requireCurrentUserOnce()
+class UnselectApplicantUseCase
+    @Inject
+    constructor(
+        private val repository: OrdersRepository,
+        private val currentUserProvider: CurrentUserProvider,
+        private val stateMachine: OrderStateMachine,
+    ) {
+        suspend operator fun invoke(
+            orderId: Long,
+            loaderId: String,
+        ): UseCaseResult<Unit> {
+            val actor = currentUserProvider.requireCurrentUserOnce()
 
-        if (actor.role != Role.DISPATCHER) {
-            return UseCaseResult.Failure("Только диспетчер может снимать выбор грузчиков")
-        }
+            if (actor.role != Role.DISPATCHER) {
+                return UseCaseResult.Failure("Только диспетчер может снимать выбор грузчиков")
+            }
 
-        val order = repository.getOrderById(orderId)
-            ?: return UseCaseResult.Failure("Заказ не найден")
+            val order =
+                repository.getOrderById(orderId)
+                    ?: return UseCaseResult.Failure("Заказ не найден")
 
-        val actions = stateMachine.actionsFor(order, actor)
+            val actions = stateMachine.actionsFor(order, actor)
 
-        if (!actions.canUnselect) {
-            return UseCaseResult.Failure("Нет прав для снятия выбора грузчика в этом заказе")
-        }
+            if (!actions.canUnselect) {
+                return UseCaseResult.Failure("Нет прав для снятия выбора грузчика в этом заказе")
+            }
 
-        return runCatchingUseCase("Не удалось снять кандидата") {
-            repository.unselectApplicant(orderId, loaderId)
-            Unit
+            return runCatchingUseCase("Не удалось снять кандидата") {
+                repository.unselectApplicant(orderId, loaderId)
+                Unit
+            }
         }
     }
-}

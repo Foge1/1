@@ -15,15 +15,16 @@ import com.loaderapp.features.orders.data.local.entity.OrdersConverters
     entities = [
         OrderEntity::class,
         OrderApplicationEntity::class,
-        OrderAssignmentEntity::class
+        OrderAssignmentEntity::class,
     ],
     version = 3,
-    exportSchema = true
+    exportSchema = true,
 )
 @TypeConverters(OrdersConverters::class)
 abstract class OrdersDatabase : RoomDatabase() {
     abstract fun ordersDao(): OrdersDao
+
     abstract fun applicationsDao(): ApplicationsDao
+
     abstract fun assignmentsDao(): AssignmentsDao
 }
-

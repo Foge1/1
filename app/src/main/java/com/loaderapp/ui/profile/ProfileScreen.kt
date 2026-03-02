@@ -28,11 +28,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.loaderapp.core.common.UiState
-import com.loaderapp.ui.common.asString
 import com.loaderapp.domain.model.UserModel
 import com.loaderapp.domain.model.UserRoleModel
 import com.loaderapp.presentation.profile.ProfileStats
 import com.loaderapp.presentation.profile.ProfileViewModel
+import com.loaderapp.ui.common.asString
 import com.loaderapp.ui.components.AppScaffold
 import com.loaderapp.ui.components.ErrorView
 import com.loaderapp.ui.components.LoadingView
@@ -52,30 +52,31 @@ import java.util.*
 @Composable
 fun ProfileScreen(
     userId: Long,
-    viewModel: ProfileViewModel = hiltViewModel()
+    viewModel: ProfileViewModel = hiltViewModel(),
 ) {
     val userState by viewModel.userState.collectAsState()
-    val stats     by viewModel.stats.collectAsState()
+    val stats by viewModel.stats.collectAsState()
 
     LaunchedEffect(userId) { viewModel.initialize(userId) }
 
     AppScaffold(title = "Профиль") {
-        val density        = LocalDensity.current
+        val density = LocalDensity.current
         val topBarHeightPx = LocalTopBarHeightPx.current
-        val topBarDp       = with(density) { topBarHeightPx.toDp() }
+        val topBarDp = with(density) { topBarHeightPx.toDp() }
 
         when (val state = userState) {
             is UiState.Loading -> LoadingView()
-            is UiState.Error   -> ErrorView(message = state.message.asString(), onRetry = null)
-            is UiState.Success -> ProfileContent(
-                user          = state.data,
-                stats         = stats,
-                topPadding    = topBarDp,
-                bottomPadding = 0.dp,
-                onSaveProfile = { name, phone, birthDate ->
-                    viewModel.saveProfile(userId, name, phone, birthDate)
-                }
-            )
+            is UiState.Error -> ErrorView(message = state.message.asString(), onRetry = null)
+            is UiState.Success ->
+                ProfileContent(
+                    user = state.data,
+                    stats = stats,
+                    topPadding = topBarDp,
+                    bottomPadding = 0.dp,
+                    onSaveProfile = { name, phone, birthDate ->
+                        viewModel.saveProfile(userId, name, phone, birthDate)
+                    },
+                )
             is UiState.Idle -> Unit
         }
     }
@@ -90,157 +91,160 @@ private fun ProfileContent(
     stats: ProfileStats,
     topPadding: androidx.compose.ui.unit.Dp,
     bottomPadding: androidx.compose.ui.unit.Dp,
-    onSaveProfile: (name: String, phone: String, birthDate: Long?) -> Unit
+    onSaveProfile: (name: String, phone: String, birthDate: Long?) -> Unit,
 ) {
-    val haptic         = LocalHapticFeedback.current
-    var isEditing      by remember { mutableStateOf(false) }
-    var editName       by remember(user.name)      { mutableStateOf(user.name) }
-    var editPhone      by remember(user.phone)     { mutableStateOf(user.phone) }
-    var editBirthDate  by remember(user.birthDate) { mutableStateOf(user.birthDate) }
+    val haptic = LocalHapticFeedback.current
+    var isEditing by remember { mutableStateOf(false) }
+    var editName by remember(user.name) { mutableStateOf(user.name) }
+    var editPhone by remember(user.phone) { mutableStateOf(user.phone) }
+    var editBirthDate by remember(user.birthDate) { mutableStateOf(user.birthDate) }
     var showDatePicker by remember { mutableStateOf(false) }
 
-    val primary    = MaterialTheme.colorScheme.primary
-    val isLoader   = user.role == UserRoleModel.LOADER
+    val primary = MaterialTheme.colorScheme.primary
+    val isLoader = user.role == UserRoleModel.LOADER
     val dateFormat = remember { SimpleDateFormat("dd.MM.yyyy", Locale.getDefault()) }
 
-    val age = user.birthDate?.let { ts ->
-        val birth = Calendar.getInstance().apply { timeInMillis = ts }
-        val now   = Calendar.getInstance()
-        var y = now.get(Calendar.YEAR) - birth.get(Calendar.YEAR)
-        if (now.get(Calendar.DAY_OF_YEAR) < birth.get(Calendar.DAY_OF_YEAR)) y--
-        y
-    }
+    val age =
+        user.birthDate?.let { ts ->
+            val birth = Calendar.getInstance().apply { timeInMillis = ts }
+            val now = Calendar.getInstance()
+            var y = now.get(Calendar.YEAR) - birth.get(Calendar.YEAR)
+            if (now.get(Calendar.DAY_OF_YEAR) < birth.get(Calendar.DAY_OF_YEAR)) y--
+            y
+        }
 
-    val memberSince = remember(user.createdAt) {
-        SimpleDateFormat("MMMM yyyy", Locale("ru")).format(Date(user.createdAt))
-    }
+    val memberSince =
+        remember(user.createdAt) {
+            SimpleDateFormat("MMMM yyyy", Locale("ru")).format(Date(user.createdAt))
+        }
 
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            // Порядок важен: фон рисуется ДО scroll
-            .scrollableGradientBackground()
-            .verticalScroll(rememberScrollState())
-            .padding(top = topPadding, bottom = bottomPadding + 16.dp)
+        modifier =
+            Modifier
+                .fillMaxSize()
+                // Порядок важен: фон рисуется ДО scroll
+                .scrollableGradientBackground()
+                .verticalScroll(rememberScrollState())
+                .padding(top = topPadding, bottom = bottomPadding + 16.dp),
     ) {
-
         // ── Шапка профиля ─────────────────────────────────────────────────────
         // Намеренно без дополнительного background — градиент уже задан через
         // scrollableGradientBackground на Column. Добавлять второй Brush здесь
         // создаёт наложение двух полупрозрачных слоёв → видимая полоса при скролле.
         Column(
-            modifier            = Modifier
-                .fillMaxWidth()
-                .padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-
-                // Аватар-инициалы
-                Box(
-                    modifier = Modifier
+            // Аватар-инициалы
+            Box(
+                modifier =
+                    Modifier
                         .size(88.dp)
                         .clip(CircleShape)
                         .background(
                             Brush.radialGradient(
-                                listOf(primary.copy(0.3f), primary.copy(0.15f))
-                            )
+                                listOf(primary.copy(0.3f), primary.copy(0.15f)),
+                            ),
                         ),
-                    contentAlignment = Alignment.Center
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    text = user.name.take(2).uppercase(),
+                    fontSize = 32.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = primary,
+                )
+            }
+
+            Spacer(Modifier.height(14.dp))
+
+            Text(user.name, fontSize = 22.sp, fontWeight = FontWeight.Bold)
+
+            Spacer(Modifier.height(6.dp))
+
+            // Роль + возраст
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                Surface(
+                    shape = RoundedCornerShape(20.dp),
+                    color = primary.copy(alpha = 0.12f),
                 ) {
                     Text(
-                        text       = user.name.take(2).uppercase(),
-                        fontSize   = 32.sp,
-                        fontWeight = FontWeight.ExtraBold,
-                        color      = primary
+                        text = if (isLoader) "Грузчик" else "Диспетчер",
+                        fontSize = 13.sp,
+                        color = primary,
+                        fontWeight = FontWeight.Medium,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
                     )
                 }
-
-                Spacer(Modifier.height(14.dp))
-
-                Text(user.name, fontSize = 22.sp, fontWeight = FontWeight.Bold)
-
-                Spacer(Modifier.height(6.dp))
-
-                // Роль + возраст
-                Row(
-                    verticalAlignment   = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
+                if (age != null) {
                     Surface(
                         shape = RoundedCornerShape(20.dp),
-                        color = primary.copy(alpha = 0.12f)
+                        color = MaterialTheme.colorScheme.surfaceVariant,
                     ) {
                         Text(
-                            text     = if (isLoader) "Грузчик" else "Диспетчер",
+                            text = "$age лет",
                             fontSize = 13.sp,
-                            color    = primary,
-                            fontWeight = FontWeight.Medium,
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
                         )
                     }
-                    if (age != null) {
-                        Surface(
-                            shape = RoundedCornerShape(20.dp),
-                            color = MaterialTheme.colorScheme.surfaceVariant
-                        ) {
-                            Text(
-                                text     = "$age лет",
-                                fontSize = 13.sp,
-                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
-                            )
-                        }
-                    }
                 }
+            }
 
-                Spacer(Modifier.height(6.dp))
+            Spacer(Modifier.height(6.dp))
 
-                Text(
-                    text  = "В сервисе с $memberSince",
-                    fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+            Text(
+                text = "В сервисе с $memberSince",
+                fontSize = 12.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
 
-                // Звёздочки убраны по требованию — рейтинг отображается
-                // в карточках статистики, дублировать его здесь избыточно
+            // Звёздочки убраны по требованию — рейтинг отображается
+            // в карточках статистики, дублировать его здесь избыточно
         }
-
 
         // ── Статистика ────────────────────────────────────────────────────────
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             if (isLoader) {
                 MiniStatCard(
                     modifier = Modifier.weight(1f),
-                    value    = "${stats.completedOrders}",
-                    label    = "заказов",
-                    icon     = Icons.Default.CheckCircle,
-                    color    = primary
+                    value = "${stats.completedOrders}",
+                    label = "заказов",
+                    icon = Icons.Default.CheckCircle,
+                    color = primary,
                 )
                 MiniStatCard(
                     modifier = Modifier.weight(1f),
-                    value    = "${stats.totalEarnings.toInt()} ₽",
-                    label    = "заработано",
-                    icon     = Icons.Default.Payments,
-                    color    = Color(0xFF27AE60)
+                    value = "${stats.totalEarnings.toInt()} ₽",
+                    label = "заработано",
+                    icon = Icons.Default.Payments,
+                    color = Color(0xFF27AE60),
                 )
             } else {
                 MiniStatCard(
                     modifier = Modifier.weight(1f),
-                    value    = "${stats.completedOrders}",
-                    label    = "выполнено",
-                    icon     = Icons.Default.CheckCircle,
-                    color    = primary
+                    value = "${stats.completedOrders}",
+                    label = "выполнено",
+                    icon = Icons.Default.CheckCircle,
+                    color = primary,
                 )
                 MiniStatCard(
                     modifier = Modifier.weight(1f),
-                    value    = "${stats.activeOrders}",
-                    label    = "активных",
-                    icon     = Icons.Default.WorkHistory,
-                    color    = Color(0xFFE67E22)
+                    value = "${stats.activeOrders}",
+                    label = "активных",
+                    icon = Icons.Default.WorkHistory,
+                    color = Color(0xFFE67E22),
                 )
             }
         }
@@ -251,75 +255,77 @@ private fun ProfileContent(
 
         // ── Личные данные ─────────────────────────────────────────────────────
         Text(
-            text          = "Личные данные",
-            fontSize      = 13.sp,
-            fontWeight    = FontWeight.SemiBold,
-            color         = primary,
+            text = "Личные данные",
+            fontSize = 13.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = primary,
             letterSpacing = 0.8.sp,
-            modifier      = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
         )
 
         AnimatedVisibility(visible = !isEditing) {
             Column {
-                ProfileInfoRow(Icons.Default.Person, "Имя",    user.name.ifBlank { "—" })
-                ProfileInfoRow(Icons.Default.Phone,  "Телефон", user.phone.ifBlank { "Не указан" })
+                ProfileInfoRow(Icons.Default.Person, "Имя", user.name.ifBlank { "—" })
+                ProfileInfoRow(Icons.Default.Phone, "Телефон", user.phone.ifBlank { "Не указан" })
                 ProfileInfoRow(
-                    icon  = Icons.Default.Cake,
+                    icon = Icons.Default.Cake,
                     label = "Дата рождения",
-                    value = user.birthDate
-                        ?.let { dateFormat.format(Date(it)) + (age?.let { a -> " ($a лет)" } ?: "") }
-                        ?: "Не указана"
+                    value =
+                        user.birthDate
+                            ?.let { dateFormat.format(Date(it)) + (age?.let { a -> " ($a лет)" } ?: "") }
+                            ?: "Не указана",
                 )
             }
         }
 
         AnimatedVisibility(visible = isEditing) {
             Column(
-                modifier              = Modifier.padding(horizontal = 16.dp),
-                verticalArrangement   = Arrangement.spacedBy(12.dp)
+                modifier = Modifier.padding(horizontal = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 OutlinedTextField(
-                    value         = editName,
+                    value = editName,
                     onValueChange = { editName = it },
-                    label         = { Text("Имя") },
-                    leadingIcon   = { Icon(Icons.Default.Person, null) },
-                    modifier      = Modifier.fillMaxWidth(),
-                    singleLine    = true,
+                    label = { Text("Имя") },
+                    leadingIcon = { Icon(Icons.Default.Person, null) },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
                     keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words),
-                    shape         = RoundedCornerShape(12.dp)
+                    shape = RoundedCornerShape(12.dp),
                 )
                 OutlinedTextField(
-                    value         = editPhone,
+                    value = editPhone,
                     onValueChange = { editPhone = it },
-                    label         = { Text("Телефон") },
-                    leadingIcon   = { Icon(Icons.Default.Phone, null) },
-                    modifier      = Modifier.fillMaxWidth(),
-                    singleLine    = true,
+                    label = { Text("Телефон") },
+                    leadingIcon = { Icon(Icons.Default.Phone, null) },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-                    shape         = RoundedCornerShape(12.dp),
-                    placeholder   = { Text("+7 999 000 00 00") }
+                    shape = RoundedCornerShape(12.dp),
+                    placeholder = { Text("+7 999 000 00 00") },
                 )
                 OutlinedButton(
-                    onClick  = { showDatePicker = true },
+                    onClick = { showDatePicker = true },
                     modifier = Modifier.fillMaxWidth(),
-                    shape    = RoundedCornerShape(12.dp)
+                    shape = RoundedCornerShape(12.dp),
                 ) {
                     Icon(Icons.Default.Cake, null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(8.dp))
                     Text(
-                        text       = editBirthDate?.let { "ДР: " + dateFormat.format(Date(it)) }
-                                     ?: "Указать дату рождения",
-                        fontWeight = FontWeight.Normal
+                        text =
+                            editBirthDate?.let { "ДР: " + dateFormat.format(Date(it)) }
+                                ?: "Указать дату рождения",
+                        fontWeight = FontWeight.Normal,
                     )
                 }
                 Button(
-                    onClick  = {
+                    onClick = {
                         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                         onSaveProfile(editName, editPhone, editBirthDate)
                         isEditing = false
                     },
                     modifier = Modifier.fillMaxWidth().height(48.dp),
-                    shape    = RoundedCornerShape(12.dp)
+                    shape = RoundedCornerShape(12.dp),
                 ) {
                     Text("Сохранить", fontWeight = FontWeight.SemiBold)
                 }
@@ -330,8 +336,8 @@ private fun ProfileContent(
         if (!isEditing) {
             Spacer(Modifier.height(8.dp))
             TextButton(
-                onClick  = { isEditing = true },
-                modifier = Modifier.padding(horizontal = 16.dp)
+                onClick = { isEditing = true },
+                modifier = Modifier.padding(horizontal = 16.dp),
             ) {
                 Icon(Icons.Default.Edit, null, modifier = Modifier.size(16.dp))
                 Spacer(Modifier.width(6.dp))
@@ -344,9 +350,12 @@ private fun ProfileContent(
 
     if (showDatePicker) {
         BirthDatePickerDialog(
-            initialDate    = editBirthDate,
-            onDateSelected = { editBirthDate = it; showDatePicker = false },
-            onDismiss      = { showDatePicker = false }
+            initialDate = editBirthDate,
+            onDateSelected = {
+                editBirthDate = it
+                showDatePicker = false
+            },
+            onDismiss = { showDatePicker = false },
         )
     }
 }
@@ -358,47 +367,54 @@ private fun ProfileContent(
 private fun BirthDatePickerDialog(
     initialDate: Long?,
     onDateSelected: (Long) -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
 ) {
-    val state = rememberDatePickerState(
-        initialSelectedDateMillis = initialDate
-            ?: Calendar.getInstance().apply { add(Calendar.YEAR, -25) }.timeInMillis,
-        yearRange = 1950..2010
-    )
+    val state =
+        rememberDatePickerState(
+            initialSelectedDateMillis =
+                initialDate
+                    ?: Calendar.getInstance().apply { add(Calendar.YEAR, -25) }.timeInMillis,
+            yearRange = 1950..2010,
+        )
     DatePickerDialog(
         onDismissRequest = onDismiss,
-        confirmButton    = {
+        confirmButton = {
             TextButton(onClick = { state.selectedDateMillis?.let(onDateSelected) }) {
                 Text("Выбрать")
             }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Отмена") } }
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Отмена") } },
     ) {
         DatePicker(
-            state    = state,
-            title    = {
+            state = state,
+            title = {
                 Text(
-                    text     = "Дата рождения",
-                    modifier = Modifier.padding(start = 24.dp, top = 16.dp)
+                    text = "Дата рождения",
+                    modifier = Modifier.padding(start = 24.dp, top = 16.dp),
                 )
-            }
+            },
         )
     }
 }
 
 @Composable
-private fun ProfileInfoRow(icon: ImageVector, label: String, value: String) {
+private fun ProfileInfoRow(
+    icon: ImageVector,
+    label: String,
+    value: String,
+) {
     Row(
-        modifier          = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         Icon(
-            imageVector        = icon,
+            imageVector = icon,
             contentDescription = null,
-            tint               = MaterialTheme.colorScheme.primary,
-            modifier           = Modifier.size(22.dp)
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(22.dp),
         )
         Spacer(Modifier.width(16.dp))
         Column {
@@ -414,12 +430,12 @@ private fun MiniStatCard(
     value: String,
     label: String,
     icon: ImageVector,
-    color: Color
+    color: Color,
 ) {
     Card(
-        modifier  = modifier,
+        modifier = modifier,
         elevation = CardDefaults.cardElevation(0.dp),
-        shape     = RoundedCornerShape(12.dp)
+        shape = RoundedCornerShape(12.dp),
     ) {
         Column(modifier = Modifier.padding(14.dp)) {
             Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(20.dp))

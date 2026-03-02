@@ -7,8 +7,8 @@ import androidx.room.Index
     tableName = "order_assignments",
     primaryKeys = ["orderId", "loaderId"],
     indices = [
-        Index(value = ["loaderId", "status"])
-    ]
+        Index(value = ["loaderId", "status"]),
+    ],
 )
 data class OrderAssignmentEntity(
     val orderId: Long,
@@ -16,5 +16,5 @@ data class OrderAssignmentEntity(
     /** OrderAssignmentStatus.name */
     val status: String,
     val assignedAtMillis: Long,
-    val startedAtMillis: Long?
+    val startedAtMillis: Long?,
 )

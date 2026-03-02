@@ -11,12 +11,19 @@ data class User(
     val rating: Double = 5.0,
     val birthDate: Long? = null,
     val avatarInitials: String = "",
-    val createdAt: Long = System.currentTimeMillis()
+    val createdAt: Long = System.currentTimeMillis(),
 )
 
 sealed interface SessionState {
     data object Unauthenticated : SessionState
+
     data object Authenticating : SessionState
-    data class Authenticated(val user: User) : SessionState
-    data class Error(val error: AppError) : SessionState
+
+    data class Authenticated(
+        val user: User,
+    ) : SessionState
+
+    data class Error(
+        val error: AppError,
+    ) : SessionState
 }

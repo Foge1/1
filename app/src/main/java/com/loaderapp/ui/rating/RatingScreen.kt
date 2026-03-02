@@ -11,15 +11,13 @@ import com.loaderapp.ui.components.AppScaffold
 import com.loaderapp.ui.components.PlaceholderContent
 
 @Composable
-fun RatingScreen(
-    viewModel: RatingViewModel = hiltViewModel()
-) {
+fun RatingScreen(viewModel: RatingViewModel = hiltViewModel()) {
     AppScaffold(title = "Рейтинг") {
         PlaceholderContent(
-            icon     = Icons.Default.Star,
-            title    = "Рейтинг",
+            icon = Icons.Default.Star,
+            title = "Рейтинг",
             subtitle = "Здесь будет отображаться рейтинг грузчиков",
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier.fillMaxSize(),
         )
     }
 }

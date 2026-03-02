@@ -15,7 +15,7 @@ private object OrdersSegmentedTabDefaults {
 data class OrdersTabCounts(
     val available: Int,
     val inProgress: Int,
-    val history: Int
+    val history: Int,
 )
 
 @Composable
@@ -26,11 +26,12 @@ fun OrdersSegmentedTabs(
     counts: OrdersTabCounts? = null,
     content: @Composable (pageIndex: Int) -> Unit,
 ) {
-    val tabs = listOf(
-        TabItem(label = OrdersTab.Available.title, badgeCount = counts?.available ?: 0),
-        TabItem(label = OrdersTab.InProgress.title, badgeCount = counts?.inProgress ?: 0),
-        TabItem(label = OrdersTab.History.title, badgeCount = 0)
-    )
+    val tabs =
+        listOf(
+            TabItem(label = OrdersTab.Available.title, badgeCount = counts?.available ?: 0),
+            TabItem(label = OrdersTab.InProgress.title, badgeCount = counts?.inProgress ?: 0),
+            TabItem(label = OrdersTab.History.title, badgeCount = 0),
+        )
 
     SwipeableTabs(
         tabs = tabs,
@@ -41,6 +42,6 @@ fun OrdersSegmentedTabs(
         tabVerticalPadding = OrdersSegmentedTabDefaults.TabVerticalPadding,
         tabHorizontalPadding = OrdersSegmentedTabDefaults.TabHorizontalPadding,
         tabRowHorizontalPadding = OrdersSegmentedTabDefaults.TrackHorizontalPadding,
-        content = content
+        content = content,
     )
 }

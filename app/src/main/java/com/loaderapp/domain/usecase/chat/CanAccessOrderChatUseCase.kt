@@ -8,17 +8,19 @@ import javax.inject.Inject
 
 data class CanAccessOrderChatParams(
     val orderId: Long,
-    val userId: Long
+    val userId: Long,
 )
 
-class CanAccessOrderChatUseCase @Inject constructor(
-    private val ordersRepository: OrdersRepository
-) : UseCase<CanAccessOrderChatParams, Boolean>() {
+class CanAccessOrderChatUseCase
+    @Inject
+    constructor(
+        private val ordersRepository: OrdersRepository,
+    ) : UseCase<CanAccessOrderChatParams, Boolean>() {
+        override suspend fun execute(params: CanAccessOrderChatParams): Result<Boolean> {
+            val order =
+                ordersRepository.getOrderById(params.orderId)
+                    ?: return Result.Error("Заказ не найден")
 
-    override suspend fun execute(params: CanAccessOrderChatParams): Result<Boolean> {
-        val order = ordersRepository.getOrderById(params.orderId)
-            ?: return Result.Error("Заказ не найден")
-
-        return Result.Success(order.status == OrderStatus.IN_PROGRESS)
+            return Result.Success(order.status == OrderStatus.IN_PROGRESS)
+        }
     }
-}

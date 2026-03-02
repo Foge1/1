@@ -33,12 +33,12 @@ interface OrdersDao {
           AND orderTimeType = :exactTimeType
           AND orderTimeExactMillis IS NOT NULL
           AND orderTimeExactMillis < :expirationThreshold
-        """
+        """,
     )
     suspend fun expireStaffingExactOrders(
         staffingStatus: String,
         expiredStatus: String,
         exactTimeType: String,
-        expirationThreshold: Long
+        expirationThreshold: Long,
     ): Int
 }

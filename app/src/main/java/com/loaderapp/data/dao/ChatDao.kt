@@ -6,7 +6,6 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface ChatDao {
-
     @Query("SELECT * FROM chat_messages WHERE orderId = :orderId ORDER BY sentAt ASC")
     fun getMessagesForOrder(orderId: Long): Flow<List<ChatMessage>>
 
