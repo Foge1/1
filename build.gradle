@@ -4,6 +4,8 @@ plugins {
     id 'com.android.library' version '8.1.2' apply false
     id 'org.jetbrains.kotlin.android' version '1.9.23' apply false
     id 'com.google.dagger.hilt.android' version '2.48' apply false
+    alias(libs.plugins.detekt) apply false
+    alias(libs.plugins.ktlint) apply false
 }
 
 ext {
@@ -24,4 +26,60 @@ ext {
             espresso             : '3.5.1',
             sentry               : '7.8.0'
     ]
+}
+
+
+subprojects { subproject ->
+    apply plugin: 'io.gitlab.arturbosch.detekt'
+    apply plugin: 'org.jlleitschuh.gradle.ktlint'
+
+    detekt {
+        buildUponDefaultConfig = true
+        allRules = false
+        config.setFrom(files("${rootDir}/config/lint/detekt.yml"))
+        parallel = true
+        ignoreFailures = false
+        autoCorrect = false
+    }
+
+    tasks.withType(io.gitlab.arturbosch.detekt.Detekt).configureEach {
+        jvmTarget = '17'
+        reports {
+            html.required.set(true)
+            sarif.required.set(false)
+            md.required.set(false)
+            xml.required.set(false)
+            txt.required.set(false)
+        }
+    }
+
+    ktlint {
+        version.set("1.3.1")
+        android.set(true)
+        outputToConsole.set(true)
+        ignoreFailures.set(false)
+        enableExperimentalRules.set(false)
+        filter {
+            exclude("**/build/**")
+            exclude("**/generated/**")
+        }
+    }
+}
+
+tasks.register('detektAll') {
+    group = 'verification'
+    description = 'Runs detekt across all modules.'
+    dependsOn(subprojects.collect { it.tasks.matching { task -> task.name == 'detekt' } })
+}
+
+tasks.register('ktlintCheck') {
+    group = 'verification'
+    description = 'Runs ktlint checks across all modules.'
+    dependsOn(subprojects.collect { it.tasks.matching { task -> task.name == 'ktlintCheck' } })
+}
+
+tasks.register('ktlintFormat') {
+    group = 'formatting'
+    description = 'Formats Kotlin sources across all modules using ktlint.'
+    dependsOn(subprojects.collect { it.tasks.matching { task -> task.name == 'ktlintFormat' } })
 }

@@ -1,0 +1,7 @@
+[versions]
+detekt = "1.23.8"
+ktlintGradle = "12.1.2"
+
+[plugins]
+detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
+ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlintGradle" }
