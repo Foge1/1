@@ -73,8 +73,8 @@ style:
     active: false
   NewLineAtEndOfFile:
     active: false
-  MandatoryBracesIfStatements:
+  BracesOnIfStatements:
     active: false
+    singleLine: "never"
+    multiLine: "always"
 
-formatting:
-  active: false
