@@ -12,5 +12,5 @@ data class UserModel(
     val rating: Double,
     val birthDate: Long?,
     val avatarInitials: String,
-    val createdAt: Long
+    val createdAt: Long,
 )

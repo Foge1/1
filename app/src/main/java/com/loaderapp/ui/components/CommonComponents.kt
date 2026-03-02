@@ -24,41 +24,42 @@ fun EmptyStateView(
     icon: ImageVector = Icons.Default.Search,
     title: String,
     message: String? = null,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     Column(
         modifier = modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+        verticalArrangement = Arrangement.Center,
     ) {
         Icon(
             imageVector = icon,
             contentDescription = null,
-            modifier = Modifier
-                .size(80.dp)
-                .alpha(0.4f),
-            tint = MaterialTheme.colorScheme.onSurfaceVariant
+            modifier =
+                Modifier
+                    .size(80.dp)
+                    .alpha(0.4f),
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        
+
         Spacer(Modifier.height(16.dp))
-        
+
         Text(
             text = title,
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.SemiBold,
             color = MaterialTheme.colorScheme.onSurface,
-            textAlign = TextAlign.Center
+            textAlign = TextAlign.Center,
         )
-        
+
         if (message != null) {
             Spacer(Modifier.height(8.dp))
-            
+
             Text(
                 text = message,
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,
-                modifier = Modifier.padding(horizontal = 32.dp)
+                modifier = Modifier.padding(horizontal = 32.dp),
             )
         }
     }
@@ -71,42 +72,42 @@ fun EmptyStateView(
 fun ErrorView(
     message: String,
     onRetry: (() -> Unit)? = null,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     Column(
         modifier = modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+        verticalArrangement = Arrangement.Center,
     ) {
         Icon(
             imageVector = Icons.Default.Error,
             contentDescription = null,
             modifier = Modifier.size(80.dp),
-            tint = MaterialTheme.colorScheme.error
+            tint = MaterialTheme.colorScheme.error,
         )
-        
+
         Spacer(Modifier.height(16.dp))
-        
+
         Text(
             text = "Ошибка",
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.SemiBold,
-            color = MaterialTheme.colorScheme.error
+            color = MaterialTheme.colorScheme.error,
         )
-        
+
         Spacer(Modifier.height(8.dp))
-        
+
         Text(
             text = message,
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
-            modifier = Modifier.padding(horizontal = 32.dp)
+            modifier = Modifier.padding(horizontal = 32.dp),
         )
-        
+
         if (onRetry != null) {
             Spacer(Modifier.height(16.dp))
-            
+
             Button(onClick = onRetry) {
                 Text("Повторить")
             }
@@ -120,24 +121,24 @@ fun ErrorView(
 @Composable
 fun LoadingView(
     message: String = "Загрузка...",
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     Column(
         modifier = modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+        verticalArrangement = Arrangement.Center,
     ) {
         CircularProgressIndicator(
             modifier = Modifier.size(48.dp),
-            color = MaterialTheme.colorScheme.primary
+            color = MaterialTheme.colorScheme.primary,
         )
-        
+
         Spacer(Modifier.height(16.dp))
-        
+
         Text(
             text = message,
             style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
 }
@@ -151,53 +152,57 @@ fun SkeletonOrderCard(modifier: Modifier = Modifier) {
     val alpha by infiniteTransition.animateFloat(
         initialValue = 0.3f,
         targetValue = 0.7f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(1000, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "shimmer_alpha"
+        animationSpec =
+            infiniteRepeatable(
+                animation = tween(1000, easing = FastOutSlowInEasing),
+                repeatMode = RepeatMode.Reverse,
+            ),
+        label = "shimmer_alpha",
     )
-    
+
     Card(
         modifier = modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             // Заголовок
             Box(
-                modifier = Modifier
-                    .fillMaxWidth(0.6f)
-                    .height(20.dp)
-                    .alpha(alpha)
-                    .shimmerBackground()
+                modifier =
+                    Modifier
+                        .fillMaxWidth(0.6f)
+                        .height(20.dp)
+                        .alpha(alpha)
+                        .shimmerBackground(),
             )
-            
+
             // Описание
             Box(
-                modifier = Modifier
-                    .fillMaxWidth(0.9f)
-                    .height(16.dp)
-                    .alpha(alpha)
-                    .shimmerBackground()
+                modifier =
+                    Modifier
+                        .fillMaxWidth(0.9f)
+                        .height(16.dp)
+                        .alpha(alpha)
+                        .shimmerBackground(),
             )
-            
+
             Spacer(Modifier.height(4.dp))
-            
+
             // Параметры
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
+                horizontalArrangement = Arrangement.SpaceBetween,
             ) {
                 repeat(4) {
                     Box(
-                        modifier = Modifier
-                            .width(60.dp)
-                            .height(16.dp)
-                            .alpha(alpha)
-                            .shimmerBackground()
+                        modifier =
+                            Modifier
+                                .width(60.dp)
+                                .height(16.dp)
+                                .alpha(alpha)
+                                .shimmerBackground(),
                     )
                 }
             }
@@ -206,6 +211,7 @@ fun SkeletonOrderCard(modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun Modifier.shimmerBackground(): Modifier = this.then(
-    Modifier.background(MaterialTheme.colorScheme.surfaceVariant)
-)
+private fun Modifier.shimmerBackground(): Modifier =
+    this.then(
+        Modifier.background(MaterialTheme.colorScheme.surfaceVariant),
+    )

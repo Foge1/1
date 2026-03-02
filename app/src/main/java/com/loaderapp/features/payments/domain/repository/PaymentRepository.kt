@@ -9,8 +9,12 @@ import kotlinx.coroutines.flow.Flow
  */
 interface PaymentRepository {
     suspend fun createPayment(payment: PaymentModel): Result<PaymentModel>
+
     suspend fun getPaymentByOrder(orderId: Long): PaymentModel?
+
     fun getPaymentsByWorker(workerId: Long): Flow<List<PaymentModel>>
+
     suspend fun confirmPayment(paymentId: Long): Result<Unit>
+
     suspend fun refundPayment(paymentId: Long): Result<Unit>
 }

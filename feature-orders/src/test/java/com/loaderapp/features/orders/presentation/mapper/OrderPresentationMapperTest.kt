@@ -11,28 +11,29 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class OrderPresentationMapperTest {
-
     @Test
     fun `toUiModel maps domain order to card ui model`() {
-        val order = Order(
-            id = 7L,
-            title = "Переезд",
-            address = "ул. Пушкина",
-            pricePerHour = 1200.0,
-            orderTime = OrderTime.Soon,
-            durationMin = 130,
-            workersCurrent = 0,
-            workersTotal = 4,
-            tags = listOf("мебель"),
-            meta = mapOf("dispatcherId" to "55", "minWorkerRating" to "4.2"),
-            comment = "Позвонить заранее",
-            status = OrderStatus.STAFFING,
-            createdByUserId = "disp",
-            applications = listOf(
-                OrderApplication(7L, "l-1", OrderApplicationStatus.SELECTED, 1L),
-                OrderApplication(7L, "l-2", OrderApplicationStatus.APPLIED, 1L)
+        val order =
+            Order(
+                id = 7L,
+                title = "Переезд",
+                address = "ул. Пушкина",
+                pricePerHour = 1200.0,
+                orderTime = OrderTime.Soon,
+                durationMin = 130,
+                workersCurrent = 0,
+                workersTotal = 4,
+                tags = listOf("мебель"),
+                meta = mapOf("dispatcherId" to "55", "minWorkerRating" to "4.2"),
+                comment = "Позвонить заранее",
+                status = OrderStatus.STAFFING,
+                createdByUserId = "disp",
+                applications =
+                    listOf(
+                        OrderApplication(7L, "l-1", OrderApplicationStatus.SELECTED, 1L),
+                        OrderApplication(7L, "l-2", OrderApplicationStatus.APPLIED, 1L),
+                    ),
             )
-        )
 
         val ui = order.toUiModel()
 

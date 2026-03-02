@@ -11,13 +11,13 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class OrdersDatabaseMigrationTest {
-
     @get:Rule
-    val helper: MigrationTestHelper = MigrationTestHelper(
-        InstrumentationRegistry.getInstrumentation(),
-        OrdersDatabase::class.java.canonicalName,
-        FrameworkSQLiteOpenHelperFactory()
-    )
+    val helper: MigrationTestHelper =
+        MigrationTestHelper(
+            InstrumentationRegistry.getInstrumentation(),
+            OrdersDatabase::class.java.canonicalName,
+            FrameworkSQLiteOpenHelperFactory(),
+        )
 
     @Test
     fun migrate2To3_preservesOrdersAndCreatesNewTables() {
@@ -42,7 +42,7 @@ class OrdersDatabaseMigrationTest {
                     acceptedByUserId TEXT,
                     acceptedAtMillis INTEGER
                 )
-                """.trimIndent()
+                """.trimIndent(),
             )
             execSQL(
                 """
@@ -55,7 +55,7 @@ class OrdersDatabaseMigrationTest {
                     120, 0, 2, '[]', '{}', 'note',
                     'AVAILABLE', 'dispatcher', NULL, NULL
                 )
-                """.trimIndent()
+                """.trimIndent(),
             )
             close()
         }

@@ -13,7 +13,7 @@ data class User(
     val rating: Double = 5.0,
     val birthDate: Long? = null, // timestamp дня рождения
     val avatarInitials: String = "", // инициалы для аватара (авто)
-    val createdAt: Long = System.currentTimeMillis()
+    val createdAt: Long = System.currentTimeMillis(),
 )
 
 enum class UserRole { DISPATCHER, LOADER }

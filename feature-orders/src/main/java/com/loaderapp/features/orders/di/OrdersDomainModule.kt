@@ -10,7 +10,6 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 internal object OrdersDomainModule {
-
     @Provides
     @Singleton
     fun provideOrdersLimits(): OrdersLimits = OrdersLimits(maxActiveApplications = 3)

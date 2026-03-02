@@ -11,11 +11,11 @@ data class OrderAssignment(
     val loaderId: String,
     val status: OrderAssignmentStatus,
     val assignedAtMillis: Long,
-    val startedAtMillis: Long? = null
+    val startedAtMillis: Long? = null,
 )
 
 enum class OrderAssignmentStatus {
     ACTIVE,
     COMPLETED,
-    CANCELED
+    CANCELED,
 }

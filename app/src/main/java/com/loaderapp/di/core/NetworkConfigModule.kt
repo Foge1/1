@@ -10,7 +10,6 @@ import javax.inject.Named
 @Module
 @InstallIn(SingletonComponent::class)
 object NetworkConfigModule {
-
     @Provides
     @Named("base_url")
     fun provideBaseUrl(appConfig: AppConfig): String = appConfig.baseUrl

@@ -72,14 +72,18 @@ tasks.register('detektAll') {
     dependsOn(subprojects.collect { it.tasks.matching { task -> task.name == 'detekt' } })
 }
 
-tasks.register('ktlintCheck') {
+tasks.register('ktlintCheckAll') {
     group = 'verification'
     description = 'Runs ktlint checks across all modules.'
-    dependsOn(subprojects.collect { it.tasks.matching { task -> task.name == 'ktlintCheck' } })
+    dependsOn(subprojects.collect {
+        it.tasks.matching { t -> t.name == 'ktlintCheck' }
+    })
 }
 
-tasks.register('ktlintFormat') {
+tasks.register('ktlintFormatAll') {
     group = 'formatting'
     description = 'Formats Kotlin sources across all modules using ktlint.'
-    dependsOn(subprojects.collect { it.tasks.matching { task -> task.name == 'ktlintFormat' } })
+    dependsOn(subprojects.collect {
+        it.tasks.matching { t -> t.name == 'ktlintFormat' }
+    })
 }

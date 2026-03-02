@@ -15,12 +15,13 @@ private const val TIME_TYPE_EXACT = "exact"
 
 fun OrderEntity.toDomain(
     applications: List<OrderApplication> = emptyList(),
-    assignments: List<OrderAssignment> = emptyList()
+    assignments: List<OrderAssignment> = emptyList(),
 ): Order {
-    val time = when (orderTimeType) {
-        Order.TIME_TYPE_SOON -> OrderTime.Soon
-        else -> OrderTime.Exact(orderTimeExactMillis ?: 0L)
-    }
+    val time =
+        when (orderTimeType) {
+            Order.TIME_TYPE_SOON -> OrderTime.Soon
+            else -> OrderTime.Exact(orderTimeExactMillis ?: 0L)
+        }
 
     return Order(
         id = id,
@@ -37,15 +38,16 @@ fun OrderEntity.toDomain(
         status = status.toOrderStatus(),
         createdByUserId = createdByUserId,
         applications = applications,
-        assignments = assignments
+        assignments = assignments,
     )
 }
 
 fun Order.toEntity(): OrderEntity {
-    val (timeType, exactMillis) = when (val time = orderTime) {
-        is OrderTime.Exact -> TIME_TYPE_EXACT to time.dateTimeMillis
-        OrderTime.Soon -> Order.TIME_TYPE_SOON to null
-    }
+    val (timeType, exactMillis) =
+        when (val time = orderTime) {
+            is OrderTime.Exact -> TIME_TYPE_EXACT to time.dateTimeMillis
+            OrderTime.Soon -> Order.TIME_TYPE_SOON to null
+        }
 
     return OrderEntity(
         id = id,
@@ -61,48 +63,56 @@ fun Order.toEntity(): OrderEntity {
         meta = meta,
         comment = comment,
         status = status.toPersistedValue(),
-        createdByUserId = createdByUserId
+        createdByUserId = createdByUserId,
     )
 }
 
-fun OrderApplicationEntity.toDomain(): OrderApplication = OrderApplication(
-    orderId = orderId,
-    loaderId = loaderId,
-    status = status.toOrderApplicationStatus(),
-    appliedAtMillis = appliedAtMillis,
-    ratingSnapshot = ratingSnapshot
-)
+fun OrderApplicationEntity.toDomain(): OrderApplication =
+    OrderApplication(
+        orderId = orderId,
+        loaderId = loaderId,
+        status = status.toOrderApplicationStatus(),
+        appliedAtMillis = appliedAtMillis,
+        ratingSnapshot = ratingSnapshot,
+    )
 
-fun OrderApplication.toEntity(): OrderApplicationEntity = OrderApplicationEntity(
-    orderId = orderId,
-    loaderId = loaderId,
-    status = status.toPersistedValue(),
-    appliedAtMillis = appliedAtMillis,
-    ratingSnapshot = ratingSnapshot
-)
+fun OrderApplication.toEntity(): OrderApplicationEntity =
+    OrderApplicationEntity(
+        orderId = orderId,
+        loaderId = loaderId,
+        status = status.toPersistedValue(),
+        appliedAtMillis = appliedAtMillis,
+        ratingSnapshot = ratingSnapshot,
+    )
 
-fun OrderAssignmentEntity.toDomain(): OrderAssignment = OrderAssignment(
-    orderId = orderId,
-    loaderId = loaderId,
-    status = status.toOrderAssignmentStatus(),
-    assignedAtMillis = assignedAtMillis,
-    startedAtMillis = startedAtMillis
-)
+fun OrderAssignmentEntity.toDomain(): OrderAssignment =
+    OrderAssignment(
+        orderId = orderId,
+        loaderId = loaderId,
+        status = status.toOrderAssignmentStatus(),
+        assignedAtMillis = assignedAtMillis,
+        startedAtMillis = startedAtMillis,
+    )
 
-fun OrderAssignment.toEntity(): OrderAssignmentEntity = OrderAssignmentEntity(
-    orderId = orderId,
-    loaderId = loaderId,
-    status = status.toPersistedValue(),
-    assignedAtMillis = assignedAtMillis,
-    startedAtMillis = startedAtMillis
-)
+fun OrderAssignment.toEntity(): OrderAssignmentEntity =
+    OrderAssignmentEntity(
+        orderId = orderId,
+        loaderId = loaderId,
+        status = status.toPersistedValue(),
+        assignedAtMillis = assignedAtMillis,
+        startedAtMillis = startedAtMillis,
+    )
 
 fun OrderStatus.toPersistedValue(): String = name
+
 fun OrderApplicationStatus.toPersistedValue(): String = name
+
 fun OrderAssignmentStatus.toPersistedValue(): String = name
 
 fun String.toOrderStatus(): OrderStatus = runCatching { OrderStatus.valueOf(this) }.getOrDefault(OrderStatus.STAFFING)
+
 fun String.toOrderApplicationStatus(): OrderApplicationStatus =
     runCatching { OrderApplicationStatus.valueOf(this) }.getOrDefault(OrderApplicationStatus.APPLIED)
+
 fun String.toOrderAssignmentStatus(): OrderAssignmentStatus =
     runCatching { OrderAssignmentStatus.valueOf(this) }.getOrDefault(OrderAssignmentStatus.ACTIVE)

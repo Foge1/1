@@ -10,7 +10,14 @@ import kotlinx.coroutines.flow.Flow
  */
 interface ChatFeatureRepository {
     fun getMessages(orderId: Long): Flow<List<ChatMessageModel>>
-    suspend fun sendMessage(orderId: Long, senderId: Long, text: String): Result<ChatMessageModel>
+
+    suspend fun sendMessage(
+        orderId: Long,
+        senderId: Long,
+        text: String,
+    ): Result<ChatMessageModel>
+
     suspend fun markAsRead(messageId: Long)
+
     fun getUnreadCount(userId: Long): Flow<Int>
 }

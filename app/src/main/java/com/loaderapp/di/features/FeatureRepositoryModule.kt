@@ -12,7 +12,6 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 abstract class FeatureRepositoryModule {
-
     @Binds
     @Singleton
     abstract fun bindAuthSessionApi(impl: AuthRepositoryImpl): AuthSessionApi

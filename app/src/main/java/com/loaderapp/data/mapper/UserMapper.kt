@@ -9,12 +9,11 @@ import com.loaderapp.domain.model.UserRoleModel
  * Mapper для конвертации User между data и domain слоями
  */
 object UserMapper {
-    
     /**
      * Конвертация Data Entity -> Domain Model
      */
-    fun toDomain(entity: User): UserModel {
-        return UserModel(
+    fun toDomain(entity: User): UserModel =
+        UserModel(
             id = entity.id,
             name = entity.name,
             phone = entity.phone,
@@ -22,15 +21,14 @@ object UserMapper {
             rating = entity.rating,
             birthDate = entity.birthDate,
             avatarInitials = entity.avatarInitials,
-            createdAt = entity.createdAt
+            createdAt = entity.createdAt,
         )
-    }
-    
+
     /**
      * Конвертация Domain Model -> Data Entity
      */
-    fun toEntity(model: UserModel): User {
-        return User(
+    fun toEntity(model: UserModel): User =
+        User(
             id = model.id,
             name = model.name,
             phone = model.phone,
@@ -38,38 +36,31 @@ object UserMapper {
             rating = model.rating,
             birthDate = model.birthDate,
             avatarInitials = model.avatarInitials,
-            createdAt = model.createdAt
+            createdAt = model.createdAt,
         )
-    }
-    
+
     /**
      * Конвертация списка Entity -> Domain
      */
-    fun toDomainList(entities: List<User>): List<UserModel> {
-        return entities.map { toDomain(it) }
-    }
-    
+    fun toDomainList(entities: List<User>): List<UserModel> = entities.map { toDomain(it) }
+
     /**
      * Конвертация списка Domain -> Entity
      */
-    fun toEntityList(models: List<UserModel>): List<User> {
-        return models.map { toEntity(it) }
-    }
+    fun toEntityList(models: List<UserModel>): List<User> = models.map { toEntity(it) }
 }
 
 /**
  * Extension функции для UserRole
  */
-private fun UserRole.toDomain(): UserRoleModel {
-    return when (this) {
+private fun UserRole.toDomain(): UserRoleModel =
+    when (this) {
         UserRole.DISPATCHER -> UserRoleModel.DISPATCHER
         UserRole.LOADER -> UserRoleModel.LOADER
     }
-}
 
-private fun UserRoleModel.toEntity(): UserRole {
-    return when (this) {
+private fun UserRoleModel.toEntity(): UserRole =
+    when (this) {
         UserRoleModel.DISPATCHER -> UserRole.DISPATCHER
         UserRoleModel.LOADER -> UserRole.LOADER
     }
-}

@@ -7,8 +7,8 @@ import androidx.room.Index
     tableName = "order_applications",
     primaryKeys = ["orderId", "loaderId"],
     indices = [
-        Index(value = ["loaderId", "status"])
-    ]
+        Index(value = ["loaderId", "status"]),
+    ],
 )
 data class OrderApplicationEntity(
     val orderId: Long,
@@ -16,5 +16,5 @@ data class OrderApplicationEntity(
     /** OrderApplicationStatus.name */
     val status: String,
     val appliedAtMillis: Long,
-    val ratingSnapshot: Float?
+    val ratingSnapshot: Float?,
 )

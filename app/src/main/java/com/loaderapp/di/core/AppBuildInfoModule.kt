@@ -11,7 +11,6 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 abstract class AppBuildInfoModule {
-
     @Binds
     @Singleton
     abstract fun bindAppBuildInfo(impl: AppBuildInfoImpl): AppBuildInfo

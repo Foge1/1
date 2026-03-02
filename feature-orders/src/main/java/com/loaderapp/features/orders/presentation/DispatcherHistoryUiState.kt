@@ -4,16 +4,16 @@ data class DispatcherHistoryUiState(
     val query: String = "",
     val sections: List<HistorySectionUi> = emptyList(),
     val isLoading: Boolean = false,
-    val error: String? = null
+    val error: String? = null,
 )
 
 data class HistorySectionUi(
     val key: String,
     val title: String,
     val count: Int,
-    val items: List<OrderHistoryItemUi>
+    val items: List<OrderHistoryItemUi>,
 )
 
 data class OrderHistoryItemUi(
-    val order: OrderUiModel
+    val order: OrderUiModel,
 )

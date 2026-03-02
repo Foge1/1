@@ -33,25 +33,27 @@ fun HistoryScreen(
     modifier: Modifier = Modifier,
 ) {
     Column(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(horizontal = 16.dp)
+        modifier =
+            modifier
+                .fillMaxSize()
+                .padding(horizontal = 16.dp),
     ) {
         OutlinedTextField(
             value = state.query,
             onValueChange = onQueryChange,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 8.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(top = 8.dp),
             singleLine = true,
-            label = { Text("Поиск по истории") }
+            label = { Text("Поиск по истории") },
         )
 
         if (state.sections.isEmpty()) {
             EmptyStateView(
                 icon = Icons.Default.History,
                 title = "История пуста",
-                message = "Нет заказов, подходящих под фильтр"
+                message = "Нет заказов, подходящих под фильтр",
             )
             return
         }
@@ -60,13 +62,13 @@ fun HistoryScreen(
             modifier = Modifier.fillMaxSize(),
             topFadeHeight = 0.dp,
             bottomFadeHeight = 36.dp,
-            contentPadding = PaddingValues(top = 12.dp, bottom = bottomPadding)
+            contentPadding = PaddingValues(top = 12.dp, bottom = bottomPadding),
         ) {
             itemsIndexed(state.sections, key = { _, section -> section.key }) { index, section ->
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(section.title, style = MaterialTheme.typography.titleSmall)
                     Text(section.count.toString(), style = MaterialTheme.typography.labelMedium)
@@ -75,14 +77,14 @@ fun HistoryScreen(
                 section.items.forEach { item ->
                     OrderCard(
                         order = item.order.toLegacyOrderModel(),
-                        onClick = { onOrderClick(item.order.order.id) }
+                        onClick = { onOrderClick(item.order.order.id) },
                     )
                     Spacer(Modifier.height(10.dp))
                 }
                 if (index < state.sections.lastIndex) {
                     HorizontalDivider(
                         modifier = Modifier.padding(vertical = 8.dp),
-                        color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
+                        color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
                     )
                     Spacer(Modifier.height(4.dp))
                 }

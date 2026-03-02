@@ -19,6 +19,5 @@ data class OrderEntity(
     val meta: Map<String, String>,
     val comment: String?,
     val status: String,
-    val createdByUserId: String
+    val createdByUserId: String,
 )
-

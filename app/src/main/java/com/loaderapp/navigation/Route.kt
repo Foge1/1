@@ -1,23 +1,33 @@
 package com.loaderapp.navigation
 
-sealed class Route(val route: String) {
+sealed class Route(
+    val route: String,
+) {
+    object Splash : Route("splash")
 
-    object Splash   : Route("splash")
-    object Auth     : Route("auth")
-    object Main     : Route("main")
+    object Auth : Route("auth")
+
+    object Main : Route("main")
 
     // ── Вкладки Bottom Nav ───────────────────────────────────────────────────
-    object Home     : Route("home")
-    object History  : Route("history")
+    object Home : Route("home")
+
+    object History : Route("history")
+
     object Responses : Route("responses")
-    object Rating   : Route("rating")
-    object Profile  : Route("profile")
+
+    object Rating : Route("rating")
+
+    object Profile : Route("profile")
+
     object Settings : Route("settings")
 
     // ── Поверх Main ──────────────────────────────────────────────────────────
     object OrderDetail : Route("order/{orderId}?isDispatcher={isDispatcher}") {
-        fun createRoute(orderId: Long, isDispatcher: Boolean) =
-            "order/$orderId?isDispatcher=$isDispatcher"
+        fun createRoute(
+            orderId: Long,
+            isDispatcher: Boolean,
+        ) = "order/$orderId?isDispatcher=$isDispatcher"
     }
 
     object CreateOrder : Route("create_order")
@@ -28,6 +38,6 @@ sealed class Route(val route: String) {
 }
 
 object NavArgs {
-    const val ORDER_ID      = "orderId"
+    const val ORDER_ID = "orderId"
     const val IS_DISPATCHER = "isDispatcher"
 }

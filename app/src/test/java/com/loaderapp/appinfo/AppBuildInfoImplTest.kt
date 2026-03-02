@@ -6,7 +6,6 @@ import org.junit.Assert.assertNotNull
 import org.junit.Test
 
 class AppBuildInfoImplTest {
-
     @Test
     fun `provides values from generated BuildConfig`() {
         val info = AppBuildInfoImpl()

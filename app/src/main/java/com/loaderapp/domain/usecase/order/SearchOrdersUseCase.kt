@@ -12,17 +12,16 @@ import javax.inject.Inject
  */
 data class SearchOrdersParams(
     val query: String,
-    val status: OrderStatusModel? = null
+    val status: OrderStatusModel? = null,
 )
 
 /**
  * UseCase: Поиск заказов по запросу
  */
-class SearchOrdersUseCase @Inject constructor(
-    private val orderRepository: OrderRepository
-) : FlowUseCase<SearchOrdersParams, Flow<List<OrderModel>>>() {
-    
-    override fun execute(params: SearchOrdersParams): Flow<List<OrderModel>> {
-        return orderRepository.searchOrders(params.query, params.status)
+class SearchOrdersUseCase
+    @Inject
+    constructor(
+        private val orderRepository: OrderRepository,
+    ) : FlowUseCase<SearchOrdersParams, Flow<List<OrderModel>>>() {
+        override fun execute(params: SearchOrdersParams): Flow<List<OrderModel>> = orderRepository.searchOrders(params.query, params.status)
     }
-}

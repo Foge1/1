@@ -15,7 +15,6 @@ import io.sentry.android.core.SentryAndroid
  */
 @HiltAndroidApp
 class LoaderApplication : Application() {
-
     override fun onCreate() {
         super.onCreate()
         val configEntryPoint =
@@ -31,14 +30,14 @@ class LoaderApplication : Application() {
         }
     }
 
-    private fun buildReleaseName(buildInfo: AppBuildInfo): String {
-        return "${buildInfo.applicationId}@${buildInfo.versionName}+${buildInfo.versionCode}"
-    }
+    private fun buildReleaseName(buildInfo: AppBuildInfo): String =
+        "${buildInfo.applicationId}@${buildInfo.versionName}+${buildInfo.versionCode}"
 }
 
 @EntryPoint
 @InstallIn(SingletonComponent::class)
 interface AppConfigEntryPoint {
     fun appConfig(): AppConfig
+
     fun appBuildInfo(): AppBuildInfo
 }

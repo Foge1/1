@@ -53,8 +53,9 @@ data class OrderUiModel(
         get() = order.applications.count { it.status == OrderApplicationStatus.APPLIED }
 
     val visibleApplicants: List<OrderApplication>
-        get() = order.applications.filter {
-            it.status == OrderApplicationStatus.APPLIED ||
-                it.status == OrderApplicationStatus.SELECTED
-        }
+        get() =
+            order.applications.filter {
+                it.status == OrderApplicationStatus.APPLIED ||
+                    it.status == OrderApplicationStatus.SELECTED
+            }
 }

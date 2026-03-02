@@ -9,16 +9,18 @@ import javax.inject.Inject
 /**
  * Параметры для получения пользователя как Flow
  */
-data class GetUserByIdFlowParams(val userId: Long)
+data class GetUserByIdFlowParams(
+    val userId: Long,
+)
 
 /**
  * UseCase: Получить пользователя по ID как живой Flow.
  * Используется в ProfileViewModel для реактивного обновления UI.
  */
-class GetUserByIdFlowUseCase @Inject constructor(
-    private val userRepository: UserRepository
-) : FlowUseCase<GetUserByIdFlowParams, Flow<UserModel?>>() {
-
-    override fun execute(params: GetUserByIdFlowParams): Flow<UserModel?> =
-        userRepository.getUserByIdFlow(params.userId)
-}
+class GetUserByIdFlowUseCase
+    @Inject
+    constructor(
+        private val userRepository: UserRepository,
+    ) : FlowUseCase<GetUserByIdFlowParams, Flow<UserModel?>>() {
+        override fun execute(params: GetUserByIdFlowParams): Flow<UserModel?> = userRepository.getUserByIdFlow(params.userId)
+    }

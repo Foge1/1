@@ -5,10 +5,11 @@ import kotlinx.coroutines.flow.Flow
 
 data class OrdersUser(
     val id: String,
-    val role: Role
+    val role: Role,
 )
 
 interface OrdersUserSession {
     fun observeCurrentUser(): Flow<OrdersUser?>
+
     suspend fun getCurrentUserOrNull(): OrdersUser?
 }

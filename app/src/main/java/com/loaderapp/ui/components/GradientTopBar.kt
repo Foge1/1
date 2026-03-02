@@ -34,44 +34,46 @@ fun GradientTopBar(
     modifier: Modifier = Modifier,
     navigationIcon: ImageVector? = null,
     onNavigationClick: () -> Unit = {},
-    actions: @Composable RowScope.() -> Unit = {}
+    actions: @Composable RowScope.() -> Unit = {},
 ) {
     Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .windowInsetsPadding(WindowInsets.statusBars)
-            .padding(horizontal = 4.dp, vertical = 8.dp)
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .windowInsetsPadding(WindowInsets.statusBars)
+                .padding(horizontal = 4.dp, vertical = 8.dp),
     ) {
         if (navigationIcon != null) {
             IconButton(
-                onClick  = onNavigationClick,
-                modifier = Modifier.align(Alignment.CenterStart)
+                onClick = onNavigationClick,
+                modifier = Modifier.align(Alignment.CenterStart),
             ) {
                 Icon(
-                    imageVector        = navigationIcon,
+                    imageVector = navigationIcon,
                     contentDescription = "Назад",
-                    tint               = MaterialTheme.colorScheme.onSurface
+                    tint = MaterialTheme.colorScheme.onSurface,
                 )
             }
         }
 
         Text(
-            text       = title,
-            fontSize   = 22.sp,
+            text = title,
+            fontSize = 22.sp,
             fontWeight = FontWeight.Bold,
-            color      = MaterialTheme.colorScheme.onSurface,
-            modifier   = Modifier
-                .align(Alignment.CenterStart)
-                .padding(
-                    start = if (navigationIcon != null) 56.dp else 12.dp,
-                    end   = 56.dp
-                )
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier =
+                Modifier
+                    .align(Alignment.CenterStart)
+                    .padding(
+                        start = if (navigationIcon != null) 56.dp else 12.dp,
+                        end = 56.dp,
+                    ),
         )
 
         Row(
-            modifier          = Modifier.align(Alignment.CenterEnd),
+            modifier = Modifier.align(Alignment.CenterEnd),
             verticalAlignment = Alignment.CenterVertically,
-            content           = actions
+            content = actions,
         )
     }
 }

@@ -3,26 +3,26 @@
 ## Локальный запуск
 
 ```bash
-./gradlew detektAll ktlintCheck
+./gradlew detektAll ktlintCheckAll
 ```
 
 - `detektAll` запускает статический анализ Kotlin-кода во всех модулях.
-- `ktlintCheck` проверяет форматирование и базовые style-правила.
+- `ktlintCheckAll` проверяет форматирование и базовые style-правила.
 
 ## Автоисправление форматирования
 
 ```bash
-./gradlew ktlintFormat
+./gradlew ktlintFormatAll
 ```
 
-После автоформатирования рекомендуется повторно выполнить `./gradlew ktlintCheck`.
+После автоформатирования рекомендуется повторно выполнить `./gradlew ktlintCheckAll`.
 
 ## Что делать при падении CI
 
 1. Открыть лог шага **Lint Check** в PR.
-2. Если упал `ktlintCheck` — выполнить `./gradlew ktlintFormat`, проверить diff и закоммитить изменения.
+2. Если упал `ktlintCheckAll` — выполнить `./gradlew ktlintFormatAll`, проверить diff и закоммитить изменения.
 3. Если упал `detektAll` — исправить выявленную проблему в коде (ошибки потенциальных багов, сложность, корутины, неиспользуемый код).
-4. Повторно запустить локально `./gradlew detektAll ktlintCheck` перед push.
+4. Повторно запустить локально `./gradlew detektAll ktlintCheckAll` перед push.
 
 ## Принципы конфигурации
 

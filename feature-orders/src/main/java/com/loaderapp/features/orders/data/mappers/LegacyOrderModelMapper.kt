@@ -6,12 +6,13 @@ import com.loaderapp.features.orders.domain.Order
 import com.loaderapp.features.orders.domain.OrderStatus
 import com.loaderapp.features.orders.domain.OrderTime
 
-fun OrderModel.toFeatureStatus(): OrderStatus = when (status) {
-    OrderStatusModel.AVAILABLE -> OrderStatus.STAFFING
-    OrderStatusModel.TAKEN, OrderStatusModel.IN_PROGRESS -> OrderStatus.IN_PROGRESS
-    OrderStatusModel.COMPLETED -> OrderStatus.COMPLETED
-    OrderStatusModel.CANCELLED -> OrderStatus.CANCELED
-}
+fun OrderModel.toFeatureStatus(): OrderStatus =
+    when (status) {
+        OrderStatusModel.AVAILABLE -> OrderStatus.STAFFING
+        OrderStatusModel.TAKEN, OrderStatusModel.IN_PROGRESS -> OrderStatus.IN_PROGRESS
+        OrderStatusModel.COMPLETED -> OrderStatus.COMPLETED
+        OrderStatusModel.CANCELLED -> OrderStatus.CANCELED
+    }
 
 fun Order.toLegacyOrderModel(): OrderModel = toOrderModel()
 
@@ -33,17 +34,19 @@ fun Order.toOrderModel(): OrderModel {
         dispatcherId = meta[DISPATCHER_ID_KEY]?.toLongOrNull() ?: 0L,
         workerRating = null,
         comment = comment.orEmpty(),
-        isAsap = orderTime is OrderTime.Soon
+        isAsap = orderTime is OrderTime.Soon,
     )
 }
 
-private fun OrderStatus.toLegacyStatusModel(): OrderStatusModel = when (this) {
-    OrderStatus.STAFFING -> OrderStatusModel.AVAILABLE
-    OrderStatus.IN_PROGRESS -> OrderStatusModel.IN_PROGRESS
-    OrderStatus.COMPLETED -> OrderStatusModel.COMPLETED
-    OrderStatus.CANCELED,
-    OrderStatus.EXPIRED -> OrderStatusModel.CANCELLED
-}
+private fun OrderStatus.toLegacyStatusModel(): OrderStatusModel =
+    when (this) {
+        OrderStatus.STAFFING -> OrderStatusModel.AVAILABLE
+        OrderStatus.IN_PROGRESS -> OrderStatusModel.IN_PROGRESS
+        OrderStatus.COMPLETED -> OrderStatusModel.COMPLETED
+        OrderStatus.CANCELED,
+        OrderStatus.EXPIRED,
+        -> OrderStatusModel.CANCELLED
+    }
 
 private const val MIN_WORKER_RATING_KEY = "minWorkerRating"
 private const val DISPATCHER_ID_KEY = "dispatcherId"

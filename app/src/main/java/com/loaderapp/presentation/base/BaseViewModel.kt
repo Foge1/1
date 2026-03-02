@@ -23,15 +23,15 @@ import kotlinx.coroutines.launch
  * events in Compose.
  */
 abstract class BaseViewModel : ViewModel() {
-
     private val _snackbarMessage = Channel<UiText>(Channel.BUFFERED)
 
     /** Collect in UI with [LaunchedEffect] to show Snackbar messages. */
     val snackbarMessage = _snackbarMessage.receiveAsFlow()
 
-    protected val exceptionHandler = CoroutineExceptionHandler { _, throwable ->
-        handleError(throwable)
-    }
+    protected val exceptionHandler =
+        CoroutineExceptionHandler { _, throwable ->
+            handleError(throwable)
+        }
 
     protected open fun handleError(throwable: Throwable) {
         showSnackbar(UiText.Dynamic(throwable.message ?: "Произошла неизвестная ошибка"))
@@ -76,11 +76,14 @@ abstract class BaseViewModel : ViewModel() {
     protected fun <T> handleResult(
         result: Result<T>,
         stateFlow: MutableStateFlow<UiState<T>>,
-        onSuccess: ((T) -> Unit)? = null
+        onSuccess: ((T) -> Unit)? = null,
     ) {
         when (result) {
-            is Result.Success -> { stateFlow.setSuccess(result.data); onSuccess?.invoke(result.data) }
-            is Result.Error   -> stateFlow.setError(result.error.toUiText())
+            is Result.Success -> {
+                stateFlow.setSuccess(result.data)
+                onSuccess?.invoke(result.data)
+            }
+            is Result.Error -> stateFlow.setError(result.error.toUiText())
             is Result.Loading -> stateFlow.setLoading()
         }
     }

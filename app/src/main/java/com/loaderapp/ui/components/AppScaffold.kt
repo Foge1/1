@@ -29,20 +29,22 @@ fun AppScaffold(
     title: String,
     modifier: Modifier = Modifier,
     actions: @Composable RowScope.() -> Unit = {},
-    content: @Composable BoxScope.() -> Unit
+    content: @Composable BoxScope.() -> Unit,
 ) {
     GradientBackground(modifier = modifier) {
         SubcomposeLayout { constraints ->
-            val topBarPlaceables = subcompose("topBar") {
-                AppTopBar(title = title, actions = actions)
-            }.map { it.measure(constraints.copy(minHeight = 0)) }
+            val topBarPlaceables =
+                subcompose("topBar") {
+                    AppTopBar(title = title, actions = actions)
+                }.map { it.measure(constraints.copy(minHeight = 0)) }
             val topBarHeightPx = topBarPlaceables.maxOfOrNull { it.height } ?: 0
 
-            val contentPlaceables = subcompose("content") {
-                CompositionLocalProvider(LocalTopBarHeightPx provides topBarHeightPx) {
-                    Box(modifier = Modifier.fillMaxSize(), content = content)
-                }
-            }.map { it.measure(constraints) }
+            val contentPlaceables =
+                subcompose("content") {
+                    CompositionLocalProvider(LocalTopBarHeightPx provides topBarHeightPx) {
+                        Box(modifier = Modifier.fillMaxSize(), content = content)
+                    }
+                }.map { it.measure(constraints) }
 
             layout(constraints.maxWidth, constraints.maxHeight) {
                 contentPlaceables.forEach { it.placeRelative(0, 0) }
@@ -55,21 +57,22 @@ fun AppScaffold(
 @Composable
 private fun AppTopBar(
     title: String,
-    actions: @Composable RowScope.() -> Unit
+    actions: @Composable RowScope.() -> Unit,
 ) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .windowInsetsPadding(WindowInsets.statusBars)
-            .padding(horizontal = 16.dp, vertical = 10.dp),
-        verticalAlignment = Alignment.CenterVertically
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .windowInsetsPadding(WindowInsets.statusBars)
+                .padding(horizontal = 16.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
             text = title,
             fontSize = 22.sp,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.weight(1f)
+            modifier = Modifier.weight(1f),
         )
         Row(verticalAlignment = Alignment.CenterVertically, content = actions)
     }

@@ -14,14 +14,12 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object LoggingModule {
-
     @Provides
     @Singleton
-    fun provideAppLogger(appConfig: AppConfig): AppLogger {
-        return when {
+    fun provideAppLogger(appConfig: AppConfig): AppLogger =
+        when {
             appConfig.verboseLogging -> LogcatAppLogger()
             appConfig.sentryDsn.isNotBlank() -> SentryAppLogger()
             else -> NoOpAppLogger()
         }
-    }
 }

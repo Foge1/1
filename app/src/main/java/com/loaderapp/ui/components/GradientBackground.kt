@@ -21,16 +21,17 @@ import androidx.compose.ui.graphics.Brush
 @Composable
 fun GradientBackground(
     modifier: Modifier = Modifier,
-    content: @Composable BoxScope.() -> Unit
+    content: @Composable BoxScope.() -> Unit,
 ) {
-    val topColor    = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.18f)
+    val topColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.18f)
     val bottomColor = MaterialTheme.colorScheme.background
 
     Box(
-        modifier = modifier
-            .fillMaxSize()
-            .background(Brush.verticalGradient(listOf(topColor, bottomColor))),
-        content = content
+        modifier =
+            modifier
+                .fillMaxSize()
+                .background(Brush.verticalGradient(listOf(topColor, bottomColor))),
+        content = content,
     )
 }
 
@@ -58,12 +59,12 @@ fun GradientBackground(
  */
 @Composable
 fun Modifier.scrollableGradientBackground(): Modifier {
-    val topColor    = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.18f)
+    val topColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.18f)
     val bottomColor = MaterialTheme.colorScheme.background
     return this.background(
         Brush.verticalGradient(
             colors = listOf(topColor, bottomColor),
-            endY   = Float.POSITIVE_INFINITY
-        )
+            endY = Float.POSITIVE_INFINITY,
+        ),
     )
 }

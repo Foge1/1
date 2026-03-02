@@ -28,31 +28,38 @@ import com.loaderapp.domain.model.UserRoleModel
 fun RoleSelectionScreen(
     isLoading: Boolean = false,
     error: String? = null,
-    onLogin: (name: String, role: UserRoleModel) -> Unit
+    onLogin: (name: String, role: UserRoleModel) -> Unit,
 ) {
-    var name         by remember { mutableStateOf("") }
+    var name by remember { mutableStateOf("") }
     var selectedRole by remember { mutableStateOf<UserRoleModel?>(null) }
-    var showError    by remember { mutableStateOf(false) }
+    var showError by remember { mutableStateOf(false) }
 
     val progress = remember { Animatable(0f) }
     LaunchedEffect(Unit) {
         progress.animateTo(1f, tween(560, easing = FastOutSlowInEasing))
     }
 
-    fun blockAlpha(start: Float, end: Float) =
-        ((progress.value - start) / (end - start)).coerceIn(0f, 1f)
-    fun blockOffset(start: Float, end: Float, from: Float = 22f) =
-        from * (1f - ((progress.value - start) / (end - start)).coerceIn(0f, 1f))
+    fun blockAlpha(
+        start: Float,
+        end: Float,
+    ) = ((progress.value - start) / (end - start)).coerceIn(0f, 1f)
+
+    fun blockOffset(
+        start: Float,
+        end: Float,
+        from: Float = 22f,
+    ) = from * (1f - ((progress.value - start) / (end - start)).coerceIn(0f, 1f))
 
     Scaffold { padding ->
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 24.dp)
-                .imePadding(),
-            horizontalAlignment = Alignment.CenterHorizontally
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 24.dp)
+                    .imePadding(),
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Spacer(Modifier.height(52.dp))
 
@@ -60,16 +67,18 @@ fun RoleSelectionScreen(
             Surface(
                 shape = RoundedCornerShape(24.dp),
                 color = MaterialTheme.colorScheme.primaryContainer,
-                modifier = Modifier
-                    .size(80.dp)
-                    .scale(0.72f + 0.28f * blockAlpha(0f, 0.42f))
-                    .alpha(blockAlpha(0f, 0.38f))
+                modifier =
+                    Modifier
+                        .size(80.dp)
+                        .scale(0.72f + 0.28f * blockAlpha(0f, 0.42f))
+                        .alpha(blockAlpha(0f, 0.38f)),
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(
-                        Icons.Default.LocalShipping, null,
+                        Icons.Default.LocalShipping,
+                        null,
                         tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(42.dp)
+                        modifier = Modifier.size(42.dp),
                     )
                 }
             }
@@ -77,20 +86,24 @@ fun RoleSelectionScreen(
             Spacer(Modifier.height(16.dp))
 
             Text(
-                "ГрузчикиApp", fontSize = 28.sp, fontWeight = FontWeight.ExtraBold,
+                "ГрузчикиApp",
+                fontSize = 28.sp,
+                fontWeight = FontWeight.ExtraBold,
                 color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier
-                    .alpha(blockAlpha(0.12f, 0.52f))
-                    .offset(y = blockOffset(0.12f, 0.52f).dp)
+                modifier =
+                    Modifier
+                        .alpha(blockAlpha(0.12f, 0.52f))
+                        .offset(y = blockOffset(0.12f, 0.52f).dp),
             )
             Text(
                 "Сервис поиска грузчиков",
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 14.sp,
-                modifier = Modifier
-                    .padding(top = 4.dp)
-                    .alpha(blockAlpha(0.18f, 0.58f))
-                    .offset(y = blockOffset(0.18f, 0.58f).dp)
+                modifier =
+                    Modifier
+                        .padding(top = 4.dp)
+                        .alpha(blockAlpha(0.18f, 0.58f))
+                        .offset(y = blockOffset(0.18f, 0.58f).dp),
             )
 
             Spacer(Modifier.height(36.dp))
@@ -98,20 +111,27 @@ fun RoleSelectionScreen(
             // Поле имени
             OutlinedTextField(
                 value = name,
-                onValueChange = { name = it; showError = false },
+                onValueChange = {
+                    name = it
+                    showError = false
+                },
                 label = { Text("Ваше имя") },
                 leadingIcon = { Icon(Icons.Default.Person, null) },
                 isError = showError && name.isBlank(),
-                supportingText = if (showError && name.isBlank()) {
-                    { Text("Введите имя") }
-                } else null,
+                supportingText =
+                    if (showError && name.isBlank()) {
+                        { Text("Введите имя") }
+                    } else {
+                        null
+                    },
                 keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .alpha(blockAlpha(0.28f, 0.68f))
-                    .offset(y = blockOffset(0.28f, 0.68f).dp),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .alpha(blockAlpha(0.28f, 0.68f))
+                        .offset(y = blockOffset(0.28f, 0.68f).dp),
                 shape = RoundedCornerShape(14.dp),
-                singleLine = true
+                singleLine = true,
             )
 
             Spacer(Modifier.height(24.dp))
@@ -121,37 +141,39 @@ fun RoleSelectionScreen(
                 "Выберите роль",
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onBackground,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .alpha(blockAlpha(0.38f, 0.72f))
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .alpha(blockAlpha(0.38f, 0.72f)),
             )
 
             Spacer(Modifier.height(12.dp))
 
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .alpha(blockAlpha(0.42f, 0.78f))
-                    .offset(y = blockOffset(0.42f, 0.78f).dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .alpha(blockAlpha(0.42f, 0.78f))
+                        .offset(y = blockOffset(0.42f, 0.78f).dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 RoleCard(
-                    icon        = Icons.Default.LocalShipping,
-                    title       = "Грузчик",
+                    icon = Icons.Default.LocalShipping,
+                    title = "Грузчик",
                     description = "Принимаю и выполняю заказы",
-                    selected    = selectedRole == UserRoleModel.LOADER,
-                    isError     = showError && selectedRole == null,
-                    onClick     = { selectedRole = UserRoleModel.LOADER },
-                    modifier    = Modifier.weight(1f)
+                    selected = selectedRole == UserRoleModel.LOADER,
+                    isError = showError && selectedRole == null,
+                    onClick = { selectedRole = UserRoleModel.LOADER },
+                    modifier = Modifier.weight(1f),
                 )
                 RoleCard(
-                    icon        = Icons.Default.Dashboard,
-                    title       = "Диспетчер",
+                    icon = Icons.Default.Dashboard,
+                    title = "Диспетчер",
                     description = "Создаю и распределяю заказы",
-                    selected    = selectedRole == UserRoleModel.DISPATCHER,
-                    isError     = showError && selectedRole == null,
-                    onClick     = { selectedRole = UserRoleModel.DISPATCHER },
-                    modifier    = Modifier.weight(1f)
+                    selected = selectedRole == UserRoleModel.DISPATCHER,
+                    isError = showError && selectedRole == null,
+                    onClick = { selectedRole = UserRoleModel.DISPATCHER },
+                    modifier = Modifier.weight(1f),
                 )
             }
 
@@ -160,7 +182,7 @@ fun RoleSelectionScreen(
                     "Выберите роль",
                     color = MaterialTheme.colorScheme.error,
                     fontSize = 12.sp,
-                    modifier = Modifier.fillMaxWidth().padding(start = 4.dp, top = 4.dp)
+                    modifier = Modifier.fillMaxWidth().padding(start = 4.dp, top = 4.dp),
                 )
             }
 
@@ -181,17 +203,18 @@ fun RoleSelectionScreen(
                     }
                 },
                 enabled = !isLoading,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(52.dp)
-                    .alpha(blockAlpha(0.6f, 0.92f)),
-                shape = RoundedCornerShape(14.dp)
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .height(52.dp)
+                        .alpha(blockAlpha(0.6f, 0.92f)),
+                shape = RoundedCornerShape(14.dp),
             ) {
                 if (isLoading) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(20.dp),
                         color = MaterialTheme.colorScheme.onPrimary,
-                        strokeWidth = 2.dp
+                        strokeWidth = 2.dp,
                     )
                 } else {
                     Icon(Icons.Default.Login, null, modifier = Modifier.size(18.dp))
@@ -213,58 +236,73 @@ private fun RoleCard(
     selected: Boolean,
     isError: Boolean,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     val scale by animateFloatAsState(
         targetValue = if (selected) 1.03f else 1f,
         animationSpec = spring(Spring.DampingRatioMediumBouncy),
-        label = "cardScale"
+        label = "cardScale",
     )
 
-    val borderColor = when {
-        selected -> MaterialTheme.colorScheme.primary
-        isError  -> MaterialTheme.colorScheme.error
-        else     -> MaterialTheme.colorScheme.outline.copy(alpha = 0.4f)
-    }
+    val borderColor =
+        when {
+            selected -> MaterialTheme.colorScheme.primary
+            isError -> MaterialTheme.colorScheme.error
+            else -> MaterialTheme.colorScheme.outline.copy(alpha = 0.4f)
+        }
 
     Surface(
-        modifier = modifier
-            .scale(scale)
-            .clickable(onClick = onClick),
+        modifier =
+            modifier
+                .scale(scale)
+                .clickable(onClick = onClick),
         shape = RoundedCornerShape(16.dp),
-        color = if (selected) MaterialTheme.colorScheme.primaryContainer
-                else MaterialTheme.colorScheme.surface,
-        border = BorderStroke(
-            width = if (selected) 2.dp else 1.dp,
-            color = borderColor
-        ),
-        tonalElevation = if (selected) 0.dp else 1.dp
+        color =
+            if (selected) {
+                MaterialTheme.colorScheme.primaryContainer
+            } else {
+                MaterialTheme.colorScheme.surface
+            },
+        border =
+            BorderStroke(
+                width = if (selected) 2.dp else 1.dp,
+                color = borderColor,
+            ),
+        tonalElevation = if (selected) 0.dp else 1.dp,
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                tint = if (selected) MaterialTheme.colorScheme.primary
-                       else MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(36.dp)
+                tint =
+                    if (selected) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    },
+                modifier = Modifier.size(36.dp),
             )
             Spacer(Modifier.height(8.dp))
             Text(
                 text = title,
                 fontWeight = FontWeight.Bold,
                 fontSize = 14.sp,
-                color = if (selected) MaterialTheme.colorScheme.primary
-                        else MaterialTheme.colorScheme.onSurface
+                color =
+                    if (selected) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        MaterialTheme.colorScheme.onSurface
+                    },
             )
             Spacer(Modifier.height(4.dp))
             Text(
                 text = description,
                 fontSize = 11.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                lineHeight = 14.sp
+                lineHeight = 14.sp,
             )
         }
     }
