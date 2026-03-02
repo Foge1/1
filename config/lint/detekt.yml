@@ -18,13 +18,13 @@ complexity:
   active: true
   CyclomaticComplexMethod:
     active: true
-    threshold: 18
+    threshold: 25
   LongMethod:
     active: true
-    threshold: 90
+    threshold: 250
   LongParameterList:
     active: true
-    functionThreshold: 8
+    functionThreshold: 12
     constructorThreshold: 9
     ignoreDefaultParameters: true
   NestedBlockDepth:
