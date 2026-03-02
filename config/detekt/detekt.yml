@@ -8,14 +8,6 @@ build:
 config:
   validation: true
 
-comments:
-  active: true
-  ForbiddenComment:
-    active: true
-    comments:
-      - 'TODO:'
-      - 'FIXME:'
-
 complexity:
   active: true
   CyclomaticComplexMethod:
@@ -27,6 +19,11 @@ complexity:
 
 style:
   active: true
+  ForbiddenComment:
+    active: true
+    comments:
+      - value: 'TODO:'
+      - value: 'FIXME:'
   UnusedImports:
     active: true
   UnusedPrivateMember:
