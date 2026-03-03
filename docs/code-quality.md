@@ -29,3 +29,23 @@
 - Конфигурация линтеров централизована в Gradle convention plugin `loaderapp.lint` (included build `build-logic`).
 - Правила настроены так, чтобы исключить шум и ложные падения на legacy-коде.
 - Для Kotlin Android/JVM модулей линтеры подключаются через `id "loaderapp.lint"` в секции `plugins`.
+
+## Detekt quality gates
+
+Detekt работает в режиме строгих quality gates для production-кода и проверяет группы правил:
+
+- complexity
+- potential-bugs
+- coroutines
+- exceptions
+- performance
+- style
+
+Важно:
+
+- baseline не используется;
+- `ignoreFailures` не используется;
+- массовые `@Suppress` не используются как стратегия прохождения проверок;
+- нарушения detekt исправляются в коде, а не скрываются suppress-ами.
+
+Formatting-правила detekt не используются: форматирование полностью остаётся за `ktlint`.

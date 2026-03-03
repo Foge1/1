@@ -19,22 +19,28 @@ output-reports:
 
 complexity:
   active: true
+  CognitiveComplexMethod:
+    active: true
+    threshold: 18
   CyclomaticComplexMethod:
     active: true
-    threshold: 25
+    threshold: 20
   LongMethod:
     active: true
-    threshold: 250
+    threshold: 140
   LongParameterList:
     active: true
-    functionThreshold: 12
+    functionThreshold: 10
     constructorThreshold: 12
     ignoreDefaultParameters: true
   NestedBlockDepth:
     active: true
-    threshold: 5
+    threshold: 4
   TooManyFunctions:
-    active: false
+    active: true
+    thresholdInClasses: 20
+    thresholdInObjects: 20
+    thresholdInFiles: 25
 
 coroutines:
   active: true
@@ -51,21 +57,33 @@ empty-blocks:
   active: false
 
 exceptions:
-  active: false
+  active: true
+  SwallowedException:
+    active: true
+  TooGenericExceptionCaught:
+    active: true
+  TooGenericExceptionThrown:
+    active: true
 
 naming:
   active: false
 
 performance:
-  active: false
+  active: true
 
 potential-bugs:
   active: true
   ImplicitDefaultLocale:
     active: false
+  NullableToStringCall:
+    active: true
+  UnnecessarySafeCall:
+    active: true
+  UnsafeCast:
+    active: true
 
 style:
-  active: false
+  active: true
   MagicNumber:
     active: false
   WildcardImport:
@@ -82,4 +100,5 @@ style:
     active: false
     singleLine: "never"
     multiLine: "always"
-
+  UnusedPrivateMember:
+    active: true
