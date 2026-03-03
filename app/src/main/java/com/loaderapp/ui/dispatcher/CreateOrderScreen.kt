@@ -44,7 +44,6 @@ private data class CreateOrderScreenFormState(
     val minWorkerRating: Float = 0f,
 )
 
-
 private data class CreateOrderUiState(
     val errorFields: Set<String> = emptySet(),
     val showValidationBanner: Boolean = false,
