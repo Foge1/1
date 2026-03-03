@@ -67,7 +67,39 @@ exceptions:
     active: true
 
 naming:
-  active: false
+  active: true
+  FunctionNaming:
+    active: true
+    functionPattern: '[a-z][a-zA-Z0-9]*'
+    ignoreAnnotated:
+      - Composable
+      - Preview
+      - Test
+    excludes:
+      - '**/test/**'
+      - '**/androidTest/**'
+  VariableNaming:
+    active: true
+    variablePattern: '[a-z][A-Za-z0-9]*'
+    privateVariablePattern: '(_)?[a-z][A-Za-z0-9]*'
+    constantPattern: '[A-Z][_A-Z0-9]*'
+    excludes:
+      - '**/test/**'
+      - '**/androidTest/**'
+  ClassNaming:
+    active: true
+    classPattern: '[A-Z][a-zA-Z0-9]*'
+  ObjectPropertyNaming:
+    active: true
+    constantPattern: '[A-Z][_A-Z0-9]*'
+    propertyPattern: '[A-Za-z][_A-Za-z0-9]*'
+    privatePropertyPattern: '(_)?[a-z][A-Za-z0-9]*'
+  PackageNaming:
+    active: false
+  TopLevelPropertyNaming:
+    active: false
+  MatchingDeclarationName:
+    active: false
 
 performance:
   active: true
