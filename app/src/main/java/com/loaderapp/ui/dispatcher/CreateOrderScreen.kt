@@ -568,80 +568,21 @@ fun AppField(
     leadingText: String? = null,
 ) {
     val primary = MaterialTheme.colorScheme.primary
-    val borderColor =
-        when {
-            isError -> MaterialTheme.colorScheme.error
-            value.isNotEmpty() -> primary
-            else -> MaterialTheme.colorScheme.outlineVariant
-        }
+    val borderColor = appFieldBorderColor(isError = isError, hasValue = value.isNotEmpty(), primary = primary)
 
     Column(modifier = modifier) {
-        Text(
-            text = label,
-            fontSize = 12.sp,
-            fontWeight = FontWeight.SemiBold,
-            color = if (isError) MaterialTheme.colorScheme.error else primary,
-            modifier = Modifier.padding(bottom = 6.dp, start = 2.dp),
+        AppFieldLabel(label = label, isError = isError, primary = primary)
+        AppFieldContainer(
+            borderColor = borderColor,
+            maxLines = maxLines,
+            icon = icon,
+            leadingText = leadingText,
+            value = value,
+            onValueChange = onValueChange,
+            placeholder = placeholder,
+            keyboardOptions = keyboardOptions,
+            primary = primary,
         )
-        Row(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(12.dp))
-                    .border(1.5.dp, borderColor, RoundedCornerShape(12.dp))
-                    .background(MaterialTheme.colorScheme.surface)
-                    .padding(
-                        horizontal = 12.dp,
-                        vertical = if (maxLines > 1) 10.dp else 4.dp,
-                    ),
-            verticalAlignment = if (maxLines > 1) Alignment.Top else Alignment.CenterVertically,
-        ) {
-            if (leadingText != null) {
-                Text(
-                    text = leadingText,
-                    fontSize = 17.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = if (value.isNotEmpty()) primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = if (maxLines > 1) 4.dp else 0.dp),
-                )
-            } else {
-                Icon(
-                    icon,
-                    null,
-                    tint = if (value.isNotEmpty()) primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier =
-                        Modifier
-                            .size(20.dp)
-                            .padding(top = if (maxLines > 1) 4.dp else 0.dp),
-                )
-            }
-            Spacer(Modifier.width(10.dp))
-            androidx.compose.foundation.text.BasicTextField(
-                value = value,
-                onValueChange = onValueChange,
-                maxLines = maxLines,
-                singleLine = maxLines == 1,
-                keyboardOptions = keyboardOptions,
-                textStyle =
-                    MaterialTheme.typography.bodyLarge.copy(
-                        color = MaterialTheme.colorScheme.onSurface,
-                        fontSize = 15.sp,
-                    ),
-                modifier = Modifier.fillMaxWidth(),
-                decorationBox = { inner ->
-                    Box {
-                        if (value.isEmpty()) {
-                            Text(
-                                placeholder,
-                                fontSize = 15.sp,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                            )
-                        }
-                        inner()
-                    }
-                },
-            )
-        }
         if (isError) {
             Text(
                 "Обязательное поле",
@@ -652,6 +593,126 @@ fun AppField(
         }
     }
 }
+
+@Composable
+private fun AppFieldLabel(
+    label: String,
+    isError: Boolean,
+    primary: androidx.compose.ui.graphics.Color,
+) {
+    Text(
+        text = label,
+        fontSize = 12.sp,
+        fontWeight = FontWeight.SemiBold,
+        color = if (isError) MaterialTheme.colorScheme.error else primary,
+        modifier = Modifier.padding(bottom = 6.dp, start = 2.dp),
+    )
+}
+
+@Composable
+private fun AppFieldContainer(
+    borderColor: androidx.compose.ui.graphics.Color,
+    maxLines: Int,
+    icon: ImageVector,
+    leadingText: String?,
+    value: String,
+    onValueChange: (String) -> Unit,
+    placeholder: String,
+    keyboardOptions: KeyboardOptions,
+    primary: androidx.compose.ui.graphics.Color,
+) {
+    Row(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(12.dp))
+                .border(1.5.dp, borderColor, RoundedCornerShape(12.dp))
+                .background(MaterialTheme.colorScheme.surface)
+                .padding(horizontal = 12.dp, vertical = if (maxLines > 1) 10.dp else 4.dp),
+        verticalAlignment = if (maxLines > 1) Alignment.Top else Alignment.CenterVertically,
+    ) {
+        AppFieldLeading(icon = icon, leadingText = leadingText, value = value, maxLines = maxLines, primary = primary)
+        Spacer(Modifier.width(10.dp))
+        AppFieldInput(
+            value = value,
+            onValueChange = onValueChange,
+            maxLines = maxLines,
+            keyboardOptions = keyboardOptions,
+            placeholder = placeholder,
+        )
+    }
+}
+
+@Composable
+private fun AppFieldLeading(
+    icon: ImageVector,
+    leadingText: String?,
+    value: String,
+    maxLines: Int,
+    primary: androidx.compose.ui.graphics.Color,
+) {
+    val color = if (value.isNotEmpty()) primary else MaterialTheme.colorScheme.onSurfaceVariant
+    val topPadding = if (maxLines > 1) 4.dp else 0.dp
+    if (leadingText != null) {
+        Text(
+            text = leadingText,
+            fontSize = 17.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = color,
+            modifier = Modifier.padding(top = topPadding),
+        )
+    } else {
+        Icon(
+            icon,
+            null,
+            tint = color,
+            modifier = Modifier.size(20.dp).padding(top = topPadding),
+        )
+    }
+}
+
+@Composable
+private fun AppFieldInput(
+    value: String,
+    onValueChange: (String) -> Unit,
+    maxLines: Int,
+    keyboardOptions: KeyboardOptions,
+    placeholder: String,
+) {
+    androidx.compose.foundation.text.BasicTextField(
+        value = value,
+        onValueChange = onValueChange,
+        maxLines = maxLines,
+        singleLine = maxLines == 1,
+        keyboardOptions = keyboardOptions,
+        textStyle = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.onSurface, fontSize = 15.sp),
+        modifier = Modifier.fillMaxWidth(),
+        decorationBox = { inner ->
+            Box {
+                if (value.isEmpty()) {
+                    Text(
+                        placeholder,
+                        fontSize = 15.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                    )
+                }
+                inner()
+            }
+        },
+    )
+}
+
+@Composable
+private fun appFieldBorderColor(
+    isError: Boolean,
+    hasValue: Boolean,
+    primary: androidx.compose.ui.graphics.Color,
+): androidx.compose.ui.graphics.Color =
+    when {
+        isError -> MaterialTheme.colorScheme.error
+        hasValue -> primary
+        else -> MaterialTheme.colorScheme.outlineVariant
+    }
 
 /**
  * Кнопка-пикер для выбора даты или времени.

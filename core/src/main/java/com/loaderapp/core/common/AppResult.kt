@@ -19,11 +19,11 @@ sealed interface AppResult<out T> {
 
 /** Executes [block] and converts thrown exceptions to [AppResult.Failure]. */
 inline fun <T> appRunCatching(block: () -> T): AppResult<T> =
-    try {
-        AppResult.Success(block())
-    } catch (throwable: Throwable) {
-        AppResult.Failure(throwable.toAppError())
-    }
+    runCatching(block)
+        .fold(
+            onSuccess = { AppResult.Success(it) },
+            onFailure = { AppResult.Failure(it.toAppError()) },
+        )
 
 /** Maps successful value and keeps failure as-is. */
 inline fun <T, R> AppResult<T>.mapResult(transform: (T) -> R): AppResult<R> =
