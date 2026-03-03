@@ -99,18 +99,16 @@ class ResponsesViewModel
 
             viewModelScope.launch {
                 var failureReason: String? = null
-                try {
+                runCatching {
                     when (val result = ordersOrchestrator.execute(command)) {
                         is UseCaseResult.Success -> Unit
                         is UseCaseResult.Failure -> failureReason = result.reason
                     }
-                } catch (e: CancellationException) {
-                    throw e
-                } catch (e: Exception) {
-                    failureReason = e.message ?: "Неизвестная ошибка"
-                } finally {
-                    _uiState.update { it.copy(pendingActions = it.pendingActions - pendingOrderId) }
+                }.onFailure { throwable ->
+                    if (throwable is CancellationException) throw throwable
+                    failureReason = throwable.message ?: "Неизвестная ошибка"
                 }
+                _uiState.update { it.copy(pendingActions = it.pendingActions - pendingOrderId) }
 
                 failureReason?.let { reason ->
                     _uiState.update { it.copy(errorMessage = reason) }

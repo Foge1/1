@@ -97,7 +97,6 @@ class ProfileViewModel
         }
 
         fun saveProfile(
-            userId: Long,
             name: String,
             phone: String,
             birthDate: Long?,

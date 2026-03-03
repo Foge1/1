@@ -66,17 +66,16 @@ class StartOrderUseCase
             orderId: Long,
             now: Long = System.currentTimeMillis(),
         ): UseCaseResult<Unit> =
-            try {
+            runCatching {
                 when (val result = start(orderId, now)) {
                     StartOrderResult.Success -> UseCaseResult.Success(Unit)
                     StartOrderResult.OrderNotFound -> UseCaseResult.Failure("Заказ не найден")
                     is StartOrderResult.Forbidden -> UseCaseResult.Failure(result.reason)
                     is StartOrderResult.AssigneeAlreadyBusy -> UseCaseResult.Failure("Грузчик уже в работе на другом заказе")
                 }
-            } catch (e: kotlinx.coroutines.CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                UseCaseResult.Failure(e.message ?: "Не удалось запустить заказ")
+            }.getOrElse { throwable ->
+                if (throwable is kotlinx.coroutines.CancellationException) throw throwable
+                UseCaseResult.Failure(throwable.message ?: "Не удалось запустить заказ")
             }
     }
 

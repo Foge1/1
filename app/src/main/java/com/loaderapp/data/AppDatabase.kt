@@ -41,8 +41,9 @@ abstract class AppDatabase : RoomDatabase() {
                             context.applicationContext,
                             AppDatabase::class.java,
                             "loader_app_database",
-                        ).addMigrations(*AppMigrations.ALL)
-                        .build()
+                        ).addMigrations(
+                            migrations = AppMigrations.ALL,
+                        ).build()
                 INSTANCE = instance
                 instance
             }

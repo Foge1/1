@@ -52,17 +52,16 @@ class SelectApplicantUseCase
             orderId: Long,
             loaderId: String,
         ): UseCaseResult<Unit> =
-            try {
+            runCatching {
                 when (val result = select(orderId, loaderId)) {
                     SelectApplicantResult.Success -> UseCaseResult.Success(Unit)
                     SelectApplicantResult.OrderNotFound -> UseCaseResult.Failure("Заказ не найден")
                     SelectApplicantResult.AlreadyAssigned -> UseCaseResult.Failure("Грузчик уже в работе на другом заказе")
                     is SelectApplicantResult.Forbidden -> UseCaseResult.Failure(result.reason)
                 }
-            } catch (e: kotlinx.coroutines.CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                UseCaseResult.Failure(e.message ?: "Не удалось выбрать грузчика")
+            }.getOrElse { throwable ->
+                if (throwable is kotlinx.coroutines.CancellationException) throw throwable
+                UseCaseResult.Failure(throwable.message ?: "Не удалось выбрать грузчика")
             }
     }
 

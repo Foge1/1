@@ -149,43 +149,54 @@ class OrderStateMachineTest {
 
     @Test
     fun `actions and transitions stay consistent for all exposed actions`() {
-        val scenarios =
-            listOf(
-                Triple(baseOrder(), loaderActor, OrderRulesContext()),
-                Triple(baseOrder(), loaderActor, OrderRulesContext(activeAssignmentExists = true)),
-                Triple(baseOrder(status = OrderStatus.IN_PROGRESS), loaderActor, OrderRulesContext()),
-                Triple(
-                    baseOrder(workersTotal = 1, applications = listOf(application("loader-1", OrderApplicationStatus.SELECTED))),
-                    creatorDispatcher,
-                    OrderRulesContext(),
-                ),
-                Triple(baseOrder(), otherDispatcher, OrderRulesContext()),
-            )
-
-        scenarios.forEach { (order, actor, context) ->
+        consistencyScenarios().forEach { (order, actor, context) ->
             val actions = stateMachine.actionsFor(order, actor, context)
-            val checks =
-                listOf(
-                    OrderEvent.APPLY to Pair(actions.canApply, actions.applyDisabledReason),
-                    OrderEvent.WITHDRAW to Pair(actions.canWithdraw, actions.withdrawDisabledReason),
-                    OrderEvent.SELECT to Pair(actions.canSelect, null),
-                    OrderEvent.UNSELECT to Pair(actions.canUnselect, null),
-                    OrderEvent.START to Pair(actions.canStart, actions.startDisabledReason),
-                    OrderEvent.CANCEL to Pair(actions.canCancel, actions.cancelDisabledReason),
-                    OrderEvent.COMPLETE to Pair(actions.canComplete, actions.completeDisabledReason),
-                )
-
-            checks.forEach { (event, actionState) ->
-                val transition = stateMachine.transition(order, event, actor, now = 0L, context = context)
-                if (actionState.first) {
-                    assertTrue("Expected success for $event in scenario $order/$actor", transition is OrderTransitionResult.Success)
-                } else {
-                    assertTrue("Expected failure for $event in scenario $order/$actor", transition is OrderTransitionResult.Failure)
-                    val reason = (transition as OrderTransitionResult.Failure).reason
-                    actionState.second?.let { assertEquals(it, reason) }
-                }
+            eventChecks(actions).forEach { (event, actionState) ->
+                assertActionConsistency(order, actor, context, event, actionState)
             }
         }
+    }
+
+    private fun consistencyScenarios(): List<Triple<Order, CurrentUser, OrderRulesContext>> =
+        listOf(
+            Triple(baseOrder(), loaderActor, OrderRulesContext()),
+            Triple(baseOrder(), loaderActor, OrderRulesContext(activeAssignmentExists = true)),
+            Triple(baseOrder(status = OrderStatus.IN_PROGRESS), loaderActor, OrderRulesContext()),
+            Triple(
+                baseOrder(workersTotal = 1, applications = listOf(application("loader-1", OrderApplicationStatus.SELECTED))),
+                creatorDispatcher,
+                OrderRulesContext(),
+            ),
+            Triple(baseOrder(), otherDispatcher, OrderRulesContext()),
+        )
+
+    private fun eventChecks(actions: OrderActions): List<Pair<OrderEvent, Pair<Boolean, OrderActionBlockReason?>>> =
+        listOf(
+            OrderEvent.APPLY to Pair(actions.canApply, actions.applyDisabledReason),
+            OrderEvent.WITHDRAW to Pair(actions.canWithdraw, actions.withdrawDisabledReason),
+            OrderEvent.SELECT to Pair(actions.canSelect, null),
+            OrderEvent.UNSELECT to Pair(actions.canUnselect, null),
+            OrderEvent.START to Pair(actions.canStart, actions.startDisabledReason),
+            OrderEvent.CANCEL to Pair(actions.canCancel, actions.cancelDisabledReason),
+            OrderEvent.COMPLETE to Pair(actions.canComplete, actions.completeDisabledReason),
+        )
+
+    private fun assertActionConsistency(
+        order: Order,
+        actor: CurrentUser,
+        context: OrderRulesContext,
+        event: OrderEvent,
+        actionState: Pair<Boolean, OrderActionBlockReason?>,
+    ) {
+        val transition = stateMachine.transition(order, event, actor, now = 0L, context = context)
+        if (actionState.first) {
+            assertTrue("Expected success for $event in scenario $order/$actor", transition is OrderTransitionResult.Success)
+            return
+        }
+
+        assertTrue("Expected failure for $event in scenario $order/$actor", transition is OrderTransitionResult.Failure)
+        val reason = (transition as OrderTransitionResult.Failure).reason
+        actionState.second?.let { assertEquals(it, reason) }
     }
 
     @Test

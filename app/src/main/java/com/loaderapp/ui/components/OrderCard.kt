@@ -41,13 +41,11 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.loaderapp.domain.model.OrderModel
 import com.loaderapp.domain.model.OrderStatusModel
 import com.loaderapp.ui.common.DateLabelFormatter
-import com.loaderapp.ui.theme.LoaderAppTheme
 import java.util.Date
 import java.util.Locale
 
@@ -473,31 +471,3 @@ fun OrderMetaChips(
 
 @Composable
 fun OrderComment(comment: String) = OrderCommentBlock(comment)
-
-@Preview(showBackground = true)
-@Composable
-private fun OrderCardPreview() {
-    LoaderAppTheme {
-        OrderCard(
-            order =
-                OrderModel(
-                    id = 42,
-                    address = "Москва, ул. Тверская, 12",
-                    dateTime = System.currentTimeMillis(),
-                    cargoDescription = "Тал",
-                    pricePerHour = 750.0,
-                    estimatedHours = 4,
-                    requiredWorkers = 3,
-                    minWorkerRating = 4.5f,
-                    status = OrderStatusModel.AVAILABLE,
-                    createdAt = System.currentTimeMillis(),
-                    completedAt = null,
-                    workerId = null,
-                    dispatcherId = 1,
-                    workerRating = null,
-                    comment = "Позвонить за 15 минут",
-                ),
-            onClick = {},
-        )
-    }
-}

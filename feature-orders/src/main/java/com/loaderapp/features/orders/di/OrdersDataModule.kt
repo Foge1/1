@@ -27,7 +27,7 @@ internal object OrdersDataModule {
                 context,
                 OrdersDatabase::class.java,
                 "orders_feature_database",
-            ).addMigrations(*OrdersMigrations.ALL)
+            ).addMigrations(migrations = OrdersMigrations.ALL)
             .build()
 
     @Provides

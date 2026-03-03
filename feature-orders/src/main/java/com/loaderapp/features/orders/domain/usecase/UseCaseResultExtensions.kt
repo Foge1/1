@@ -6,10 +6,11 @@ internal inline fun <T> runCatchingUseCase(
     defaultErrorMessage: String,
     block: () -> T,
 ): UseCaseResult<T> =
-    try {
-        UseCaseResult.Success(block())
-    } catch (e: CancellationException) {
-        throw e
-    } catch (e: Exception) {
-        UseCaseResult.Failure(e.message ?: defaultErrorMessage)
-    }
+    runCatching(block)
+        .fold(
+            onSuccess = { UseCaseResult.Success(it) },
+            onFailure = { throwable ->
+                if (throwable is CancellationException) throw throwable
+                UseCaseResult.Failure(throwable.message ?: defaultErrorMessage)
+            },
+        )

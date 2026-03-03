@@ -24,7 +24,6 @@ import androidx.compose.ui.unit.dp
  * как отдельный слой. Подход не затрагивает альфа-канал контента — текст
  * и элементы карточек остаются полностью непрозрачными.
  *
- * @param topFadeHeight    Зарезервирован для совместимости; в текущей реализации не используется
  * @param bottomFadeHeight Высота нижнего fade-оверлея
  * @param contentPadding   Padding контента списка
  * @param state            Состояние списка для внешнего управления прокруткой
@@ -32,7 +31,6 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun FadingEdgeLazyColumn(
     modifier: Modifier = Modifier,
-    topFadeHeight: Dp = 88.dp,
     bottomFadeHeight: Dp = 36.dp,
     contentPadding: PaddingValues = PaddingValues(0.dp),
     state: LazyListState = rememberLazyListState(),

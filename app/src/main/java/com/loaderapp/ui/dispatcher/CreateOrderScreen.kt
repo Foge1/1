@@ -35,6 +35,35 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+private data class CreateOrderScreenFormState(
+    val address: String = "",
+    val cargo: String = "",
+    val price: String = "",
+    val comment: String = "",
+    val requiredWorkers: Int = 1,
+    val minWorkerRating: Float = 0f,
+)
+
+private data class CreateOrderUiState(
+    val errorFields: Set<String> = emptySet(),
+    val showValidationBanner: Boolean = false,
+    val showDatePicker: Boolean = false,
+    val showTimePicker: Boolean = false,
+)
+
+private data class CreateOrderContentCallbacks(
+    val onAddressChange: (String) -> Unit,
+    val onDayOptionSelect: (OrderDayOption) -> Unit,
+    val onTimePickerOpen: () -> Unit,
+    val onCargoChange: (String) -> Unit,
+    val onPriceChange: (String) -> Unit,
+    val onHoursChange: (Int) -> Unit,
+    val onRequiredWorkersChange: (Int) -> Unit,
+    val onMinWorkerRatingChange: (Float) -> Unit,
+    val onCommentChange: (String) -> Unit,
+    val onCreate: () -> Unit,
+)
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CreateOrderScreen(
@@ -42,44 +71,64 @@ fun CreateOrderScreen(
     viewModel: CreateOrderViewModel = hiltViewModel(),
 ) {
     val haptic = LocalHapticFeedback.current
-    val uiState by viewModel.uiState.collectAsState()
+    val vmState by viewModel.uiState.collectAsState()
 
     LaunchedEffect(viewModel) {
         viewModel.navigationEvent.collect { event ->
-            when (event) {
-                NavigationEvent.NavigateUp -> onBack()
-            }
+            if (event == NavigationEvent.NavigateUp) onBack()
         }
     }
 
-    var address by remember { mutableStateOf("") }
-    var cargo by remember { mutableStateOf("") }
-    var price by remember { mutableStateOf("") }
-    var comment by remember { mutableStateOf("") }
-    var requiredWorkers by remember { mutableIntStateOf(1) }
-    var minWorkerRating by remember { mutableFloatStateOf(0f) }
-
-    var errorFields by remember { mutableStateOf(emptySet<String>()) }
-    var showValidationBanner by remember { mutableStateOf(false) }
-
-    var showDatePicker by remember { mutableStateOf(false) }
-    var showTimePicker by remember { mutableStateOf(false) }
+    var formState by remember { mutableStateOf(CreateOrderScreenFormState()) }
+    var uiState by remember { mutableStateOf(CreateOrderUiState()) }
 
     val dateFormatter = remember { SimpleDateFormat("dd MMMM yyyy", Locale("ru")) }
     val primary = MaterialTheme.colorScheme.primary
-
-    fun validate(): Boolean {
-        val errors =
-            buildSet {
-                if (address.isBlank()) add("address")
-                if (cargo.isBlank()) add("cargo")
-                val parsedPrice = price.toDoubleOrNull()
-                if (parsedPrice == null || parsedPrice <= 0.0) add("price")
-            }
-        errorFields = errors
-        showValidationBanner = errors.isNotEmpty()
-        return errors.isEmpty()
-    }
+    val callbacks =
+        CreateOrderContentCallbacks(
+            onAddressChange = { value ->
+                formState = formState.copy(address = value)
+                uiState = uiState.copy(errorFields = uiState.errorFields - "address")
+            },
+            onDayOptionSelect = { option ->
+                viewModel.onDayOptionSelected(option)
+                if (option == OrderDayOption.OTHER_DATE) uiState = uiState.copy(showDatePicker = true)
+            },
+            onTimePickerOpen = { uiState = uiState.copy(showTimePicker = true) },
+            onCargoChange = { value ->
+                formState = formState.copy(cargo = value)
+                uiState = uiState.copy(errorFields = uiState.errorFields - "cargo")
+            },
+            onPriceChange = { value ->
+                formState = formState.copy(price = value)
+                uiState = uiState.copy(errorFields = uiState.errorFields - "price")
+            },
+            onHoursChange = { newValue ->
+                val current = vmState.estimatedHours
+                when {
+                    newValue > current -> repeat(newValue - current) { viewModel.incrementHours() }
+                    newValue < current -> repeat(current - newValue) { viewModel.decrementHours() }
+                }
+            },
+            onRequiredWorkersChange = { value -> formState = formState.copy(requiredWorkers = value) },
+            onMinWorkerRatingChange = { value -> formState = formState.copy(minWorkerRating = value) },
+            onCommentChange = { value -> formState = formState.copy(comment = value) },
+            onCreate = {
+                val validation = validateCreateOrderForm(formState)
+                uiState = uiState.copy(errorFields = validation, showValidationBanner = validation.isNotEmpty())
+                if (validation.isEmpty()) {
+                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    viewModel.createOrder(
+                        address = formState.address,
+                        cargoDescription = formState.cargo,
+                        pricePerHour = formState.price.toDouble(),
+                        requiredWorkers = formState.requiredWorkers,
+                        minWorkerRating = formState.minWorkerRating,
+                        comment = formState.comment,
+                    )
+                }
+            },
+        )
 
     Scaffold(
         topBar = {
@@ -90,211 +139,222 @@ fun CreateOrderScreen(
             )
         },
     ) { padding ->
-        Column(
+        CreateOrderContent(
             modifier =
                 Modifier
                     .fillMaxSize()
-                    .padding(padding)
-                    .verticalScroll(rememberScrollState())
+                    .padding(
+                        padding,
+                    ).verticalScroll(rememberScrollState())
                     .padding(horizontal = 16.dp, vertical = 12.dp)
                     .imePadding(),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-        ) {
-            AppField(
-                icon = Icons.Default.LocationOn,
-                label = "Адрес *",
-                value = address,
-                onValueChange = {
-                    address = it
-                    errorFields = errorFields - "address"
-                },
-                placeholder = "Например: ул. Ленина, 15",
-                isError = "address" in errorFields,
-                keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
-            )
-
-            SectionLabel("Дата и время")
-            DayOptionSelector(
-                selected = uiState.selectedDayOption,
-                onSelect = { option ->
-                    viewModel.onDayOptionSelected(option)
-                    if (option == OrderDayOption.OTHER_DATE) showDatePicker = true
-                },
-            )
-
-            if (uiState.selectedDayOption == OrderDayOption.SOON) {
-                Text(
-                    text = "Режим: Ближайшее время",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.primary,
-                )
-            }
-
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                AppPickerButton(
-                    icon = Icons.Default.DateRange,
-                    label = dateFormatter.format(Date(uiState.selectedDateMillis)),
-                    modifier = Modifier.weight(1f),
-                    onClick = { showDatePicker = true },
-                    enabled = uiState.selectedDayOption == OrderDayOption.OTHER_DATE,
-                )
-                AppPickerButton(
-                    icon = Icons.Default.AccessTime,
-                    label = "%02d:%02d".format(uiState.selectedHour, uiState.selectedMinute),
-                    modifier = Modifier.weight(0.7f),
-                    onClick = { showTimePicker = true },
-                    enabled = uiState.selectedDayOption != OrderDayOption.SOON,
-                )
-            }
-
-            AppField(
-                icon = Icons.Default.Inventory,
-                label = "Описание груза *",
-                value = cargo,
-                onValueChange = {
-                    cargo = it
-                    errorFields = errorFields - "cargo"
-                },
-                placeholder = "Что нужно перевезти",
-                isError = "cargo" in errorFields,
-                maxLines = 3,
-                keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
-            )
-
-            SectionLabel("Стоимость")
-            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    AppField(
-                        icon = Icons.Default.CurrencyRuble,
-                        label = "₽/час *",
-                        value = price,
-                        onValueChange = {
-                            price = it
-                            errorFields = errorFields - "price"
-                        },
-                        placeholder = "0",
-                        isError = "price" in errorFields,
-                        modifier = Modifier.weight(1f),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                        leadingText = "₽",
-                    )
-                    HoursStepper(
-                        value = uiState.estimatedHours,
-                        minValue = OrderRules.MIN_ESTIMATED_HOURS,
-                        maxValue = OrderRules.MAX_ESTIMATED_HOURS,
-                        onDecrement = viewModel::decrementHours,
-                        onIncrement = viewModel::incrementHours,
-                        modifier = Modifier.weight(0.65f),
-                    )
-                }
-                Text(
-                    text = "Минимальный заказ — от ${OrderRules.MIN_ESTIMATED_HOURS} часов",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(start = 4.dp),
-                )
-            }
-
-            val priceVal = price.toDoubleOrNull() ?: 0.0
-            if (priceVal > 0.0) {
-                TotalRow(pricePerHour = priceVal, hours = uiState.estimatedHours, primary = primary)
-            }
-
-            SectionLabel("Количество грузчиков")
-            WorkerCountStepper(
-                value = requiredWorkers,
-                onDecrement = { if (requiredWorkers > 1) requiredWorkers-- },
-                onIncrement = { if (requiredWorkers < 50) requiredWorkers++ },
-            )
-
-            SectionLabel("Минимальный рейтинг грузчика")
-            RatingSlider(
-                value = minWorkerRating,
-                onValueChange = { minWorkerRating = it },
-                primary = primary,
-            )
-
-            AppField(
-                icon = Icons.Default.Comment,
-                label = "Комментарий диспетчера",
-                value = comment,
-                onValueChange = { comment = it },
-                placeholder = "Дополнительная информация для грузчика",
-                maxLines = 3,
-                keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
-            )
-
-            if (showValidationBanner) {
-                ValidationBanner()
-            }
-
-            Button(
-                onClick = {
-                    if (validate()) {
-                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                        viewModel.createOrder(
-                            address = address,
-                            cargoDescription = cargo,
-                            pricePerHour = price.toDouble(),
-                            requiredWorkers = requiredWorkers,
-                            minWorkerRating = minWorkerRating,
-                            comment = comment,
-                        )
-                    }
-                },
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .height(54.dp),
-                shape = RoundedCornerShape(14.dp),
-            ) {
-                Icon(Icons.Default.Add, null, modifier = Modifier.size(20.dp))
-                Spacer(Modifier.width(8.dp))
-                Text("Создать заказ", fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
-            }
-
-            Spacer(Modifier.height(8.dp))
-        }
+            vmState = vmState,
+            formState = formState,
+            uiState = uiState,
+            primary = primary,
+            dateFormatter = dateFormatter,
+            callbacks = callbacks,
+        )
     }
 
-    if (showDatePicker) {
-        val dpState = rememberDatePickerState(initialSelectedDateMillis = uiState.selectedDateMillis)
-        DatePickerDialog(
-            onDismissRequest = { showDatePicker = false },
-            confirmButton = {
-                TextButton(onClick = {
-                    dpState.selectedDateMillis?.let(viewModel::onDateSelected)
-                    showDatePicker = false
-                }) { Text("ОК") }
+    if (uiState.showDatePicker) {
+        CreateOrderDateDialog(
+            selectedDateMillis = vmState.selectedDateMillis,
+            onDismiss = { uiState = uiState.copy(showDatePicker = false) },
+            onConfirm = { millis ->
+                viewModel.onDateSelected(millis)
+                uiState = uiState.copy(showDatePicker = false)
             },
-            dismissButton = {
-                TextButton(onClick = { showDatePicker = false }) { Text("Отмена") }
-            },
-        ) { DatePicker(state = dpState) }
+        )
     }
 
-    if (showTimePicker) {
-        val tpState =
-            rememberTimePickerState(
-                initialHour = uiState.selectedHour,
-                initialMinute = uiState.selectedMinute,
-                is24Hour = true,
-            )
-        AlertDialog(
-            onDismissRequest = { showTimePicker = false },
-            confirmButton = {
-                TextButton(onClick = {
-                    viewModel.onTimeSelected(tpState.hour, tpState.minute)
-                    showTimePicker = false
-                }) { Text("ОК") }
+    if (uiState.showTimePicker) {
+        CreateOrderTimeDialog(
+            hour = vmState.selectedHour,
+            minute = vmState.selectedMinute,
+            onDismiss = { uiState = uiState.copy(showTimePicker = false) },
+            onConfirm = { hour, minute ->
+                viewModel.onTimeSelected(hour, minute)
+                uiState = uiState.copy(showTimePicker = false)
             },
-            dismissButton = {
-                TextButton(onClick = { showTimePicker = false }) { Text("Отмена") }
-            },
-            text = { TimePicker(state = tpState) },
         )
     }
 }
+
+@Composable
+private fun CreateOrderContent(
+    modifier: Modifier,
+    vmState: com.loaderapp.presentation.dispatcher.CreateOrderUiState,
+    formState: CreateOrderScreenFormState,
+    uiState: CreateOrderUiState,
+    primary: androidx.compose.ui.graphics.Color,
+    dateFormatter: SimpleDateFormat,
+    callbacks: CreateOrderContentCallbacks,
+) {
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        AppField(
+            icon = Icons.Default.LocationOn,
+            label = "Адрес *",
+            value = formState.address,
+            onValueChange = callbacks.onAddressChange,
+            placeholder = "Например: ул. Ленина, 15",
+            isError = "address" in uiState.errorFields,
+            keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
+        )
+
+        SectionLabel("Дата и время")
+        DayOptionSelector(selected = vmState.selectedDayOption, onSelect = callbacks.onDayOptionSelect)
+
+        DateTimeSection(vmState = vmState, dateFormatter = dateFormatter, onOpenTimePicker = callbacks.onTimePickerOpen)
+
+        AppField(
+            icon = Icons.Default.Inventory,
+            label = "Описание груза *",
+            value = formState.cargo,
+            onValueChange = callbacks.onCargoChange,
+            placeholder = "Например: Переезд, мебель, коробки",
+            isError = "cargo" in uiState.errorFields,
+            maxLines = 3,
+            keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
+        )
+
+        SectionLabel("Стоимость")
+        AppField(
+            icon = Icons.Default.AttachMoney,
+            label = "Цена за час *",
+            value = formState.price,
+            onValueChange = { input -> if (input.all { it.isDigit() } || input.isEmpty()) callbacks.onPriceChange(input) },
+            placeholder = "0",
+            leadingText = "₽",
+            isError = "price" in uiState.errorFields,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+        )
+
+        HoursSelector(value = vmState.estimatedHours, onValueChange = callbacks.onHoursChange)
+
+        if (vmState.estimatedHours < OrderRules.MIN_ESTIMATED_HOURS) {
+            Text(
+                text = "Минимальный заказ — от ${OrderRules.MIN_ESTIMATED_HOURS} часов",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(start = 4.dp),
+            )
+        }
+
+        val priceVal = formState.price.toDoubleOrNull() ?: 0.0
+        if (priceVal > 0.0) {
+            TotalRow(pricePerHour = priceVal, hours = vmState.estimatedHours, primary = primary)
+        }
+
+        SectionLabel("Количество грузчиков")
+        WorkerCountStepper(
+            value = formState.requiredWorkers,
+            onDecrement = { if (formState.requiredWorkers > 1) callbacks.onRequiredWorkersChange(formState.requiredWorkers - 1) },
+            onIncrement = { if (formState.requiredWorkers < 50) callbacks.onRequiredWorkersChange(formState.requiredWorkers + 1) },
+        )
+
+        SectionLabel("Минимальный рейтинг грузчика")
+        RatingSlider(value = formState.minWorkerRating, onValueChange = callbacks.onMinWorkerRatingChange, primary = primary)
+
+        AppField(
+            icon = Icons.Default.Comment,
+            label = "Комментарий диспетчера",
+            value = formState.comment,
+            onValueChange = callbacks.onCommentChange,
+            placeholder = "Дополнительная информация для грузчика",
+            maxLines = 3,
+            keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
+        )
+
+        if (uiState.showValidationBanner) ValidationBanner()
+
+        Button(
+            onClick = callbacks.onCreate,
+            modifier = Modifier.fillMaxWidth().height(54.dp),
+            shape = RoundedCornerShape(14.dp),
+        ) {
+            Icon(Icons.Default.Add, null, modifier = Modifier.size(20.dp))
+            Spacer(Modifier.width(8.dp))
+            Text("Создать заказ", fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+        }
+
+        Spacer(Modifier.height(8.dp))
+    }
+}
+
+@Composable
+private fun DateTimeSection(
+    vmState: com.loaderapp.presentation.dispatcher.CreateOrderUiState,
+    dateFormatter: SimpleDateFormat,
+    onOpenTimePicker: () -> Unit,
+) {
+    val selectedTimeLabel = "%02d:%02d".format(vmState.selectedHour, vmState.selectedMinute)
+
+    if (vmState.selectedDayOption == OrderDayOption.SOON) {
+        Text("Режим: Ближайшее время", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        return
+    }
+
+    Text(
+        text = "Дата: ${dateFormatter.format(Date(vmState.selectedDateMillis))}",
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurface,
+    )
+
+    Text(
+        text = "Время: $selectedTimeLabel",
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurface,
+    )
+
+    AppPickerButton(
+        icon = Icons.Default.Schedule,
+        label = selectedTimeLabel,
+        onClick = onOpenTimePicker,
+    )
+}
+
+@Composable
+private fun CreateOrderDateDialog(
+    selectedDateMillis: Long,
+    onDismiss: () -> Unit,
+    onConfirm: (Long) -> Unit,
+) {
+    val dpState = rememberDatePickerState(initialSelectedDateMillis = selectedDateMillis)
+    DatePickerDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(onClick = {
+                dpState.selectedDateMillis?.let(onConfirm)
+            }) { Text("ОК") }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Отмена") } },
+    ) { DatePicker(state = dpState) }
+}
+
+@Composable
+private fun CreateOrderTimeDialog(
+    hour: Int,
+    minute: Int,
+    onDismiss: () -> Unit,
+    onConfirm: (Int, Int) -> Unit,
+) {
+    val tpState = rememberTimePickerState(initialHour = hour, initialMinute = minute, is24Hour = true)
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = { TextButton(onClick = { onConfirm(tpState.hour, tpState.minute) }) { Text("ОК") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Отмена") } },
+        text = { TimePicker(state = tpState) },
+    )
+}
+
+private fun validateCreateOrderForm(state: CreateOrderScreenFormState): Set<String> =
+    buildSet {
+        if (state.address.isBlank()) add("address")
+        if (state.cargo.isBlank()) add("cargo")
+        val parsedPrice = state.price.toDoubleOrNull()
+        if (parsedPrice == null || parsedPrice <= 0.0) add("price")
+    }
 
 // ── Приватные UI-компоненты экрана ────────────────────────────────────────────
 
@@ -339,28 +399,21 @@ private enum class DayOption(
 }
 
 @Composable
-private fun HoursStepper(
+private fun HoursSelector(
     value: Int,
-    minValue: Int,
-    maxValue: Int,
-    onDecrement: () -> Unit,
-    onIncrement: () -> Unit,
-    modifier: Modifier = Modifier,
+    onValueChange: (Int) -> Unit,
 ) {
+    val minValue = OrderRules.MIN_ESTIMATED_HOURS
+    val maxValue = OrderRules.MAX_ESTIMATED_HOURS
     val primary = MaterialTheme.colorScheme.primary
-    Column(
-        modifier = modifier,
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
+
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text(
             text = "Часов",
             fontSize = 12.sp,
             fontWeight = FontWeight.SemiBold,
             color = primary,
-            modifier =
-                Modifier
-                    .padding(bottom = 6.dp, start = 2.dp)
-                    .fillMaxWidth(),
+            modifier = Modifier.padding(bottom = 6.dp, start = 2.dp).fillMaxWidth(),
         )
         Row(
             modifier =
@@ -373,33 +426,34 @@ private fun HoursStepper(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
-            IconButton(
-                onClick = onDecrement,
-                enabled = value > minValue,
-                modifier = Modifier.size(28.dp),
-            ) {
+            IconButton(onClick = { onValueChange(value - 1) }, enabled = value > minValue, modifier = Modifier.size(28.dp)) {
                 Icon(
                     Icons.Default.Remove,
                     null,
-                    tint = if (value > minValue) primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                    tint =
+                        if (value >
+                            minValue
+                        ) {
+                            primary
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        },
                     modifier = Modifier.size(16.dp),
                 )
             }
-            Text(
-                text = "$value",
-                fontSize = 18.sp,
-                fontWeight = FontWeight.ExtraBold,
-                color = primary,
-            )
-            IconButton(
-                onClick = onIncrement,
-                enabled = value < maxValue,
-                modifier = Modifier.size(28.dp),
-            ) {
+            Text(text = "$value", fontSize = 18.sp, fontWeight = FontWeight.ExtraBold, color = primary)
+            IconButton(onClick = { onValueChange(value + 1) }, enabled = value < maxValue, modifier = Modifier.size(28.dp)) {
                 Icon(
                     Icons.Default.Add,
                     null,
-                    tint = if (value < maxValue) primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                    tint =
+                        if (value <
+                            maxValue
+                        ) {
+                            primary
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        },
                     modifier = Modifier.size(16.dp),
                 )
             }
@@ -423,11 +477,7 @@ private fun TotalRow(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(
-            "Итого за ~$hours ч:",
-            fontSize = 14.sp,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
+        Text("Итого за ~$hours ч:", fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Text(
             text = "${(pricePerHour * hours).toInt()} ₽",
             fontSize = 18.sp,
@@ -568,80 +618,21 @@ fun AppField(
     leadingText: String? = null,
 ) {
     val primary = MaterialTheme.colorScheme.primary
-    val borderColor =
-        when {
-            isError -> MaterialTheme.colorScheme.error
-            value.isNotEmpty() -> primary
-            else -> MaterialTheme.colorScheme.outlineVariant
-        }
+    val borderColor = appFieldBorderColor(isError = isError, hasValue = value.isNotEmpty(), primary = primary)
 
     Column(modifier = modifier) {
-        Text(
-            text = label,
-            fontSize = 12.sp,
-            fontWeight = FontWeight.SemiBold,
-            color = if (isError) MaterialTheme.colorScheme.error else primary,
-            modifier = Modifier.padding(bottom = 6.dp, start = 2.dp),
+        AppFieldLabel(label = label, isError = isError, primary = primary)
+        AppFieldContainer(
+            borderColor = borderColor,
+            maxLines = maxLines,
+            icon = icon,
+            leadingText = leadingText,
+            value = value,
+            onValueChange = onValueChange,
+            placeholder = placeholder,
+            keyboardOptions = keyboardOptions,
+            primary = primary,
         )
-        Row(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(12.dp))
-                    .border(1.5.dp, borderColor, RoundedCornerShape(12.dp))
-                    .background(MaterialTheme.colorScheme.surface)
-                    .padding(
-                        horizontal = 12.dp,
-                        vertical = if (maxLines > 1) 10.dp else 4.dp,
-                    ),
-            verticalAlignment = if (maxLines > 1) Alignment.Top else Alignment.CenterVertically,
-        ) {
-            if (leadingText != null) {
-                Text(
-                    text = leadingText,
-                    fontSize = 17.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = if (value.isNotEmpty()) primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = if (maxLines > 1) 4.dp else 0.dp),
-                )
-            } else {
-                Icon(
-                    icon,
-                    null,
-                    tint = if (value.isNotEmpty()) primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier =
-                        Modifier
-                            .size(20.dp)
-                            .padding(top = if (maxLines > 1) 4.dp else 0.dp),
-                )
-            }
-            Spacer(Modifier.width(10.dp))
-            androidx.compose.foundation.text.BasicTextField(
-                value = value,
-                onValueChange = onValueChange,
-                maxLines = maxLines,
-                singleLine = maxLines == 1,
-                keyboardOptions = keyboardOptions,
-                textStyle =
-                    MaterialTheme.typography.bodyLarge.copy(
-                        color = MaterialTheme.colorScheme.onSurface,
-                        fontSize = 15.sp,
-                    ),
-                modifier = Modifier.fillMaxWidth(),
-                decorationBox = { inner ->
-                    Box {
-                        if (value.isEmpty()) {
-                            Text(
-                                placeholder,
-                                fontSize = 15.sp,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                            )
-                        }
-                        inner()
-                    }
-                },
-            )
-        }
         if (isError) {
             Text(
                 "Обязательное поле",
@@ -652,6 +643,126 @@ fun AppField(
         }
     }
 }
+
+@Composable
+private fun AppFieldLabel(
+    label: String,
+    isError: Boolean,
+    primary: androidx.compose.ui.graphics.Color,
+) {
+    Text(
+        text = label,
+        fontSize = 12.sp,
+        fontWeight = FontWeight.SemiBold,
+        color = if (isError) MaterialTheme.colorScheme.error else primary,
+        modifier = Modifier.padding(bottom = 6.dp, start = 2.dp),
+    )
+}
+
+@Composable
+private fun AppFieldContainer(
+    borderColor: androidx.compose.ui.graphics.Color,
+    maxLines: Int,
+    icon: ImageVector,
+    leadingText: String?,
+    value: String,
+    onValueChange: (String) -> Unit,
+    placeholder: String,
+    keyboardOptions: KeyboardOptions,
+    primary: androidx.compose.ui.graphics.Color,
+) {
+    Row(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(12.dp))
+                .border(1.5.dp, borderColor, RoundedCornerShape(12.dp))
+                .background(MaterialTheme.colorScheme.surface)
+                .padding(horizontal = 12.dp, vertical = if (maxLines > 1) 10.dp else 4.dp),
+        verticalAlignment = if (maxLines > 1) Alignment.Top else Alignment.CenterVertically,
+    ) {
+        AppFieldLeading(icon = icon, leadingText = leadingText, value = value, maxLines = maxLines, primary = primary)
+        Spacer(Modifier.width(10.dp))
+        AppFieldInput(
+            value = value,
+            onValueChange = onValueChange,
+            maxLines = maxLines,
+            keyboardOptions = keyboardOptions,
+            placeholder = placeholder,
+        )
+    }
+}
+
+@Composable
+private fun AppFieldLeading(
+    icon: ImageVector,
+    leadingText: String?,
+    value: String,
+    maxLines: Int,
+    primary: androidx.compose.ui.graphics.Color,
+) {
+    val color = if (value.isNotEmpty()) primary else MaterialTheme.colorScheme.onSurfaceVariant
+    val topPadding = if (maxLines > 1) 4.dp else 0.dp
+    if (leadingText != null) {
+        Text(
+            text = leadingText,
+            fontSize = 17.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = color,
+            modifier = Modifier.padding(top = topPadding),
+        )
+    } else {
+        Icon(
+            icon,
+            null,
+            tint = color,
+            modifier = Modifier.size(20.dp).padding(top = topPadding),
+        )
+    }
+}
+
+@Composable
+private fun AppFieldInput(
+    value: String,
+    onValueChange: (String) -> Unit,
+    maxLines: Int,
+    keyboardOptions: KeyboardOptions,
+    placeholder: String,
+) {
+    androidx.compose.foundation.text.BasicTextField(
+        value = value,
+        onValueChange = onValueChange,
+        maxLines = maxLines,
+        singleLine = maxLines == 1,
+        keyboardOptions = keyboardOptions,
+        textStyle = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.onSurface, fontSize = 15.sp),
+        modifier = Modifier.fillMaxWidth(),
+        decorationBox = { inner ->
+            Box {
+                if (value.isEmpty()) {
+                    Text(
+                        placeholder,
+                        fontSize = 15.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                    )
+                }
+                inner()
+            }
+        },
+    )
+}
+
+@Composable
+private fun appFieldBorderColor(
+    isError: Boolean,
+    hasValue: Boolean,
+    primary: androidx.compose.ui.graphics.Color,
+): androidx.compose.ui.graphics.Color =
+    when {
+        isError -> MaterialTheme.colorScheme.error
+        hasValue -> primary
+        else -> MaterialTheme.colorScheme.outlineVariant
+    }
 
 /**
  * Кнопка-пикер для выбора даты или времени.
