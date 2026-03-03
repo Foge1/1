@@ -4,45 +4,6 @@ plugins {
     alias(libs.plugins.android.library) apply false
     alias(libs.plugins.kotlin.android) apply false
     alias(libs.plugins.hilt.android) apply false
-    alias(libs.plugins.detekt) apply false
-    alias(libs.plugins.ktlint) apply false
-}
-
-subprojects { subproject ->
-    apply plugin: 'io.gitlab.arturbosch.detekt'
-    apply plugin: 'org.jlleitschuh.gradle.ktlint'
-
-    detekt {
-        buildUponDefaultConfig = true
-        allRules = false
-        config.setFrom(files("${rootDir}/config/lint/detekt.yml"))
-        parallel = true
-        ignoreFailures = false
-        autoCorrect = false
-    }
-
-    tasks.withType(io.gitlab.arturbosch.detekt.Detekt).configureEach {
-        jvmTarget = '17'
-        reports {
-            html.required.set(true)
-            sarif.required.set(false)
-            md.required.set(false)
-            xml.required.set(false)
-            txt.required.set(false)
-        }
-    }
-
-    ktlint {
-        version.set(libs.versions.ktlintCli.get())
-        android.set(true)
-        outputToConsole.set(true)
-        ignoreFailures.set(false)
-        enableExperimentalRules.set(false)
-        filter {
-            exclude("**/build/**")
-            exclude("**/generated/**")
-        }
-    }
 }
 
 tasks.register('detektAll') {
