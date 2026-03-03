@@ -6,7 +6,7 @@ import com.loaderapp.data.model.Order
 import com.loaderapp.data.model.OrderStatus
 import kotlinx.coroutines.flow.Flow
 
-internal abstract class OrderLocalDataSourceQueries(
+abstract class OrderLocalDataSourceQueries(
     protected val orderDao: OrderDao,
     protected val orderWorkerDao: OrderWorkerDao,
 ) {

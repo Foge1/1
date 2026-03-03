@@ -35,7 +35,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-private data class CreateOrderFormState(
+private data class CreateOrderScreenFormState(
     val address: String = "",
     val cargo: String = "",
     val price: String = "",
@@ -43,6 +43,7 @@ private data class CreateOrderFormState(
     val requiredWorkers: Int = 1,
     val minWorkerRating: Float = 0f,
 )
+
 
 private data class CreateOrderUiState(
     val errorFields: Set<String> = emptySet(),
@@ -79,7 +80,7 @@ fun CreateOrderScreen(
         }
     }
 
-    var formState by remember { mutableStateOf(CreateOrderFormState()) }
+    var formState by remember { mutableStateOf(CreateOrderScreenFormState()) }
     var uiState by remember { mutableStateOf(CreateOrderUiState()) }
 
     val dateFormatter = remember { SimpleDateFormat("dd MMMM yyyy", Locale("ru")) }
@@ -178,7 +179,7 @@ fun CreateOrderScreen(
 private fun CreateOrderContent(
     modifier: Modifier,
     vmState: com.loaderapp.presentation.dispatcher.CreateOrderUiState,
-    formState: CreateOrderFormState,
+    formState: CreateOrderScreenFormState,
     uiState: CreateOrderUiState,
     primary: androidx.compose.ui.graphics.Color,
     dateFormatter: SimpleDateFormat,
@@ -341,7 +342,7 @@ private fun CreateOrderTimeDialog(
     )
 }
 
-private fun validateCreateOrderForm(state: CreateOrderFormState): Set<String> =
+private fun validateCreateOrderForm(state: CreateOrderScreenFormState): Set<String> =
     buildSet {
         if (state.address.isBlank()) add("address")
         if (state.cargo.isBlank()) add("cargo")

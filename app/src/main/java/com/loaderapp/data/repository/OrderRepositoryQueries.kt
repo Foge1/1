@@ -10,7 +10,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 
-internal abstract class OrderRepositoryQueries(
+abstract class OrderRepositoryQueries(
     protected val localDataSource: OrderLocalDataSource,
 ) : OrderRepository {
     final override fun getAllOrders(): Flow<List<OrderModel>> =
