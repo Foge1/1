@@ -12,7 +12,8 @@ data class CreatePaymentParams(
 
 /**
  * UseCase для создания платежа после завершения заказа.
- * TODO: Реализовать когда будет подключён платёжный шлюз.
+ * TODO(TECH-DEBT-001): Подключить платёжный шлюз и вынести создание платежа в интеграционный сценарий
+ * с подтверждением статусов со стороны провайдера; done when create/confirm/refund проходят через реальный gateway.
  */
 class CreatePaymentUseCase
     @Inject

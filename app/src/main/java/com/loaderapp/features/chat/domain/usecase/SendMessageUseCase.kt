@@ -12,7 +12,8 @@ data class SendMessageParams(
 
 /**
  * UseCase для отправки сообщения в чат заказа.
- * TODO: Подключить real-time когда будет реализован ChatFeatureRepository.
+ * TODO(TECH-DEBT-004): Переключить use case на real-time delivery после готовности ChatFeatureRepository;
+ * done when отправка/доставка подтверждается стримом входящих событий.
  */
 class SendMessageUseCase
     @Inject

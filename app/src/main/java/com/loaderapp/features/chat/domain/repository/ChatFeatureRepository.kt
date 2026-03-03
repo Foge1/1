@@ -5,7 +5,8 @@ import kotlinx.coroutines.flow.Flow
 
 /**
  * Расширенный контракт репозитория чата.
- * TODO: Добавить поддержку real-time сообщений (WebSocket / Firebase).
+ * TODO(TECH-DEBT-005): Добавить поддержку real-time сообщений (WebSocket/Firebase) с reconnection policy
+ * и ack сообщений; done when repository обеспечивает delivery semantics для online/offline сценариев.
  * Текущий ChatRepository в domain/ работает только с локальной БД Room.
  */
 interface ChatFeatureRepository {

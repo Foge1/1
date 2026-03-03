@@ -4,7 +4,8 @@ import kotlinx.coroutines.flow.Flow
 
 /**
  * Контракт репозитория рейтингов.
- * TODO: Реализовать с агрегацией рейтингов по завершённым заказам.
+ * TODO(TECH-DEBT-006): Реализовать агрегацию рейтингов по завершённым заказам с учётом пересчёта истории;
+ * done when getWorkerRating и getWorkerRatingHistory читают согласованные данные из единого источника.
  */
 interface RatingRepository {
     suspend fun rateWorker(

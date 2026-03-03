@@ -4,7 +4,7 @@
 Accepted
 
 ## Context
-LoaderApp had split session logic between UI-level `SessionViewModel` and `UserPreferences`, while auth feature was still TODO.
+LoaderApp had split session logic between UI-level `SessionViewModel` and `UserPreferences`, while auth feature was still in progress.
 This caused implicit coupling and made it hard to reason about transitions (restore/login/logout/error).
 
 ## Decision
