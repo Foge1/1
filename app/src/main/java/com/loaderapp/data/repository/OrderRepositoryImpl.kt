@@ -56,14 +56,14 @@ class OrderRepositoryImpl
                 .map { it?.let(OrderMapper::toDomain) }
 
         override suspend fun getOrderById(orderId: Long): Result<OrderModel> =
-            try {
+            runCatching {
                 val order = localDataSource.getOrderById(orderId)
                 if (order != null) {
                     Result.Success(OrderMapper.toDomain(order))
                 } else {
                     Result.Error("Заказ не найден")
                 }
-            } catch (e: Exception) {
+            }.getOrElse { e ->
                 appLogger.breadcrumb("storage", "order_get_failed", mapOf("operation" to "get_by_id"))
                 appLogger.e(LOG_TAG, "DB error while getting order", e)
                 Result.Error("Ошибка получения заказа: ${e.message}", e)
@@ -97,35 +97,35 @@ class OrderRepositoryImpl
                 .map { OrderMapper.toDomainList(it) }
 
         override suspend fun createOrder(order: OrderModel): Result<Long> =
-            try {
+            runCatching {
                 val entity = OrderMapper.toEntity(order)
                 val id = localDataSource.insertOrder(entity)
                 appLogger.breadcrumb("orders", "order_created", mapOf("operation" to "create"))
                 Result.Success(id)
-            } catch (e: Exception) {
+            }.getOrElse { e ->
                 appLogger.breadcrumb("storage", "order_create_failed", mapOf("operation" to "create"))
                 appLogger.e(LOG_TAG, "DB error while creating order", e)
                 Result.Error("Ошибка создания заказа: ${e.message}", e)
             }
 
         override suspend fun updateOrder(order: OrderModel): Result<Unit> =
-            try {
+            runCatching {
                 val entity = OrderMapper.toEntity(order)
                 localDataSource.updateOrder(entity)
                 appLogger.breadcrumb("orders", "order_updated", mapOf("operation" to "update"))
                 Result.Success(Unit)
-            } catch (e: Exception) {
+            }.getOrElse { e ->
                 appLogger.breadcrumb("storage", "order_update_failed", mapOf("operation" to "update"))
                 appLogger.e(LOG_TAG, "DB error while updating order", e)
                 Result.Error("Ошибка обновления заказа: ${e.message}", e)
             }
 
         override suspend fun deleteOrder(order: OrderModel): Result<Unit> =
-            try {
+            runCatching {
                 val entity = OrderMapper.toEntity(order)
                 localDataSource.deleteOrder(entity)
                 Result.Success(Unit)
-            } catch (e: Exception) {
+            }.getOrElse { e ->
                 Result.Error("Ошибка удаления заказа: ${e.message}", e)
             }
 
@@ -133,7 +133,7 @@ class OrderRepositoryImpl
             orderId: Long,
             workerId: Long,
         ): Result<Unit> =
-            try {
+            runCatching {
                 // Добавляем грузчика в таблицу order_workers
                 localDataSource.addWorkerToOrder(OrderWorker(orderId = orderId, workerId = workerId))
 
@@ -149,23 +149,23 @@ class OrderRepositoryImpl
                     }
                 }
                 Result.Success(Unit)
-            } catch (e: Exception) {
+            }.getOrElse { e ->
                 Result.Error("Ошибка взятия заказа: ${e.message}", e)
             }
 
         override suspend fun completeOrder(orderId: Long): Result<Unit> =
-            try {
+            runCatching {
                 localDataSource.completeOrder(orderId, OrderStatus.COMPLETED, System.currentTimeMillis())
                 Result.Success(Unit)
-            } catch (e: Exception) {
+            }.getOrElse { e ->
                 Result.Error("Ошибка завершения заказа: ${e.message}", e)
             }
 
         override suspend fun cancelOrder(orderId: Long): Result<Unit> =
-            try {
+            runCatching {
                 localDataSource.updateOrderStatus(orderId, OrderStatus.CANCELLED)
                 Result.Success(Unit)
-            } catch (e: Exception) {
+            }.getOrElse { e ->
                 Result.Error("Ошибка отмены заказа: ${e.message}", e)
             }
 
@@ -173,10 +173,10 @@ class OrderRepositoryImpl
             orderId: Long,
             rating: Float,
         ): Result<Unit> =
-            try {
+            runCatching {
                 localDataSource.rateOrder(orderId, rating)
                 Result.Success(Unit)
-            } catch (e: Exception) {
+            }.getOrElse { e ->
                 Result.Error("Ошибка оценки заказа: ${e.message}", e)
             }
 

@@ -23,11 +23,11 @@ class ChatRepositoryImpl
                 .map { ChatMessageMapper.toDomainList(it) }
 
         override suspend fun sendMessage(message: ChatMessageModel): Result<Long> =
-            try {
+            runCatching {
                 val entity = ChatMessageMapper.toEntity(message)
                 val id = localDataSource.insertMessage(entity)
                 Result.Success(id)
-            } catch (e: Exception) {
+            }.getOrElse { e ->
                 Result.Error("Ошибка отправки сообщения: ${e.message}", e)
             }
 

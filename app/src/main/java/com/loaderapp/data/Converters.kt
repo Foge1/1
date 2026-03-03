@@ -10,20 +10,14 @@ class Converters {
 
     @TypeConverter
     fun toOrderStatus(value: String): OrderStatus =
-        try {
-            OrderStatus.valueOf(value)
-        } catch (e: IllegalArgumentException) {
-            OrderStatus.AVAILABLE
-        }
+        runCatching { OrderStatus.valueOf(value) }
+            .getOrElse { OrderStatus.AVAILABLE }
 
     @TypeConverter
     fun fromUserRole(value: UserRole): String = value.name
 
     @TypeConverter
     fun toUserRole(value: String): UserRole =
-        try {
-            UserRole.valueOf(value)
-        } catch (e: IllegalArgumentException) {
-            UserRole.LOADER
-        }
+        runCatching { UserRole.valueOf(value) }
+            .getOrElse { UserRole.LOADER }
 }

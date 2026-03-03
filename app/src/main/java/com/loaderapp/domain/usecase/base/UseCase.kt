@@ -14,9 +14,9 @@ abstract class UseCase<in Input, out Output>(
     private val dispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) {
     suspend operator fun invoke(params: Input): Result<@UnsafeVariance Output> =
-        try {
+        runCatching {
             withContext(dispatcher) { execute(params) }
-        } catch (e: Exception) {
+        }.getOrElse { e ->
             Result.Error(error = e.toAppError(), exception = e)
         }
 

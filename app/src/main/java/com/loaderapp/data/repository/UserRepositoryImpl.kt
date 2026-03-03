@@ -35,14 +35,14 @@ class UserRepositoryImpl
                 .map { UserMapper.toDomainList(it) }
 
         override suspend fun getUserById(userId: Long): Result<UserModel> =
-            try {
+            runCatching {
                 val user = localDataSource.getUserById(userId)
                 if (user != null) {
                     Result.Success(UserMapper.toDomain(user))
                 } else {
                     Result.Error("Пользователь не найден")
                 }
-            } catch (e: Exception) {
+            }.getOrElse { e ->
                 Result.Error("Ошибка получения пользователя: ${e.message}", e)
             }
 
@@ -55,7 +55,7 @@ class UserRepositoryImpl
             name: String,
             role: UserRoleModel,
         ): Result<UserModel?> =
-            try {
+            runCatching {
                 val entityRole =
                     when (role) {
                         UserRoleModel.DISPATCHER -> UserRole.DISPATCHER
@@ -63,34 +63,34 @@ class UserRepositoryImpl
                     }
                 val user = localDataSource.getUserByNameAndRole(name, entityRole)
                 Result.Success(user?.let(UserMapper::toDomain))
-            } catch (e: Exception) {
+            }.getOrElse { e ->
                 Result.Error("Ошибка поиска пользователя: ${e.message}", e)
             }
 
         override suspend fun createUser(user: UserModel): Result<Long> =
-            try {
+            runCatching {
                 val entity = UserMapper.toEntity(user)
                 val id = localDataSource.insertUser(entity)
                 Result.Success(id)
-            } catch (e: Exception) {
+            }.getOrElse { e ->
                 Result.Error("Ошибка создания пользователя: ${e.message}", e)
             }
 
         override suspend fun updateUser(user: UserModel): Result<Unit> =
-            try {
+            runCatching {
                 val entity = UserMapper.toEntity(user)
                 localDataSource.updateUser(entity)
                 Result.Success(Unit)
-            } catch (e: Exception) {
+            }.getOrElse { e ->
                 Result.Error("Ошибка обновления пользователя: ${e.message}", e)
             }
 
         override suspend fun deleteUser(user: UserModel): Result<Unit> =
-            try {
+            runCatching {
                 val entity = UserMapper.toEntity(user)
                 localDataSource.deleteUser(entity)
                 Result.Success(Unit)
-            } catch (e: Exception) {
+            }.getOrElse { e ->
                 Result.Error("Ошибка удаления пользователя: ${e.message}", e)
             }
 
@@ -98,10 +98,10 @@ class UserRepositoryImpl
             userId: Long,
             rating: Double,
         ): Result<Unit> =
-            try {
+            runCatching {
                 localDataSource.updateUserRating(userId, rating)
                 Result.Success(Unit)
-            } catch (e: Exception) {
+            }.getOrElse { e ->
                 Result.Error("Ошибка обновления рейтинга: ${e.message}", e)
             }
     }

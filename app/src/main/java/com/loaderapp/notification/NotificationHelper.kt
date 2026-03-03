@@ -6,6 +6,7 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.os.Build
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import com.loaderapp.MainActivity
@@ -19,6 +20,7 @@ class NotificationHelper(
         private const val CHANNEL_DESCRIPTION = "Уведомления о новых и изменённых заказах"
         private const val NEW_ORDER_NOTIFICATION_ID = 1
         private const val CHAT_NOTIFICATION_ID = 3
+        private const val LOG_TAG = "NotificationHelper"
     }
 
     init {
@@ -71,7 +73,7 @@ class NotificationHelper(
         try {
             NotificationManagerCompat.from(context).notify(NEW_ORDER_NOTIFICATION_ID, notification)
         } catch (e: SecurityException) {
-            // Пользователь не дал разрешение на уведомления
+            Log.w(LOG_TAG, "Notification permission denied for new order", e)
         }
     }
 
@@ -106,7 +108,7 @@ class NotificationHelper(
         try {
             NotificationManagerCompat.from(context).notify(CHAT_NOTIFICATION_ID, notification)
         } catch (e: SecurityException) {
-            // нет разрешения
+            Log.w(LOG_TAG, "Notification permission denied for chat message", e)
         }
     }
 
@@ -138,6 +140,7 @@ class NotificationHelper(
         try {
             NotificationManagerCompat.from(context).notify(NEW_ORDER_NOTIFICATION_ID + 1, notification)
         } catch (e: SecurityException) {
+            Log.w(LOG_TAG, "Notification permission denied for order taken", e)
         }
     }
 }
