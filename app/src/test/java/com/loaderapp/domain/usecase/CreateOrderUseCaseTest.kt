@@ -1,10 +1,7 @@
 package com.loaderapp.domain.usecase
 
-import com.loaderapp.domain.repository.OrderRepository
-import com.loaderapp.domain.usecase.order.CreateOrderUseCase
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertTrue
-import org.junit.Before
 import org.junit.Ignore
 import org.junit.Test
 
@@ -18,15 +15,6 @@ import org.junit.Test
  *   app.cash.turbine:turbine:1.0.0
  */
 class CreateOrderUseCaseTest {
-    private lateinit var orderRepository: OrderRepository
-    private lateinit var useCase: CreateOrderUseCase
-
-    @Before
-    fun setUp() {
-        // orderRepository = mockk()
-        // useCase = CreateOrderUseCase(orderRepository)
-    }
-
     @Test
     @Ignore("TECH-DEBT-008: Нужны mockk/turbine для проверки success path и verify вызовов репозитория")
     fun `createOrder returns success when repository succeeds`() =

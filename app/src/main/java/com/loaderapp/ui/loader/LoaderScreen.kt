@@ -394,7 +394,6 @@ private fun OrdersListPage(
 
     FadingEdgeLazyColumn(
         modifier = Modifier.fillMaxSize(),
-        topFadeHeight = 0.dp,
         bottomFadeHeight = 36.dp,
         contentPadding =
             PaddingValues(

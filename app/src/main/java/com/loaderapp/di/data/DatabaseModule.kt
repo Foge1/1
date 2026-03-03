@@ -28,8 +28,9 @@ object DatabaseModule {
                 context,
                 AppDatabase::class.java,
                 "loader_app_database",
-            ).addMigrations(*AppMigrations.ALL)
-            .build()
+            ).addMigrations(
+                migrations = AppMigrations.ALL,
+            ).build()
 
     @Provides
     @Singleton

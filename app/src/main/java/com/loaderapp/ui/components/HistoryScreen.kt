@@ -60,7 +60,6 @@ fun HistoryScreen(
 
         FadingEdgeLazyColumn(
             modifier = Modifier.fillMaxSize(),
-            topFadeHeight = 0.dp,
             bottomFadeHeight = 36.dp,
             contentPadding = PaddingValues(top = 12.dp, bottom = bottomPadding),
         ) {

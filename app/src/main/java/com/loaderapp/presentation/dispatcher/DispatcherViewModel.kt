@@ -50,8 +50,6 @@ class DispatcherViewModel
             observeStats()
         }
 
-        fun initialize(dispatcherId: Long) = Unit
-
         private fun observeOrders() {
             combine(ordersRepository.observeOrders(), _searchQuery.debounce(300)) { orders, query ->
                 if (query.isBlank()) {

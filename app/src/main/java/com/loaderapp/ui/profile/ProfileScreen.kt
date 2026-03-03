@@ -74,7 +74,7 @@ fun ProfileScreen(
                     topPadding = topBarDp,
                     bottomPadding = 0.dp,
                     onSaveProfile = { name, phone, birthDate ->
-                        viewModel.saveProfile(userId, name, phone, birthDate)
+                        viewModel.saveProfile(name, phone, birthDate)
                     },
                 )
             is UiState.Idle -> Unit

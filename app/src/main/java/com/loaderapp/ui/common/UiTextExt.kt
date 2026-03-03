@@ -8,5 +8,5 @@ import com.loaderapp.core.common.UiText
 fun UiText.asString(): String =
     when (this) {
         is UiText.Dynamic -> value
-        is UiText.Resource -> stringResource(resId, *args.toTypedArray())
+        is UiText.Resource -> stringResource(resId, formatArgs = args.toTypedArray())
     }

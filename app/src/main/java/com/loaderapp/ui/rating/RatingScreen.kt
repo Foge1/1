@@ -5,13 +5,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.hilt.navigation.compose.hiltViewModel
-import com.loaderapp.presentation.rating.RatingViewModel
 import com.loaderapp.ui.components.AppScaffold
 import com.loaderapp.ui.components.PlaceholderContent
 
 @Composable
-fun RatingScreen(viewModel: RatingViewModel = hiltViewModel()) {
+fun RatingScreen() {
     AppScaffold(title = "Рейтинг") {
         PlaceholderContent(
             icon = Icons.Default.Star,
