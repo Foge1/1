@@ -22,20 +22,12 @@ complexity:
   CognitiveComplexMethod:
     active: true
     threshold: 18
-    excludes:
-      - '**/ui/main/MainScreen.kt'
-      - '**/ui/auth/RoleSelectionScreen.kt'
-      - '**/ui/dispatcher/CreateOrderScreen.kt'
-      - '**/ui/components/AppBottomBar.kt'
   CyclomaticComplexMethod:
     active: true
     threshold: 20
   LongMethod:
     active: true
     threshold: 140
-    excludes:
-      - '**/ui/auth/RoleSelectionScreen.kt'
-      - '**/ui/dispatcher/CreateOrderScreen.kt'
   LongParameterList:
     active: true
     functionThreshold: 10

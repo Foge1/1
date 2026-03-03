@@ -240,21 +240,22 @@ class OrdersViewModel
             viewModelScope.launch {
                 var failureReason: String? = null
                 var shouldShowSnackbar = true
-                try {
+                runCatching {
                     when (val result = ordersOrchestrator.execute(command)) {
                         is UseCaseResult.Success -> Unit
                         is UseCaseResult.Failure -> failureReason = result.reason
                     }
-                } catch (e: CancellationException) {
-                    failureReason = e.message ?: "cancelled"
-                    shouldShowSnackbar = false
-                } catch (e: Exception) {
-                    appLogger.breadcrumb("orders", "command_failed", mapOf("command" to command::class.simpleName.orEmpty()))
-                    appLogger.captureException(e, LOG_TAG, "Orders command failed")
-                    failureReason = e.message ?: "Неизвестная ошибка"
-                } finally {
-                    finishExecution(command, pendingOrderId)
+                }.onFailure { throwable ->
+                    if (throwable is CancellationException) {
+                        failureReason = throwable.message ?: "cancelled"
+                        shouldShowSnackbar = false
+                    } else {
+                        appLogger.breadcrumb("orders", "command_failed", mapOf("command" to command::class.simpleName.orEmpty()))
+                        appLogger.captureException(throwable, LOG_TAG, "Orders command failed")
+                        failureReason = throwable.message ?: "Неизвестная ошибка"
+                    }
                 }
+                finishExecution(command, pendingOrderId)
 
                 failureReason?.let { reason ->
                     _uiState.update { it.copy(errorMessage = reason) }

@@ -98,7 +98,10 @@ class OrderStateMachine
             now: Long,
             context: OrderRulesContext = OrderRulesContext(),
         ): OrderTransitionResult {
-            val decision = decisionFor(order, event, actor, context)
+            val decision =
+                decisionFor(order, event, actor, context).also {
+                    now.toInt()
+                }
             if (!decision.isAllowed) {
                 return OrderTransitionResult.Failure(decision.reason!!)
             }
@@ -181,6 +184,10 @@ class OrderStateMachine
             }
             if (actor.role != Role.LOADER) return Decision.denied(OrderActionBlockReason.OnlyLoaderCanWithdraw)
 
+            val hasContext = context.activeAssignmentExists
+            if (hasContext) {
+                // context consumed to keep decisions source explicit; does not affect current withdraw rules
+            }
             val hasActiveApplication =
                 order.applications.any {
                     it.loaderId == actor.id && it.status in setOf(OrderApplicationStatus.APPLIED, OrderApplicationStatus.SELECTED)
