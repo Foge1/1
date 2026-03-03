@@ -5,11 +5,12 @@ import com.loaderapp.domain.usecase.order.CreateOrderUseCase
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertTrue
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Test
 
 /**
  * Unit тест для CreateOrderUseCase.
- * TODO: Раскомментировать и дополнить тесты когда подключат mockk/turbine.
+ * Тесты помечены как временно отключённые: сценарии требуют mockk/turbine и полной имитации репозитория заказов.
  *
  * Необходимые зависимости в build.gradle (testImplementation):
  *   io.mockk:mockk:1.13.8
@@ -27,16 +28,16 @@ class CreateOrderUseCaseTest {
     }
 
     @Test
+    @Ignore("TECH-DEBT-008: Нужны mockk/turbine для проверки success path и verify вызовов репозитория")
     fun `createOrder returns success when repository succeeds`() =
         runTest {
-            // TODO: Implement
             assertTrue(true)
         }
 
     @Test
+    @Ignore("TECH-DEBT-008: Нужны mockk/turbine для проверки error path и propagate ошибок")
     fun `createOrder returns error when repository throws`() =
         runTest {
-            // TODO: Implement
             assertTrue(true)
         }
 }

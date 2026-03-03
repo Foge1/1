@@ -2,7 +2,8 @@ package com.loaderapp.features.payments.domain.model
 
 /**
  * Domain-модель платежа.
- * TODO: Добавить Room-entity и маппер когда будет реализован модуль оплаты.
+ * TODO(TECH-DEBT-003): Добавить Room entity и мапперы для хранения платежей локально; done when платежи
+ * кэшируются в БД и синхронизируются с backend source of truth.
  */
 data class PaymentModel(
     val id: Long = 0,

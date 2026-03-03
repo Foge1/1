@@ -5,7 +5,8 @@ import kotlinx.coroutines.flow.Flow
 
 /**
  * Контракт репозитория платежей.
- * TODO: Реализовать PaymentRepositoryImpl с интеграцией платёжного шлюза.
+ * TODO(TECH-DEBT-002): Реализовать PaymentRepositoryImpl c интеграцией платёжного шлюза, идемпотентностью
+ * запросов и обработкой ошибок провайдера; done when feature покрыта e2e и используется в production path.
  */
 interface PaymentRepository {
     suspend fun createPayment(payment: PaymentModel): Result<PaymentModel>
