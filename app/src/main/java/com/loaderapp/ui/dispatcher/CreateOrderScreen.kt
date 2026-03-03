@@ -84,6 +84,51 @@ fun CreateOrderScreen(
 
     val dateFormatter = remember { SimpleDateFormat("dd MMMM yyyy", Locale("ru")) }
     val primary = MaterialTheme.colorScheme.primary
+    val callbacks =
+        CreateOrderContentCallbacks(
+            onAddressChange = { value ->
+                formState = formState.copy(address = value)
+                uiState = uiState.copy(errorFields = uiState.errorFields - "address")
+            },
+            onDayOptionSelect = { option ->
+                viewModel.onDayOptionSelected(option)
+                if (option == OrderDayOption.OTHER_DATE) uiState = uiState.copy(showDatePicker = true)
+            },
+            onTimePickerOpen = { uiState = uiState.copy(showTimePicker = true) },
+            onCargoChange = { value ->
+                formState = formState.copy(cargo = value)
+                uiState = uiState.copy(errorFields = uiState.errorFields - "cargo")
+            },
+            onPriceChange = { value ->
+                formState = formState.copy(price = value)
+                uiState = uiState.copy(errorFields = uiState.errorFields - "price")
+            },
+            onHoursChange = { newValue ->
+                val current = vmState.estimatedHours
+                when {
+                    newValue > current -> repeat(newValue - current) { viewModel.incrementHours() }
+                    newValue < current -> repeat(current - newValue) { viewModel.decrementHours() }
+                }
+            },
+            onRequiredWorkersChange = { value -> formState = formState.copy(requiredWorkers = value) },
+            onMinWorkerRatingChange = { value -> formState = formState.copy(minWorkerRating = value) },
+            onCommentChange = { value -> formState = formState.copy(comment = value) },
+            onCreate = {
+                val validation = validateCreateOrderForm(formState)
+                uiState = uiState.copy(errorFields = validation, showValidationBanner = validation.isNotEmpty())
+                if (validation.isEmpty()) {
+                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    viewModel.createOrder(
+                        address = formState.address,
+                        cargoDescription = formState.cargo,
+                        pricePerHour = formState.price.toDouble(),
+                        requiredWorkers = formState.requiredWorkers,
+                        minWorkerRating = formState.minWorkerRating,
+                        comment = formState.comment,
+                    )
+                }
+            },
+        )
 
     Scaffold(
         topBar = {
@@ -108,45 +153,7 @@ fun CreateOrderScreen(
             uiState = uiState,
             primary = primary,
             dateFormatter = dateFormatter,
-            callbacks =
-                CreateOrderContentCallbacks(
-                    callbacks.onAddressChange = { value ->
-                        formState = formState.copy(address = value)
-                        uiState = uiState.copy(errorFields = uiState.errorFields - "address")
-                    },
-                    callbacks.onDayOptionSelect = { option ->
-                        viewModel.callbacks.onDayOptionSelected(option)
-                        if (option == OrderDayOption.OTHER_DATE) uiState = uiState.copy(showDatePicker = true)
-                    },
-                    callbacks.onTimePickerOpen = { uiState = uiState.copy(showTimePicker = true) },
-                    callbacks.onCargoChange = { value ->
-                        formState = formState.copy(cargo = value)
-                        uiState = uiState.copy(errorFields = uiState.errorFields - "cargo")
-                    },
-                    callbacks.onPriceChange = { value ->
-                        formState = formState.copy(price = value)
-                        uiState = uiState.copy(errorFields = uiState.errorFields - "price")
-                    },
-                    callbacks.onHoursChange = viewModel::onEstimatedHoursChanged,
-                    callbacks.onRequiredWorkersChange = { value -> formState = formState.copy(requiredWorkers = value) },
-                    callbacks.onMinWorkerRatingChange = { value -> formState = formState.copy(minWorkerRating = value) },
-                    callbacks.onCommentChange = { value -> formState = formState.copy(comment = value) },
-                    callbacks.onCreate = {
-                        val validation = validateCreateOrderForm(formState)
-                        uiState = uiState.copy(errorFields = validation, showValidationBanner = validation.isNotEmpty())
-                        if (validation.isEmpty()) {
-                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                            viewModel.createOrder(
-                                address = formState.address,
-                                cargoDescription = formState.cargo,
-                                pricePerHour = formState.price.toDouble(),
-                                requiredWorkers = formState.requiredWorkers,
-                                minWorkerRating = formState.minWorkerRating,
-                                comment = formState.comment,
-                            )
-                        }
-                    },
-                ),
+            callbacks = callbacks,
         )
     }
 
@@ -281,6 +288,8 @@ private fun DateTimeSection(
     dateFormatter: SimpleDateFormat,
     onOpenTimePicker: () -> Unit,
 ) {
+    val selectedTimeLabel = "%02d:%02d".format(vmState.selectedHour, vmState.selectedMinute)
+
     if (vmState.selectedDayOption == OrderDayOption.SOON) {
         Text("Режим: Ближайшее время", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         return
@@ -292,17 +301,15 @@ private fun DateTimeSection(
         color = MaterialTheme.colorScheme.onSurface,
     )
 
-    if (vmState.selectedTimeLabel != null) {
-        Text(
-            text = "Время: ${vmState.selectedTimeLabel}",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurface,
-        )
-    }
+    Text(
+        text = "Время: $selectedTimeLabel",
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurface,
+    )
 
     AppPickerButton(
         icon = Icons.Default.Schedule,
-        label = vmState.selectedTimeLabel ?: "Выбрать время",
+        label = selectedTimeLabel,
         onClick = onOpenTimePicker,
     )
 }
@@ -389,6 +396,95 @@ private enum class DayOption(
     TOMORROW(OrderDayOption.TOMORROW, "Завтра"),
     SOON(OrderDayOption.SOON, "Ближайшее"),
     OTHER_DATE(OrderDayOption.OTHER_DATE, "Дата"),
+}
+
+@Composable
+private fun HoursSelector(
+    value: Int,
+    onValueChange: (Int) -> Unit,
+) {
+    val minValue = OrderRules.MIN_ESTIMATED_HOURS
+    val maxValue = OrderRules.MAX_ESTIMATED_HOURS
+    val primary = MaterialTheme.colorScheme.primary
+
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(
+            text = "Часов",
+            fontSize = 12.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = primary,
+            modifier = Modifier.padding(bottom = 6.dp, start = 2.dp).fillMaxWidth(),
+        )
+        Row(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(12.dp))
+                    .border(1.5.dp, primary.copy(0.5f), RoundedCornerShape(12.dp))
+                    .background(MaterialTheme.colorScheme.surface)
+                    .padding(horizontal = 4.dp, vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            IconButton(onClick = { onValueChange(value - 1) }, enabled = value > minValue, modifier = Modifier.size(28.dp)) {
+                Icon(
+                    Icons.Default.Remove,
+                    null,
+                    tint =
+                        if (value >
+                            minValue
+                        ) {
+                            primary
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        },
+                    modifier = Modifier.size(16.dp),
+                )
+            }
+            Text(text = "$value", fontSize = 18.sp, fontWeight = FontWeight.ExtraBold, color = primary)
+            IconButton(onClick = { onValueChange(value + 1) }, enabled = value < maxValue, modifier = Modifier.size(28.dp)) {
+                Icon(
+                    Icons.Default.Add,
+                    null,
+                    tint =
+                        if (value <
+                            maxValue
+                        ) {
+                            primary
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        },
+                    modifier = Modifier.size(16.dp),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun TotalRow(
+    pricePerHour: Double,
+    hours: Int,
+    primary: androidx.compose.ui.graphics.Color,
+) {
+    Row(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(10.dp))
+                .background(primary.copy(alpha = 0.08f))
+                .padding(horizontal = 16.dp, vertical = 10.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text("Итого за ~$hours ч:", fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(
+            text = "${(pricePerHour * hours).toInt()} ₽",
+            fontSize = 18.sp,
+            fontWeight = FontWeight.ExtraBold,
+            color = primary,
+        )
+    }
 }
 
 @Composable
