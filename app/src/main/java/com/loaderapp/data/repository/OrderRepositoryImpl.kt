@@ -3,15 +3,8 @@ package com.loaderapp.data.repository
 import com.loaderapp.core.common.Result
 import com.loaderapp.core.logging.AppLogger
 import com.loaderapp.data.datasource.local.OrderLocalDataSource
-import com.loaderapp.data.mapper.OrderMapper
-import com.loaderapp.data.model.OrderStatus
-import com.loaderapp.data.model.OrderWorker
 import com.loaderapp.domain.model.OrderModel
-import com.loaderapp.domain.model.OrderStatusModel
 import com.loaderapp.domain.repository.OrderRepository
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 
 /**
@@ -21,187 +14,38 @@ import javax.inject.Inject
 class OrderRepositoryImpl
     @Inject
     constructor(
-        private val localDataSource: OrderLocalDataSource,
-        private val appLogger: AppLogger,
-    ) : OrderRepository {
-        override fun getAllOrders(): Flow<List<OrderModel>> =
-            localDataSource
-                .getAllOrders()
-                .map { OrderMapper.toDomainList(it) }
+        localDataSource: OrderLocalDataSource,
+        appLogger: AppLogger,
+    ) : OrderRepositoryQueries(localDataSource),
+        OrderRepository {
+        private val transitions =
+            OrderRepositoryTransitions(
+                localDataSource = localDataSource,
+                appLogger = appLogger,
+                logTag = LOG_TAG,
+            )
 
-        override fun getAvailableOrders(): Flow<List<OrderModel>> =
-            localDataSource
-                .getOrdersByStatus(OrderStatus.AVAILABLE)
-                .map { OrderMapper.toDomainList(it) }
+        override suspend fun getOrderById(orderId: Long): Result<OrderModel> = transitions.getOrderById(orderId)
 
-        override fun getOrdersByWorker(workerId: Long): Flow<List<OrderModel>> =
-            combine(
-                localDataSource.getAllOrders(),
-                localDataSource.getOrderIdsByWorker(workerId),
-            ) { orders, orderIds ->
-                val relatedIds = orderIds.toSet()
-                orders.filter { order ->
-                    order.workerId == workerId || order.id in relatedIds
-                }
-            }.map { OrderMapper.toDomainList(it) }
+        override suspend fun createOrder(order: OrderModel): Result<Long> = transitions.createOrder(order)
 
-        override fun getOrdersByDispatcher(dispatcherId: Long): Flow<List<OrderModel>> =
-            localDataSource
-                .getOrdersByDispatcher(dispatcherId)
-                .map { OrderMapper.toDomainList(it) }
+        override suspend fun updateOrder(order: OrderModel): Result<Unit> = transitions.updateOrder(order)
 
-        override fun getOrderByIdFlow(orderId: Long): Flow<OrderModel?> =
-            localDataSource
-                .getOrderByIdFlow(orderId)
-                .map { it?.let(OrderMapper::toDomain) }
-
-        override suspend fun getOrderById(orderId: Long): Result<OrderModel> =
-            runCatching {
-                val order = localDataSource.getOrderById(orderId)
-                if (order != null) {
-                    Result.Success(OrderMapper.toDomain(order))
-                } else {
-                    Result.Error("Заказ не найден")
-                }
-            }.getOrElse { e ->
-                appLogger.breadcrumb("storage", "order_get_failed", mapOf("operation" to "get_by_id"))
-                appLogger.e(LOG_TAG, "DB error while getting order", e)
-                Result.Error("Ошибка получения заказа: ${e.message}", e)
-            }
-
-        override fun searchOrders(
-            query: String,
-            status: OrderStatusModel?,
-        ): Flow<List<OrderModel>> {
-            val entityStatus =
-                status?.let {
-                    when (it) {
-                        OrderStatusModel.AVAILABLE -> OrderStatus.AVAILABLE
-                        OrderStatusModel.TAKEN -> OrderStatus.TAKEN
-                        OrderStatusModel.IN_PROGRESS -> OrderStatus.IN_PROGRESS
-                        OrderStatusModel.COMPLETED -> OrderStatus.COMPLETED
-                        OrderStatusModel.CANCELLED -> OrderStatus.CANCELLED
-                    }
-                }
-            return localDataSource
-                .searchOrders(query, entityStatus)
-                .map { OrderMapper.toDomainList(it) }
-        }
-
-        override fun searchOrdersByDispatcher(
-            dispatcherId: Long,
-            query: String,
-        ): Flow<List<OrderModel>> =
-            localDataSource
-                .searchOrdersByDispatcher(dispatcherId, query)
-                .map { OrderMapper.toDomainList(it) }
-
-        override suspend fun createOrder(order: OrderModel): Result<Long> =
-            runCatching {
-                val entity = OrderMapper.toEntity(order)
-                val id = localDataSource.insertOrder(entity)
-                appLogger.breadcrumb("orders", "order_created", mapOf("operation" to "create"))
-                Result.Success(id)
-            }.getOrElse { e ->
-                appLogger.breadcrumb("storage", "order_create_failed", mapOf("operation" to "create"))
-                appLogger.e(LOG_TAG, "DB error while creating order", e)
-                Result.Error("Ошибка создания заказа: ${e.message}", e)
-            }
-
-        override suspend fun updateOrder(order: OrderModel): Result<Unit> =
-            runCatching {
-                val entity = OrderMapper.toEntity(order)
-                localDataSource.updateOrder(entity)
-                appLogger.breadcrumb("orders", "order_updated", mapOf("operation" to "update"))
-                Result.Success(Unit)
-            }.getOrElse { e ->
-                appLogger.breadcrumb("storage", "order_update_failed", mapOf("operation" to "update"))
-                appLogger.e(LOG_TAG, "DB error while updating order", e)
-                Result.Error("Ошибка обновления заказа: ${e.message}", e)
-            }
-
-        override suspend fun deleteOrder(order: OrderModel): Result<Unit> =
-            runCatching {
-                val entity = OrderMapper.toEntity(order)
-                localDataSource.deleteOrder(entity)
-                Result.Success(Unit)
-            }.getOrElse { e ->
-                Result.Error("Ошибка удаления заказа: ${e.message}", e)
-            }
+        override suspend fun deleteOrder(order: OrderModel): Result<Unit> = transitions.deleteOrder(order)
 
         override suspend fun takeOrder(
             orderId: Long,
             workerId: Long,
-        ): Result<Unit> =
-            runCatching {
-                // Добавляем грузчика в таблицу order_workers
-                localDataSource.addWorkerToOrder(OrderWorker(orderId = orderId, workerId = workerId))
+        ): Result<Unit> = transitions.takeOrder(orderId = orderId, workerId = workerId)
 
-                // Обновляем workerId в заказе (первый взявший)
-                val order = localDataSource.getOrderById(orderId)
-                if (order != null && order.workerId == null) {
-                    localDataSource.updateOrder(order.copy(workerId = workerId, status = OrderStatus.TAKEN))
-                } else if (order != null) {
-                    // Уже есть грузчики — проверяем набрали ли нужное количество
-                    val count = localDataSource.getWorkerCountSync(orderId)
-                    if (count >= order.requiredWorkers) {
-                        localDataSource.updateOrderStatus(orderId, OrderStatus.TAKEN)
-                    }
-                }
-                Result.Success(Unit)
-            }.getOrElse { e ->
-                Result.Error("Ошибка взятия заказа: ${e.message}", e)
-            }
+        override suspend fun completeOrder(orderId: Long): Result<Unit> = transitions.completeOrder(orderId)
 
-        override suspend fun completeOrder(orderId: Long): Result<Unit> =
-            runCatching {
-                localDataSource.completeOrder(orderId, OrderStatus.COMPLETED, System.currentTimeMillis())
-                Result.Success(Unit)
-            }.getOrElse { e ->
-                Result.Error("Ошибка завершения заказа: ${e.message}", e)
-            }
-
-        override suspend fun cancelOrder(orderId: Long): Result<Unit> =
-            runCatching {
-                localDataSource.updateOrderStatus(orderId, OrderStatus.CANCELLED)
-                Result.Success(Unit)
-            }.getOrElse { e ->
-                Result.Error("Ошибка отмены заказа: ${e.message}", e)
-            }
+        override suspend fun cancelOrder(orderId: Long): Result<Unit> = transitions.cancelOrder(orderId)
 
         override suspend fun rateOrder(
             orderId: Long,
             rating: Float,
-        ): Result<Unit> =
-            runCatching {
-                localDataSource.rateOrder(orderId, rating)
-                Result.Success(Unit)
-            }.getOrElse { e ->
-                Result.Error("Ошибка оценки заказа: ${e.message}", e)
-            }
-
-        override fun getWorkerCountForOrder(orderId: Long): Flow<Int> = localDataSource.getWorkerCount(orderId)
-
-        override suspend fun getWorkerCountSync(orderId: Long): Int = localDataSource.getWorkerCountSync(orderId)
-
-        override suspend fun hasWorkerTakenOrder(
-            orderId: Long,
-            workerId: Long,
-        ): Boolean = localDataSource.hasWorker(orderId, workerId)
-
-        override fun getOrderIdsByWorker(workerId: Long): Flow<List<Long>> = localDataSource.getOrderIdsByWorker(workerId)
-
-        // Statistics
-
-        override fun getCompletedOrdersCount(workerId: Long): Flow<Int> = localDataSource.getCompletedOrdersCount(workerId)
-
-        override fun getTotalEarnings(workerId: Long): Flow<Double?> = localDataSource.getTotalEarnings(workerId)
-
-        override fun getAverageRating(workerId: Long): Flow<Float?> = localDataSource.getAverageRating(workerId)
-
-        override fun getDispatcherCompletedCount(dispatcherId: Long): Flow<Int> = localDataSource.getDispatcherCompletedCount(dispatcherId)
-
-        override fun getDispatcherActiveCount(dispatcherId: Long): Flow<Int> = localDataSource.getDispatcherActiveCount(dispatcherId)
+        ): Result<Unit> = transitions.rateOrder(orderId = orderId, rating = rating)
 
         companion object {
             private const val LOG_TAG = "OrderRepository"
