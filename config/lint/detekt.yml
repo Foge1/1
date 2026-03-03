@@ -82,10 +82,12 @@ naming:
     active: true
     variablePattern: '[a-z][A-Za-z0-9]*'
     privateVariablePattern: '(_)?[a-z][A-Za-z0-9]*'
-    constantPattern: '[A-Z][_A-Z0-9]*'
     excludes:
       - '**/test/**'
       - '**/androidTest/**'
+  ConstantNaming:
+    active: true
+    constantPattern: '[A-Z][_A-Z0-9]*'
   ClassNaming:
     active: true
     classPattern: '[A-Z][a-zA-Z0-9]*'
