@@ -34,7 +34,6 @@ import kotlinx.coroutines.test.setMain
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
-import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TestWatcher
@@ -55,8 +54,17 @@ class OrderDetailViewModelTest {
 
             assertFalse(vm.uiState.value.loading)
             assertNotNull(vm.uiState.value.order)
-            assertEquals(77L, vm.uiState.value.order?.order?.id)
-            assertEquals("Order title", vm.uiState.value.order?.order?.title)
+            val orderId =
+                vm.uiState.value.order
+                    ?.order
+                    ?.id
+            val orderTitle =
+                vm.uiState.value.order
+                    ?.order
+                    ?.title
+
+            assertEquals(77L, orderId)
+            assertEquals("Order title", orderTitle)
         }
 
     @Test
@@ -115,7 +123,10 @@ class OrderDetailViewModelTest {
 
         override suspend fun createOrder(order: Order): Long = order.id
 
-        override suspend fun cancelOrder(id: Long, reason: String?) = Unit
+        override suspend fun cancelOrder(
+            id: Long,
+            reason: String?,
+        ) = Unit
 
         override suspend fun completeOrder(id: Long) = Unit
 
@@ -123,7 +134,11 @@ class OrderDetailViewModelTest {
 
         override suspend fun getOrderById(id: Long): Order? = ordersFlow.value.firstOrNull { it.id == id }
 
-        override suspend fun applyToOrder(orderId: Long, loaderId: String, now: Long) {
+        override suspend fun applyToOrder(
+            orderId: Long,
+            loaderId: String,
+            now: Long,
+        ) {
             applyCalls += 1
             lastApplyOrderId = orderId
         }
