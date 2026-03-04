@@ -9,7 +9,6 @@ sealed class Route(
 
     object Main : Route("main")
 
-    // ── Вкладки Bottom Nav ───────────────────────────────────────────────────
     object Home : Route("home")
 
     object History : Route("history")
@@ -22,14 +21,6 @@ sealed class Route(
 
     object Settings : Route("settings")
 
-    // ── Поверх Main ──────────────────────────────────────────────────────────
-    object OrderDetail : Route("order/{orderId}?isDispatcher={isDispatcher}") {
-        fun createRoute(
-            orderId: Long,
-            isDispatcher: Boolean,
-        ) = "order/$orderId?isDispatcher=$isDispatcher"
-    }
-
     object CreateOrder : Route("create_order")
 
     object Chat : Route("chat/{orderId}") {
@@ -39,5 +30,4 @@ sealed class Route(
 
 object NavArgs {
     const val ORDER_ID = "orderId"
-    const val IS_DISPATCHER = "isDispatcher"
 }
