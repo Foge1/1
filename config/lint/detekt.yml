@@ -116,6 +116,22 @@ potential-bugs:
 
 style:
   active: true
+  ForbiddenImport:
+    active: true
+    imports:
+      # Guardrail 1: UI layer should not depend on app data/persistence implementations.
+      - 'com.loaderapp.data.*'
+      - 'com.loaderapp.data..*'
+      - 'com.loaderapp.di.data.*'
+      - 'com.loaderapp.di.data..*'
+      # Guardrail 2: feature modules should not depend on app module internals.
+      - 'com.loaderapp.di.*'
+      - 'com.loaderapp.di..*'
+      - 'com.loaderapp.LoaderApplication'
+      - 'com.loaderapp.MainActivity'
+    includes:
+      - '**/src/main/java/com/loaderapp/ui/**'
+      - '**/feature-*/src/main/java/**'
   MagicNumber:
     active: false
   WildcardImport:

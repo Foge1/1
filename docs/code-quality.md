@@ -49,3 +49,27 @@ Detekt работает в режиме строгих quality gates для prod
 - нарушения detekt исправляются в коде, а не скрываются suppress-ами.
 
 Formatting-правила detekt не используются: форматирование полностью остаётся за `ktlint`.
+
+## Архитектурные guardrails (Detekt ForbiddenImport)
+
+Чтобы предотвращать архитектурные регрессы без ложных срабатываний, включены точечные правила `ForbiddenImport`.
+
+### Какие guardrails действуют
+
+1. **UI не импортирует data/persistence слоя app-модуля**
+   - Запрещены импорты `com.loaderapp.data..*` и `com.loaderapp.di.data..*`.
+   - Область действия: `com.loaderapp.ui..*` (`app/src/main/java/com/loaderapp/ui/**`).
+   - Цель: UI работает через presentation/domain API, а не через DAO, entities, репозитории и DI data-модули.
+
+2. **Feature-модули не импортируют app internals**
+   - Запрещены импорты `com.loaderapp.di..*`, а также `com.loaderapp.LoaderApplication` и `com.loaderapp.MainActivity`.
+   - Область действия: все feature-модули (`feature-*/src/main/java/**`).
+   - Цель: фичи остаются изолированными, не зависят от app wiring и не ломают модульные границы.
+
+### Как правильно строить зависимости
+
+- `ui` → зависит от `presentation` моделей/состояний/команд.
+- `presentation` → зависит от `domain` use-case/контрактов.
+- `domain` → по возможности не зависит от Android SDK и деталей хранения.
+- `data`/`di` wiring → остаются в app или data-слое; наружу отдают только интерфейсы/контракты.
+- Feature-модули интегрируются через публичные контракты (core/domain API), а не через `app` классы.
