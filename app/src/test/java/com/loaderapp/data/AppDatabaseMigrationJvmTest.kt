@@ -71,10 +71,11 @@ class AppDatabaseMigrationJvmTest {
         assertTrue(annotation.exportSchema)
         assertEquals(6, annotation.version)
 
-        val schemaFile = resolveSchemaPath(
-            "schemas/com.loaderapp.data.AppDatabase/6.json",
-            "app/schemas/com.loaderapp.data.AppDatabase/6.json",
-        )
+        val schemaFile =
+            resolveSchemaPath(
+                "schemas/com.loaderapp.data.AppDatabase/6.json",
+                "app/schemas/com.loaderapp.data.AppDatabase/6.json",
+            )
         assertTrue(
             "Expected committed schema file for version 6",
             schemaFile.exists(),
@@ -87,7 +88,8 @@ class AppDatabaseMigrationJvmTest {
         onCreate: (SupportSQLiteDatabase) -> Unit,
     ) {
         val configuration =
-            SupportSQLiteOpenHelper.Configuration.builder(context)
+            SupportSQLiteOpenHelper.Configuration
+                .builder(context)
                 .name(dbFile.absolutePath)
                 .callback(
                     object : SupportSQLiteOpenHelper.Callback(version) {
