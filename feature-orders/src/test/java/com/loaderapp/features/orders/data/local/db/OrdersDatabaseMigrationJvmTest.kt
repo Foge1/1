@@ -86,10 +86,11 @@ class OrdersDatabaseMigrationJvmTest {
         assertTrue(annotation.exportSchema)
         assertEquals(3, annotation.version)
 
-        val schemaFile = resolveSchemaPath(
-            "schemas/com.loaderapp.features.orders.data.local.db.OrdersDatabase/3.json",
-            "feature-orders/schemas/com.loaderapp.features.orders.data.local.db.OrdersDatabase/3.json",
-        )
+        val schemaFile =
+            resolveSchemaPath(
+                "schemas/com.loaderapp.features.orders.data.local.db.OrdersDatabase/3.json",
+                "feature-orders/schemas/com.loaderapp.features.orders.data.local.db.OrdersDatabase/3.json",
+            )
         assertTrue("Expected committed schema file for OrdersDatabase v3", schemaFile.exists())
     }
 
@@ -99,7 +100,8 @@ class OrdersDatabaseMigrationJvmTest {
         onCreate: (SupportSQLiteDatabase) -> Unit,
     ) {
         val configuration =
-            SupportSQLiteOpenHelper.Configuration.builder(context)
+            SupportSQLiteOpenHelper.Configuration
+                .builder(context)
                 .name(dbFile.absolutePath)
                 .callback(
                     object : SupportSQLiteOpenHelper.Callback(version) {
