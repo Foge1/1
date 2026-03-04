@@ -1,21 +1,20 @@
 package com.loaderapp.features.orders.data
 
 import com.loaderapp.core.common.Result
-import com.loaderapp.domain.model.OrderModel
-import com.loaderapp.domain.model.OrderStatusModel
 import com.loaderapp.domain.repository.OrderRepository
+import com.loaderapp.features.orders.data.mappers.toFeatureOrderModel
 import com.loaderapp.features.orders.data.mappers.toFeatureStatus
-import com.loaderapp.features.orders.data.mappers.toOrderModel
-import com.loaderapp.features.orders.domain.Order
+import com.loaderapp.features.orders.data.mappers.toLegacyOrderModel
 import com.loaderapp.features.orders.domain.OrderAssignmentStatus
 import com.loaderapp.features.orders.domain.OrderStatus
-import com.loaderapp.features.orders.domain.OrderTime
 import com.loaderapp.features.orders.domain.repository.OrdersRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 import javax.inject.Singleton
+import com.loaderapp.domain.model.OrderModel as LegacyOrderModel
+import com.loaderapp.domain.model.OrderStatusModel as LegacyOrderStatusModel
 
 @Singleton
 class LegacyOrderRepositoryAdapter
@@ -23,15 +22,15 @@ class LegacyOrderRepositoryAdapter
     constructor(
         private val ordersRepository: OrdersRepository,
     ) : OrderRepository {
-        override fun getAllOrders(): Flow<List<OrderModel>> =
-            ordersRepository.observeOrders().map { orders -> orders.map(Order::toOrderModel) }
+        override fun getAllOrders(): Flow<List<LegacyOrderModel>> =
+            ordersRepository.observeOrders().map { orders -> orders.map { it.toLegacyOrderModel() } }
 
-        override fun getAvailableOrders(): Flow<List<OrderModel>> =
+        override fun getAvailableOrders(): Flow<List<LegacyOrderModel>> =
             ordersRepository
                 .observeOrders()
-                .map { orders -> orders.filter { it.status == OrderStatus.STAFFING }.map(Order::toOrderModel) }
+                .map { orders -> orders.filter { it.status == OrderStatus.STAFFING }.map { it.toLegacyOrderModel() } }
 
-        override fun getOrdersByWorker(workerId: Long): Flow<List<OrderModel>> {
+        override fun getOrdersByWorker(workerId: Long): Flow<List<LegacyOrderModel>> {
             val workerKey = workerId.toString()
             return ordersRepository
                 .observeOrders()
@@ -40,26 +39,30 @@ class LegacyOrderRepositoryAdapter
                         .filter { order ->
                             order.assignments.any { it.loaderId == workerKey } ||
                                 order.applications.any { it.loaderId == workerKey }
-                        }.map(Order::toOrderModel)
+                        }.map { it.toLegacyOrderModel() }
                 }
         }
 
-        override fun getOrdersByDispatcher(dispatcherId: Long): Flow<List<OrderModel>> =
+        override fun getOrdersByDispatcher(dispatcherId: Long): Flow<List<LegacyOrderModel>> =
             ordersRepository
                 .observeOrders()
-                .map { orders -> orders.filter { it.meta[DISPATCHER_ID_KEY]?.toLongOrNull() == dispatcherId }.map(Order::toOrderModel) }
+                .map { orders ->
+                    orders
+                        .filter { it.meta[DISPATCHER_ID_KEY]?.toLongOrNull() == dispatcherId }
+                        .map { it.toLegacyOrderModel() }
+                }
 
-        override suspend fun getOrderById(orderId: Long): Result<OrderModel> =
-            ordersRepository.getOrderById(orderId)?.let { Result.Success(it.toOrderModel()) }
+        override suspend fun getOrderById(orderId: Long): Result<LegacyOrderModel> =
+            ordersRepository.getOrderById(orderId)?.let { Result.Success(it.toLegacyOrderModel()) }
                 ?: Result.Error("Order not found")
 
-        override fun getOrderByIdFlow(orderId: Long): Flow<OrderModel?> =
-            ordersRepository.observeOrders().map { orders -> orders.firstOrNull { it.id == orderId }?.toOrderModel() }
+        override fun getOrderByIdFlow(orderId: Long): Flow<LegacyOrderModel?> =
+            ordersRepository.observeOrders().map { orders -> orders.firstOrNull { it.id == orderId }?.toLegacyOrderModel() }
 
         override fun searchOrders(
             query: String,
-            status: OrderStatusModel?,
-        ): Flow<List<OrderModel>> =
+            status: LegacyOrderStatusModel?,
+        ): Flow<List<LegacyOrderModel>> =
             ordersRepository
                 .observeOrders()
                 .map { orders ->
@@ -72,13 +75,13 @@ class LegacyOrderRepositoryAdapter
                                     order.comment.orEmpty().contains(query, ignoreCase = true)
                             val byStatus = status == null || order.status == status.toFeatureStatus()
                             byQuery && byStatus
-                        }.map(Order::toOrderModel)
+                        }.map { it.toLegacyOrderModel() }
                 }
 
         override fun searchOrdersByDispatcher(
             dispatcherId: Long,
             query: String,
-        ): Flow<List<OrderModel>> =
+        ): Flow<List<LegacyOrderModel>> =
             getOrdersByDispatcher(dispatcherId).map { orders ->
                 if (query.isBlank()) {
                     orders
@@ -91,37 +94,15 @@ class LegacyOrderRepositoryAdapter
                 }
             }
 
-        override suspend fun createOrder(order: OrderModel): Result<Long> {
-            val created =
-                Order(
-                    id = order.id,
-                    title = order.cargoDescription.ifBlank { "Заказ" },
-                    address = order.address,
-                    pricePerHour = order.pricePerHour,
-                    orderTime = if (order.isAsap) OrderTime.Soon else OrderTime.Exact(order.dateTime),
-                    durationMin = order.estimatedHours.coerceAtLeast(1) * 60,
-                    workersCurrent = if (order.workerId == null) 0 else 1,
-                    workersTotal = order.requiredWorkers,
-                    tags = listOf(order.cargoDescription),
-                    meta =
-                        mapOf(
-                            DISPATCHER_ID_KEY to order.dispatcherId.toString(),
-                            MIN_WORKER_RATING_KEY to order.minWorkerRating.toString(),
-                            Order.CREATED_AT_KEY to order.createdAt.toString(),
-                        ),
-                    comment = order.comment,
-                    status = order.status.toFeatureStatus(),
-                    createdByUserId = order.dispatcherId.toString(),
-                )
-            return runCatching {
-                val createdOrderId = ordersRepository.createOrder(created)
+        override suspend fun createOrder(order: LegacyOrderModel): Result<Long> =
+            runCatching {
+                val createdOrderId = ordersRepository.createOrder(order.toFeatureOrderModel())
                 Result.Success(createdOrderId)
             }.getOrElse { Result.Error(it.message ?: "Failed to create order") }
-        }
 
-        override suspend fun updateOrder(order: OrderModel): Result<Unit> = Result.Error("Not supported")
+        override suspend fun updateOrder(order: LegacyOrderModel): Result<Unit> = Result.Error("Not supported")
 
-        override suspend fun deleteOrder(order: OrderModel): Result<Unit> =
+        override suspend fun deleteOrder(order: LegacyOrderModel): Result<Unit> =
             runCatching {
                 ordersRepository.cancelOrder(order.id, reason = "legacy_delete")
                 Result.Success(Unit)
@@ -174,12 +155,12 @@ class LegacyOrderRepositoryAdapter
             }
 
         override fun getCompletedOrdersCount(workerId: Long): Flow<Int> =
-            getOrdersByWorker(workerId).map { orders -> orders.count { it.status == OrderStatusModel.COMPLETED } }
+            getOrdersByWorker(workerId).map { orders -> orders.count { it.status == LegacyOrderStatusModel.COMPLETED } }
 
         override fun getTotalEarnings(workerId: Long): Flow<Double?> =
             getOrdersByWorker(workerId).map { orders ->
                 orders
-                    .filter { it.status == OrderStatusModel.COMPLETED }
+                    .filter { it.status == LegacyOrderStatusModel.COMPLETED }
                     .sumOf { it.pricePerHour * it.estimatedHours }
             }
 
@@ -190,13 +171,12 @@ class LegacyOrderRepositoryAdapter
             }
 
         override fun getDispatcherCompletedCount(dispatcherId: Long): Flow<Int> =
-            getOrdersByDispatcher(dispatcherId).map { orders -> orders.count { it.status == OrderStatusModel.COMPLETED } }
+            getOrdersByDispatcher(dispatcherId).map { orders -> orders.count { it.status == LegacyOrderStatusModel.COMPLETED } }
 
         override fun getDispatcherActiveCount(dispatcherId: Long): Flow<Int> =
             getOrdersByDispatcher(dispatcherId).map { orders ->
-                orders.count { it.status == OrderStatusModel.AVAILABLE || it.status == OrderStatusModel.IN_PROGRESS }
+                orders.count { it.status == LegacyOrderStatusModel.AVAILABLE || it.status == LegacyOrderStatusModel.IN_PROGRESS }
             }
     }
 
 private const val DISPATCHER_ID_KEY = "dispatcherId"
-private const val MIN_WORKER_RATING_KEY = "minWorkerRating"
