@@ -42,6 +42,8 @@ complexity:
     thresholdInObjects: 20
     thresholdInInterfaces: 25
     thresholdInFiles: 25
+    excludes:
+      - '**/features/orders/data/LegacyOrderRepositoryAdapter.kt'
 
 coroutines:
   active: true

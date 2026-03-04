@@ -42,7 +42,7 @@ class OrdersRepositoryImpl
                 ordersGraphMapper.toDomainOrders(orderEntities, appEntities, assignmentEntities)
             }
 
-        override suspend fun createOrder(order: Order) {
+        override suspend fun createOrder(order: Order): Long {
             val newOrder =
                 order.copy(
                     id = 0L,
@@ -53,6 +53,7 @@ class OrdersRepositoryImpl
             val orderId = ordersDao.insertOrder(newOrder.toEntity())
             appLogger.breadcrumb("orders", "order_created", mapOf("source" to "feature_orders"))
             log("createOrder")
+            return orderId
         }
 
         override suspend fun cancelOrder(

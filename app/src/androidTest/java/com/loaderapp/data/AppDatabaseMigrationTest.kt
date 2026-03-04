@@ -4,6 +4,7 @@ import androidx.room.testing.MigrationTestHelper
 import androidx.sqlite.db.framework.FrameworkSQLiteOpenHelperFactory
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import org.junit.Assert.assertFalse
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -108,7 +109,54 @@ class AppDatabaseMigrationTest {
     }
 
     @Test
-    fun migrateAllFrom1To5() {
+    fun migrate5To6_dropsLegacyOrdersTables() {
+        helper.createDatabase(testDb, 5).apply {
+            execSQL(
+                """
+                CREATE TABLE IF NOT EXISTS `orders` (
+                    `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                    `address` TEXT NOT NULL,
+                    `dateTime` INTEGER NOT NULL,
+                    `cargoDescription` TEXT NOT NULL,
+                    `pricePerHour` REAL NOT NULL,
+                    `estimatedHours` INTEGER NOT NULL,
+                    `requiredWorkers` INTEGER NOT NULL,
+                    `minWorkerRating` REAL NOT NULL,
+                    `status` TEXT NOT NULL,
+                    `createdAt` INTEGER NOT NULL,
+                    `completedAt` INTEGER,
+                    `workerId` INTEGER,
+                    `dispatcherId` INTEGER NOT NULL,
+                    `workerRating` REAL,
+                    `comment` TEXT NOT NULL
+                )
+                """.trimIndent(),
+            )
+            execSQL(
+                """
+                CREATE TABLE IF NOT EXISTS `order_workers` (
+                    `orderId` INTEGER NOT NULL,
+                    `workerId` INTEGER NOT NULL,
+                    `takenAt` INTEGER NOT NULL,
+                    PRIMARY KEY(`orderId`, `workerId`)
+                )
+                """.trimIndent(),
+            )
+            close()
+        }
+
+        val migratedDb = helper.runMigrationsAndValidate(testDb, 6, true, AppMigrations.MIGRATION_5_6)
+
+        migratedDb.query("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'orders'").use { cursor ->
+            assertFalse(cursor.moveToFirst())
+        }
+        migratedDb.query("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'order_workers'").use { cursor ->
+            assertFalse(cursor.moveToFirst())
+        }
+    }
+
+    @Test
+    fun migrateAllFrom1To6() {
         helper.createDatabase(testDb, 1).apply {
             execSQL(
                 """
@@ -129,6 +177,6 @@ class AppDatabaseMigrationTest {
             close()
         }
 
-        helper.runMigrationsAndValidate(testDb, 5, true, *AppMigrations.ALL)
+        helper.runMigrationsAndValidate(testDb, 6, true, *AppMigrations.ALL)
     }
 }

@@ -131,7 +131,7 @@ class SelectUnselectApplicantUseCaseTest {
                 .first()
                 .status
 
-        override suspend fun createOrder(order: Order) = Unit
+        override suspend fun createOrder(order: Order): Long = 1L
 
         override suspend fun cancelOrder(
             id: Long,

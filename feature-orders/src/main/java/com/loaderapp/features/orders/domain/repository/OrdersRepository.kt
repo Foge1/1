@@ -8,7 +8,7 @@ interface OrdersRepository {
     fun observeOrders(): Flow<List<Order>>
 
     // ── Order lifecycle ────────────────────────────────────────────────────────
-    suspend fun createOrder(order: Order)
+    suspend fun createOrder(order: Order): Long
 
     suspend fun cancelOrder(
         id: Long,

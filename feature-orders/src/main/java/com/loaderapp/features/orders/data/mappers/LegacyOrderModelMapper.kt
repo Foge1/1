@@ -1,24 +1,38 @@
 package com.loaderapp.features.orders.data.mappers
 
-import com.loaderapp.domain.model.OrderModel
-import com.loaderapp.domain.model.OrderStatusModel
-import com.loaderapp.features.orders.domain.Order
-import com.loaderapp.features.orders.domain.OrderStatus
 import com.loaderapp.features.orders.domain.OrderTime
+import com.loaderapp.domain.model.OrderModel as LegacyOrderModel
+import com.loaderapp.domain.model.OrderStatusModel as LegacyStatusModel
+import com.loaderapp.features.orders.domain.Order as FeatureOrderModel
+import com.loaderapp.features.orders.domain.OrderStatus as FeatureStatus
 
-fun OrderModel.toFeatureStatus(): OrderStatus =
-    when (status) {
-        OrderStatusModel.AVAILABLE -> OrderStatus.STAFFING
-        OrderStatusModel.TAKEN, OrderStatusModel.IN_PROGRESS -> OrderStatus.IN_PROGRESS
-        OrderStatusModel.COMPLETED -> OrderStatus.COMPLETED
-        OrderStatusModel.CANCELLED -> OrderStatus.CANCELED
-    }
+fun LegacyOrderModel.toFeatureOrderModel(): FeatureOrderModel =
+    FeatureOrderModel(
+        id = id,
+        title = cargoDescription.ifBlank { "Заказ" },
+        address = address,
+        pricePerHour = pricePerHour,
+        orderTime = if (isAsap) OrderTime.Soon else OrderTime.Exact(dateTime),
+        durationMin = estimatedHours.coerceAtLeast(1) * 60,
+        workersCurrent = if (workerId == null) 0 else 1,
+        workersTotal = requiredWorkers,
+        tags = listOf(cargoDescription),
+        meta =
+            mapOf(
+                DISPATCHER_ID_KEY to dispatcherId.toString(),
+                MIN_WORKER_RATING_KEY to minWorkerRating.toString(),
+                FeatureOrderModel.CREATED_AT_KEY to createdAt.toString(),
+            ),
+        comment = comment,
+        status = status.toFeatureStatus(),
+        createdByUserId = dispatcherId.toString(),
+    )
 
-fun Order.toLegacyOrderModel(): OrderModel = toOrderModel()
+fun FeatureOrderModel.toOrderModel(): LegacyOrderModel = toLegacyOrderModel()
 
-fun Order.toOrderModel(): OrderModel {
+fun FeatureOrderModel.toLegacyOrderModel(): LegacyOrderModel {
     val durationHours = (durationMin / 60).coerceAtLeast(1)
-    return OrderModel(
+    return LegacyOrderModel(
         id = id,
         address = address,
         dateTime = dateTime,
@@ -27,8 +41,8 @@ fun Order.toOrderModel(): OrderModel {
         estimatedHours = durationHours,
         requiredWorkers = workersTotal,
         minWorkerRating = meta[MIN_WORKER_RATING_KEY]?.toFloatOrNull() ?: 0f,
-        status = status.toLegacyStatusModel(),
-        createdAt = meta[Order.CREATED_AT_KEY]?.toLongOrNull() ?: dateTime,
+        status = status.toLegacyStatus(),
+        createdAt = meta[FeatureOrderModel.CREATED_AT_KEY]?.toLongOrNull() ?: dateTime,
         completedAt = null,
         workerId = null,
         dispatcherId = meta[DISPATCHER_ID_KEY]?.toLongOrNull() ?: 0L,
@@ -38,14 +52,24 @@ fun Order.toOrderModel(): OrderModel {
     )
 }
 
-private fun OrderStatus.toLegacyStatusModel(): OrderStatusModel =
+fun LegacyStatusModel.toFeatureStatus(): FeatureStatus =
     when (this) {
-        OrderStatus.STAFFING -> OrderStatusModel.AVAILABLE
-        OrderStatus.IN_PROGRESS -> OrderStatusModel.IN_PROGRESS
-        OrderStatus.COMPLETED -> OrderStatusModel.COMPLETED
-        OrderStatus.CANCELED,
-        OrderStatus.EXPIRED,
-        -> OrderStatusModel.CANCELLED
+        LegacyStatusModel.AVAILABLE -> FeatureStatus.STAFFING
+        LegacyStatusModel.TAKEN,
+        LegacyStatusModel.IN_PROGRESS,
+        -> FeatureStatus.IN_PROGRESS
+        LegacyStatusModel.COMPLETED -> FeatureStatus.COMPLETED
+        LegacyStatusModel.CANCELLED -> FeatureStatus.CANCELED
+    }
+
+fun FeatureStatus.toLegacyStatus(): LegacyStatusModel =
+    when (this) {
+        FeatureStatus.STAFFING -> LegacyStatusModel.AVAILABLE
+        FeatureStatus.IN_PROGRESS -> LegacyStatusModel.IN_PROGRESS
+        FeatureStatus.COMPLETED -> LegacyStatusModel.COMPLETED
+        FeatureStatus.CANCELED,
+        FeatureStatus.EXPIRED,
+        -> LegacyStatusModel.CANCELLED
     }
 
 private const val MIN_WORKER_RATING_KEY = "minWorkerRating"

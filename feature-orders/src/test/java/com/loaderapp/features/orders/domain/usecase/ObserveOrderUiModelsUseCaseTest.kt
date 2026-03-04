@@ -115,8 +115,9 @@ class ObserveOrderUiModelsUseCaseTest {
             state.emit(orders)
         }
 
-        override suspend fun createOrder(order: Order) {
+        override suspend fun createOrder(order: Order): Long {
             state.update { it + order }
+            return order.id.takeIf { it > 0 } ?: 1L
         }
 
         override suspend fun cancelOrder(
