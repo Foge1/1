@@ -9,6 +9,7 @@ import com.loaderapp.features.orders.domain.usecase.ObserveOrderUiModelsResult
 import com.loaderapp.features.orders.domain.usecase.ObserveOrderUiModelsUseCase
 import com.loaderapp.features.orders.domain.usecase.ResponderAvailability
 import com.loaderapp.features.orders.domain.usecase.UseCaseResult
+import com.loaderapp.features.orders.presentation.mapper.toUiModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -54,8 +55,9 @@ class ResponsesViewModel
                         }
 
                         is ObserveOrderUiModelsResult.Selected -> {
+                            val uiModels = result.orders.map { it.toUiModel() }
                             val responderIds =
-                                result.orders
+                                uiModels
                                     .asSequence()
                                     .filter { it.order.status == OrderStatus.STAFFING }
                                     .flatMap { order -> order.visibleApplicants.asSequence().map { it.loaderId } }
@@ -66,7 +68,7 @@ class ResponsesViewModel
                                 state.copy(
                                     loading = false,
                                     errorMessage = null,
-                                    items = result.orders.toResponsesItems(availability),
+                                    items = uiModels.toResponsesItems(availability),
                                 )
                             }
                         }
