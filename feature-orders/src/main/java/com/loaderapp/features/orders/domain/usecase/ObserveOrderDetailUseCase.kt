@@ -1,6 +1,6 @@
 package com.loaderapp.features.orders.domain.usecase
 
-import com.loaderapp.features.orders.presentation.OrderUiModel
+import com.loaderapp.features.orders.domain.model.OrderDetail
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
@@ -32,6 +32,6 @@ sealed interface ObserveOrderDetailResult {
     data object NotFound : ObserveOrderDetailResult
 
     data class Success(
-        val order: OrderUiModel,
+        val order: OrderDetail,
     ) : ObserveOrderDetailResult
 }

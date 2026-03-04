@@ -13,6 +13,7 @@ import com.loaderapp.features.orders.domain.usecase.StartOrderUseCase
 import com.loaderapp.features.orders.domain.usecase.UnselectApplicantUseCase
 import com.loaderapp.features.orders.domain.usecase.UseCaseResult
 import com.loaderapp.features.orders.domain.usecase.WithdrawApplicationUseCase
+import com.loaderapp.features.orders.presentation.mapper.toUiModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -69,7 +70,7 @@ class OrderDetailViewModel
                             is ObserveOrderDetailResult.Success -> {
                                 current.copy(
                                     loading = false,
-                                    order = result.order,
+                                    order = result.order.toUiModel(),
                                     errorMessage = null,
                                     requiresUserSelection = false,
                                 )
