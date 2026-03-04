@@ -22,9 +22,9 @@ import com.loaderapp.features.orders.domain.usecase.SelectApplicantUseCase
 import com.loaderapp.features.orders.domain.usecase.StartOrderUseCase
 import com.loaderapp.features.orders.domain.usecase.UnselectApplicantUseCase
 import com.loaderapp.features.orders.domain.usecase.WithdrawApplicationUseCase
+import com.loaderapp.features.orders.testing.MainDispatcherRule
 import com.loaderapp.features.orders.testing.TestAppLogger
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -33,13 +33,9 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.test.StandardTestDispatcher
-import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceUntilIdle
-import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runCurrent
-import kotlinx.coroutines.test.setMain
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -47,8 +43,6 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
-import org.junit.rules.TestWatcher
-import org.junit.runner.Description
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class OrdersViewModelTest {
@@ -61,7 +55,10 @@ class OrdersViewModelTest {
     private fun runOrdersTest(
         dispatchTimeoutMs: Long = 60_000L,
         testBody: suspend TestScope.() -> Unit,
-    ) = mainDispatcherRule.runTest(dispatchTimeoutMs = dispatchTimeoutMs) {
+    ) = kotlinx.coroutines.test.runTest(
+        context = mainDispatcherRule.dispatcher,
+        dispatchTimeoutMs = dispatchTimeoutMs,
+    ) {
         try {
             testBody()
         } finally {
@@ -564,27 +561,6 @@ class OrdersViewModelTest {
     }
 
     // ── Rules ─────────────────────────────────────────────────────────────────
-
-    class MainDispatcherRule(
-        val testDispatcher: TestDispatcher = StandardTestDispatcher(),
-    ) : TestWatcher() {
-        override fun starting(description: Description) {
-            Dispatchers.setMain(testDispatcher)
-        }
-
-        override fun finished(description: Description) {
-            Dispatchers.resetMain()
-        }
-
-        fun runTest(
-            dispatchTimeoutMs: Long = 60_000L,
-            testBody: suspend TestScope.() -> Unit,
-        ) = kotlinx.coroutines.test.runTest(
-            testDispatcher.scheduler,
-            dispatchTimeoutMs = dispatchTimeoutMs,
-            testBody = testBody,
-        )
-    }
 
     // ── Fixtures ──────────────────────────────────────────────────────────────
 
