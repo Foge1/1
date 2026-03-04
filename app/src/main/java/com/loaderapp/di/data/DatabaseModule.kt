@@ -5,8 +5,6 @@ import androidx.room.Room
 import com.loaderapp.data.AppDatabase
 import com.loaderapp.data.AppMigrations
 import com.loaderapp.data.dao.ChatDao
-import com.loaderapp.data.dao.OrderDao
-import com.loaderapp.data.dao.OrderWorkerDao
 import com.loaderapp.data.dao.UserDao
 import dagger.Module
 import dagger.Provides
@@ -34,15 +32,7 @@ object DatabaseModule {
 
     @Provides
     @Singleton
-    fun provideOrderDao(database: AppDatabase): OrderDao = database.orderDao()
-
-    @Provides
-    @Singleton
     fun provideUserDao(database: AppDatabase): UserDao = database.userDao()
-
-    @Provides
-    @Singleton
-    fun provideOrderWorkerDao(database: AppDatabase): OrderWorkerDao = database.orderWorkerDao()
 
     @Provides
     @Singleton
