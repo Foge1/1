@@ -78,7 +78,7 @@ object Migration2To3 : Migration(2, 3) {
             """.trimIndent(),
         )
         db.execSQL(
-            "CREATE INDEX IF NOT EXISTS idx_order_applications_loader_status ON order_applications (loaderId, status)",
+            "CREATE INDEX IF NOT EXISTS index_order_applications_loaderId_status ON order_applications (loaderId, status)",
         )
 
         // 6. Create order_assignments table
@@ -95,7 +95,7 @@ object Migration2To3 : Migration(2, 3) {
             """.trimIndent(),
         )
         db.execSQL(
-            "CREATE INDEX IF NOT EXISTS idx_order_assignments_loader_status ON order_assignments (loaderId, status)",
+            "CREATE INDEX IF NOT EXISTS index_order_assignments_loaderId_status ON order_assignments (loaderId, status)",
         )
     }
 }
