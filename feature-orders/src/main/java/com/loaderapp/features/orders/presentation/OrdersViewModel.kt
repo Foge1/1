@@ -6,6 +6,7 @@ import com.loaderapp.core.logging.AppLogger
 import com.loaderapp.features.orders.domain.usecase.ObserveOrderUiModelsResult
 import com.loaderapp.features.orders.domain.usecase.ObserveOrderUiModelsUseCase
 import com.loaderapp.features.orders.domain.usecase.UseCaseResult
+import com.loaderapp.features.orders.presentation.mapper.toUiModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -81,16 +82,17 @@ class OrdersViewModel
                             }
 
                             is ObserveOrderUiModelsResult.Selected -> {
+                                val uiModels = result.orders.map { it.toUiModel() }
                                 val availableOrders =
-                                    result.orders.filter {
+                                    uiModels.filter {
                                         OrdersTab.Available.matches(it.order.status)
                                     }
                                 val inProgressOrders =
-                                    result.orders.filter {
+                                    uiModels.filter {
                                         OrdersTab.InProgress.matches(it.order.status)
                                     }
                                 val historyOrders =
-                                    result.orders.filter {
+                                    uiModels.filter {
                                         OrdersTab.History.matches(it.order.status)
                                     }
                                 state.copy(

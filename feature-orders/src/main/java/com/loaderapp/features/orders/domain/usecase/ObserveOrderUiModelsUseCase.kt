@@ -6,18 +6,18 @@ import com.loaderapp.features.orders.domain.OrderAssignmentStatus
 import com.loaderapp.features.orders.domain.OrderRulesContext
 import com.loaderapp.features.orders.domain.OrderStateMachine
 import com.loaderapp.features.orders.domain.Role
+import com.loaderapp.features.orders.domain.model.OrderDetail
 import com.loaderapp.features.orders.domain.orders.filterForUser
 import com.loaderapp.features.orders.domain.repository.OrdersRepository
 import com.loaderapp.features.orders.domain.session.CurrentUser
 import com.loaderapp.features.orders.domain.session.CurrentUserProvider
-import com.loaderapp.features.orders.presentation.OrderUiModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.mapLatest
 import javax.inject.Inject
 
 /**
- * Единая точка построения [OrderUiModel] из потоков пользователя и заказов.
+ * Единая точка построения domain-моделей деталей заказа из потоков пользователя и заказов.
  */
 class ObserveOrderUiModelsUseCase
     @Inject
@@ -39,7 +39,7 @@ class ObserveOrderUiModelsUseCase
                     val visibleOrders = orders.filterForUser(actor)
                     val baseContext = buildBaseContext(actor)
                     ObserveOrderUiModelsResult.Selected(
-                        visibleOrders.map { order: Order -> order.toUiModel(actor, baseContext) },
+                        visibleOrders.map { order: Order -> order.toOrderDetail(actor, baseContext) },
                     )
                 }
             }
@@ -55,10 +55,10 @@ class ObserveOrderUiModelsUseCase
                 Role.DISPATCHER -> OrderRulesContext()
             }
 
-        private fun Order.toUiModel(
+        private fun Order.toOrderDetail(
             actor: CurrentUser,
             baseContext: OrderRulesContext,
-        ): OrderUiModel {
+        ): OrderDetail {
             val hasAssignmentHere =
                 actor.role == Role.LOADER &&
                     assignments.any { it.loaderId == actor.id && it.status == OrderAssignmentStatus.ACTIVE }
@@ -66,7 +66,7 @@ class ObserveOrderUiModelsUseCase
             val context = baseContext.copy(loaderHasActiveAssignmentInThisOrder = hasAssignmentHere)
             val actions: OrderActions = stateMachine.actionsFor(this, actor, context)
 
-            return OrderUiModel(
+            return OrderDetail(
                 order = this,
                 currentUserId = actor.id,
                 currentUserRole = actor.role,
@@ -91,6 +91,6 @@ sealed interface ObserveOrderUiModelsResult {
     data object NotSelected : ObserveOrderUiModelsResult
 
     data class Selected(
-        val orders: List<OrderUiModel>,
+        val orders: List<OrderDetail>,
     ) : ObserveOrderUiModelsResult
 }

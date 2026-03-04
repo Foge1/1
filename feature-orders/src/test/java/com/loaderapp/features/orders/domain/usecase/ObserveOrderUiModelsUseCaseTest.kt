@@ -23,7 +23,7 @@ import org.junit.Test
 
 class ObserveOrderUiModelsUseCaseTest {
     @Test
-    fun `loader applyDisabledReason is set when active assignment exists`() =
+    fun `loader applyBlockReason is set when active assignment exists`() =
         runBlocking {
             val repo =
                 InMemoryOrdersRepository(
@@ -39,11 +39,11 @@ class ObserveOrderUiModelsUseCaseTest {
 
             assertEquals(1, models.size)
             assertTrue(!models.first().canApply)
-            assertNotNull(models.first().applyDisabledReason)
+            assertNotNull(models.first().applyBlockReason)
         }
 
     @Test
-    fun `loader applyDisabledReason is set when active applied count reached`() =
+    fun `loader applyBlockReason is set when active applied count reached`() =
         runBlocking {
             val repo =
                 InMemoryOrdersRepository(
@@ -59,7 +59,7 @@ class ObserveOrderUiModelsUseCaseTest {
 
             assertEquals(1, models.size)
             assertTrue(!models.first().canApply)
-            assertNotNull(models.first().applyDisabledReason)
+            assertNotNull(models.first().applyBlockReason)
         }
 
     @Test
