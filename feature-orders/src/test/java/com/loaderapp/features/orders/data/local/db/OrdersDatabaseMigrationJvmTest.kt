@@ -64,18 +64,35 @@ class OrdersDatabaseMigrationJvmTest {
             )
         }
 
-        openRoomDb(dbFile).use { roomDb ->
+        val roomDb = openRoomDb(dbFile)
+        try {
             val sqliteDb = roomDb.openHelper.writableDatabase
-            sqliteDb.query("SELECT status FROM orders WHERE id = 1").use { cursor ->
-                assertTrue(cursor.moveToFirst())
-                assertEquals("STAFFING", cursor.getString(0))
+
+            val statusCursor = sqliteDb.query("SELECT status FROM orders WHERE id = 1")
+            try {
+                assertTrue(statusCursor.moveToFirst())
+                assertEquals("STAFFING", statusCursor.getString(0))
+            } finally {
+                statusCursor.close()
             }
-            sqliteDb.query("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'order_applications'").use { cursor ->
-                assertTrue(cursor.moveToFirst())
+
+            val applicationsCursor =
+                sqliteDb.query("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'order_applications'")
+            try {
+                assertTrue(applicationsCursor.moveToFirst())
+            } finally {
+                applicationsCursor.close()
             }
-            sqliteDb.query("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'order_assignments'").use { cursor ->
-                assertTrue(cursor.moveToFirst())
+
+            val assignmentsCursor =
+                sqliteDb.query("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'order_assignments'")
+            try {
+                assertTrue(assignmentsCursor.moveToFirst())
+            } finally {
+                assignmentsCursor.close()
             }
+        } finally {
+            roomDb.close()
         }
     }
 
@@ -115,8 +132,11 @@ class OrdersDatabaseMigrationJvmTest {
                     },
                 ).build()
 
-        FrameworkSQLiteOpenHelperFactory().create(configuration).use { helper ->
+        val helper = FrameworkSQLiteOpenHelperFactory().create(configuration)
+        try {
             helper.writableDatabase
+        } finally {
+            helper.close()
         }
     }
 
