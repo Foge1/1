@@ -7,8 +7,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.*
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import com.loaderapp.features.orders.presentation.orderDetailRoute
 import com.loaderapp.features.orders.presentation.navigateToOrderDetail
+import com.loaderapp.features.orders.presentation.orderDetailRoute
 import com.loaderapp.presentation.session.SessionDestination
 import com.loaderapp.presentation.session.SessionViewModel
 import com.loaderapp.ui.auth.RoleSelectionScreen
