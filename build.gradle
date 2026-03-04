@@ -6,6 +6,7 @@ plugins {
     alias(libs.plugins.hilt.android) apply false
 }
 
+
 tasks.register('detektAll') {
     group = 'verification'
     description = 'Runs detekt across all modules.'

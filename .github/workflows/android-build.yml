@@ -16,6 +16,8 @@ jobs:
       - name: Setup Android build environment
         uses: ./.github/actions/android-build-setup
 
+      - name: Gradle & JVM diagnostics
+        run: ./gradlew -version --no-daemon --stacktrace
 
       - name: Lint Check
         run: ./gradlew detektAll ktlintCheckAll --no-daemon --stacktrace
