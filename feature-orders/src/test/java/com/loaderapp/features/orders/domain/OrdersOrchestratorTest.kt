@@ -332,8 +332,10 @@ class OrdersOrchestratorTest {
 
         override fun observeOrders(): Flow<List<Order>> = emptyFlow()
 
-        override suspend fun createOrder(order: Order) {
-            orders.add(order.copy(id = if (order.id == 0L) 1L else order.id, status = OrderStatus.STAFFING))
+        override suspend fun createOrder(order: Order): Long {
+            val createdId = if (order.id == 0L) 1L else order.id
+            orders.add(order.copy(id = createdId, status = OrderStatus.STAFFING))
+            return createdId
         }
 
         override suspend fun cancelOrder(

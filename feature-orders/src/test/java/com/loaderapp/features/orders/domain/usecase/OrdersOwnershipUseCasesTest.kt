@@ -314,8 +314,10 @@ class OrdersOwnershipUseCasesTest {
 
         override fun observeOrders(): Flow<List<Order>> = state
 
-        override suspend fun createOrder(order: Order) {
-            state.update { it + order.copy(id = if (order.id == 0L) 1L else order.id, status = OrderStatus.STAFFING) }
+        override suspend fun createOrder(order: Order): Long {
+            val createdId = if (order.id == 0L) 1L else order.id
+            state.update { it + order.copy(id = createdId, status = OrderStatus.STAFFING) }
+            return createdId
         }
 
         override suspend fun cancelOrder(

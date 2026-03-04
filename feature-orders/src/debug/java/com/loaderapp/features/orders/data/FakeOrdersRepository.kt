@@ -44,7 +44,7 @@ class FakeOrdersRepository
             }
         }
 
-        override suspend fun createOrder(order: Order) {
+        override suspend fun createOrder(order: Order): Long {
             simulateLatency()
             val resolvedId =
                 if (order.id > 0) {
@@ -62,6 +62,7 @@ class FakeOrdersRepository
                     assignments = emptyList(),
                 )
             orders.update { it + newOrder }
+            return resolvedId
         }
 
         override suspend fun cancelOrder(

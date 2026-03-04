@@ -49,7 +49,7 @@ class CanAccessOrderChatUseCaseTest {
     ) : OrdersRepository {
         override fun observeOrders(): Flow<List<Order>> = emptyFlow()
 
-        override suspend fun createOrder(order: Order) = Unit
+        override suspend fun createOrder(order: Order): Long = 1L
 
         @Deprecated("compat")
         override suspend fun cancelOrder(

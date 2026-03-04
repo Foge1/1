@@ -86,7 +86,7 @@ class StartOrderUseCaseBusyTest {
 
         override fun observeOrders(): Flow<List<Order>> = state
 
-        override suspend fun createOrder(order: Order) = Unit
+        override suspend fun createOrder(order: Order): Long = 1L
 
         override suspend fun cancelOrder(
             id: Long,

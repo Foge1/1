@@ -114,8 +114,8 @@ class LegacyOrderRepositoryAdapter
                     createdByUserId = order.dispatcherId.toString(),
                 )
             return runCatching {
-                ordersRepository.createOrder(created)
-                Result.Success(0L)
+                val createdOrderId = ordersRepository.createOrder(created)
+                Result.Success(createdOrderId)
             }.getOrElse { Result.Error(it.message ?: "Failed to create order") }
         }
 
