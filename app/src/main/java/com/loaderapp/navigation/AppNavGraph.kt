@@ -7,13 +7,13 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.*
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import com.loaderapp.presentation.order.OrderDetailViewModel
+import com.loaderapp.features.orders.presentation.navigateToOrderDetail
+import com.loaderapp.features.orders.presentation.orderDetailRoute
 import com.loaderapp.presentation.session.SessionDestination
 import com.loaderapp.presentation.session.SessionViewModel
 import com.loaderapp.ui.auth.RoleSelectionScreen
 import com.loaderapp.ui.chat.ChatScreen
 import com.loaderapp.ui.main.MainScreen
-import com.loaderapp.ui.order.OrderDetailScreen
 import com.loaderapp.ui.splash.SplashScreen
 
 @Composable
@@ -26,7 +26,6 @@ fun AppNavGraph(
     val destination by sessionViewModel.destination.collectAsState()
     val sessionState by sessionViewModel.sessionState.collectAsState()
 
-    // Глобальная реакция на logout → возврат на Auth с очисткой стека
     LaunchedEffect(destination) {
         when (destination) {
             is SessionDestination.Auth -> {
@@ -55,7 +54,6 @@ fun AppNavGraph(
         enterTransition = { fadeIn(tween(300)) },
         exitTransition = { fadeOut(tween(200)) },
     ) {
-        // ── Splash ──────────────────────────────────────────────────────────
         composable(
             route = Route.Splash.route,
             enterTransition = { fadeIn(tween(500, easing = FastOutSlowInEasing)) },
@@ -80,7 +78,6 @@ fun AppNavGraph(
             )
         }
 
-        // ── Auth ─────────────────────────────────────────────────────────────
         composable(
             route = Route.Auth.route,
             enterTransition = {
@@ -96,49 +93,19 @@ fun AppNavGraph(
             )
         }
 
-        // ── Main (единый для всех ролей) ─────────────────────────────────────
         composable(route = Route.Main.route) {
             MainScreen(
                 sessionViewModel = sessionViewModel,
-                onOrderClick = { orderId, isDispatcher ->
-                    navController.navigate(
-                        Route.OrderDetail.createRoute(orderId, isDispatcher),
-                    )
+                onOrderClick = { orderId, _ ->
+                    navController.navigateToOrderDetail(orderId)
                 },
             )
         }
 
-        // ── Order Detail ─────────────────────────────────────────────────────
-        composable(
-            route = Route.OrderDetail.route,
-            arguments =
-                listOf(
-                    navArgument(NavArgs.ORDER_ID) { type = NavType.LongType },
-                    navArgument(NavArgs.IS_DISPATCHER) {
-                        type = NavType.BoolType
-                        defaultValue = false
-                    },
-                ),
-            enterTransition = {
-                fadeIn(tween(280)) +
-                    slideInVertically(tween(340, easing = FastOutSlowInEasing)) { it / 5 }
-            },
-            exitTransition = {
-                fadeOut(tween(200)) +
-                    slideOutVertically(tween(280, easing = FastOutSlowInEasing)) { it / 5 }
-            },
-        ) { _ ->
-            val vm: OrderDetailViewModel = hiltViewModel()
-            // No LaunchedEffect needed: OrderDetailViewModel reads orderId from
-            // SavedStateHandle in init{} and starts loading automatically.
-            OrderDetailScreen(
-                viewModel = vm,
-                onBack = { navController.popBackStack() },
-                onOpenChat = { chatOrderId ->
-                    navController.navigate(Route.Chat.createRoute(chatOrderId))
-                },
-            )
-        }
+        orderDetailRoute(
+            onBack = { navController.popBackStack() },
+            onOpenChat = { chatOrderId -> navController.navigate(Route.Chat.createRoute(chatOrderId)) },
+        )
 
         composable(
             route = Route.Chat.route,
