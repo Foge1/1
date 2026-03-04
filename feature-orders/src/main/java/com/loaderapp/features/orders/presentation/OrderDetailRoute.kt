@@ -47,10 +47,19 @@ fun NavGraphBuilder.orderDetailRoute(
 ) {
     composable(
         route = OrderDetailRoute.ROUTE_PATTERN,
-        arguments = listOf(navArgument(OrderDetailRoute.ORDER_ID_ARG) { type = NavType.LongType }),
+        arguments =
+            listOf(
+                navArgument(OrderDetailRoute.ORDER_ID_ARG) {
+                    type = NavType.LongType
+                },
+            ),
     ) {
         val viewModel: OrderDetailViewModel = hiltViewModel()
-        OrderDetailScreen(viewModel = viewModel, onBack = onBack, onOpenChat = onOpenChat)
+        OrderDetailScreen(
+            viewModel = viewModel,
+            onBack = onBack,
+            onOpenChat = onOpenChat,
+        )
     }
 }
 
@@ -67,33 +76,88 @@ fun OrderDetailScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(if (order == null) "Заказ" else "Заказ #${order.order.id}") },
-                navigationIcon = { Button(onClick = onBack, contentPadding = PaddingValues(horizontal = 12.dp)) { Text("Назад") } },
+                title = {
+                    Text(
+                        text = if (order == null) "Заказ" else "Заказ #${order.order.id}",
+                    )
+                },
+                navigationIcon = {
+                    Button(
+                        onClick = onBack,
+                        contentPadding = PaddingValues(horizontal = 12.dp),
+                    ) {
+                        Text("Назад")
+                    }
+                },
             )
         },
     ) { padding ->
         when {
             state.loading -> {
-                Column(modifier = Modifier.fillMaxSize().padding(padding), verticalArrangement = Arrangement.Center) {
-                    CircularProgressIndicator(modifier = Modifier.padding(16.dp))
+                Column(
+                    modifier =
+                        Modifier
+                            .fillMaxSize()
+                            .padding(padding),
+                    verticalArrangement = Arrangement.Center,
+                ) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.padding(16.dp),
+                    )
                 }
             }
-            state.requiresUserSelection -> Text("Выберите пользователя", modifier = Modifier.padding(16.dp).padding(padding))
-            state.errorMessage != null && order == null -> Text(state.errorMessage.orEmpty(), modifier = Modifier.padding(16.dp).padding(padding))
+
+            state.requiresUserSelection -> {
+                Text(
+                    text = "Выберите пользователя",
+                    modifier =
+                        Modifier
+                            .padding(16.dp)
+                            .padding(padding),
+                )
+            }
+
+            state.errorMessage != null &&
+                order == null -> {
+                Text(
+                    text = state.errorMessage.orEmpty(),
+                    modifier =
+                        Modifier
+                            .padding(16.dp)
+                            .padding(padding),
+                )
+            }
+
             order != null -> {
                 LazyColumn(
-                    modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 16.dp),
+                    modifier =
+                        Modifier
+                            .fillMaxSize()
+                            .padding(padding)
+                            .padding(horizontal = 16.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
                     item {
-                        Text(order.order.title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                        Text(order.order.address)
-                        Text("Статус: ${order.order.status}")
-                        Text("Отклики: ${order.appliedApplicantsCount}, выбрано: ${order.selectedApplicantsCount}")
+                        Text(
+                            text = order.order.title,
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                        )
+                        Text(text = order.order.address)
+                        Text(text = "Статус: ${order.order.status}")
+                        Text(
+                            text =
+                                "Отклики: ${order.appliedApplicantsCount}, " +
+                                    "выбрано: ${order.selectedApplicantsCount}",
+                        )
                     }
                     item {
                         if (order.canOpenChat) {
-                            Button(onClick = { onOpenChat(order.order.id) }) { Text("Открыть чат") }
+                            Button(
+                                onClick = { onOpenChat(order.order.id) },
+                            ) {
+                                Text("Открыть чат")
+                            }
                         }
                     }
                     item {
@@ -108,14 +172,21 @@ fun OrderDetailScreen(
                         )
                     }
                     if (order.canSelect || order.canUnselect) {
-                        items(order.visibleApplicants, key = { it.loaderId }) { applicant ->
+                        items(
+                            items = order.visibleApplicants,
+                            key = { it.loaderId },
+                        ) { applicant ->
                             ApplicantItem(
                                 loaderId = applicant.loaderId,
                                 status = applicant.status,
-                                onSelect = { viewModel.onSelectApplicant(applicant.loaderId) },
-                                onUnselect = { viewModel.onUnselectApplicant(applicant.loaderId) },
                                 canSelect = order.canSelect,
                                 canUnselect = order.canUnselect,
+                                onSelect = {
+                                    viewModel.onSelectApplicant(applicant.loaderId)
+                                },
+                                onUnselect = {
+                                    viewModel.onUnselectApplicant(applicant.loaderId)
+                                },
                             )
                         }
                     }
@@ -135,12 +206,58 @@ private fun OrderPrimaryActions(
     onCancel: () -> Unit,
     onComplete: () -> Unit,
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        if (model.canApply) Button(onClick = onApply, enabled = !inProgress, modifier = Modifier.fillMaxWidth()) { Text("Откликнуться") }
-        if (model.canWithdraw) Button(onClick = onWithdraw, enabled = !inProgress, modifier = Modifier.fillMaxWidth()) { Text("Отозвать отклик") }
-        if (model.canStart && model.order.status == OrderStatus.STAFFING) Button(onClick = onStart, enabled = !inProgress, modifier = Modifier.fillMaxWidth()) { Text("Начать") }
-        if (model.canComplete && model.order.status == OrderStatus.IN_PROGRESS) Button(onClick = onComplete, enabled = !inProgress, modifier = Modifier.fillMaxWidth()) { Text("Завершить") }
-        if (model.canCancel) Button(onClick = onCancel, enabled = !inProgress, modifier = Modifier.fillMaxWidth()) { Text("Отменить") }
+    Column(
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        if (model.canApply) {
+            Button(
+                onClick = onApply,
+                enabled = !inProgress,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text("Откликнуться")
+            }
+        }
+        if (model.canWithdraw) {
+            Button(
+                onClick = onWithdraw,
+                enabled = !inProgress,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text("Отозвать отклик")
+            }
+        }
+        if (model.canStart &&
+            model.order.status == OrderStatus.STAFFING
+        ) {
+            Button(
+                onClick = onStart,
+                enabled = !inProgress,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text("Начать")
+            }
+        }
+        if (model.canComplete &&
+            model.order.status == OrderStatus.IN_PROGRESS
+        ) {
+            Button(
+                onClick = onComplete,
+                enabled = !inProgress,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text("Завершить")
+            }
+        }
+        if (model.canCancel) {
+            Button(
+                onClick = onCancel,
+                enabled = !inProgress,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text("Отменить")
+            }
+        }
     }
 }
 
@@ -153,14 +270,21 @@ private fun ApplicantItem(
     onSelect: () -> Unit,
     onUnselect: () -> Unit,
 ) {
-    Column(modifier = Modifier.fillMaxWidth()) {
-        Text("Грузчик: $loaderId")
-        Text("Статус отклика: $status")
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Text(text = "Грузчик: $loaderId")
+        Text(text = "Статус отклика: $status")
+
         if (canSelect && status == OrderApplicationStatus.APPLIED) {
-            Button(onClick = onSelect) { Text("Выбрать") }
+            Button(onClick = onSelect) {
+                Text("Выбрать")
+            }
         }
         if (canUnselect && status == OrderApplicationStatus.SELECTED) {
-            Button(onClick = onUnselect) { Text("Снять") }
+            Button(onClick = onUnselect) {
+                Text("Снять")
+            }
         }
     }
 }
