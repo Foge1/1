@@ -153,8 +153,7 @@ class LegacyOrderRepositoryAdapter
             rating: Float,
         ): Result<Unit> = Result.Error("Not supported")
 
-        override fun getWorkerCountForOrder(orderId: Long): Flow<Int> =
-            getOrderByIdFlow(orderId).map { it?.requiredWorkers ?: 0 }
+        override fun getWorkerCountForOrder(orderId: Long): Flow<Int> = getOrderByIdFlow(orderId).map { it?.requiredWorkers ?: 0 }
 
         override suspend fun getWorkerCountSync(orderId: Long): Int = getWorkerCountForOrder(orderId).first()
 

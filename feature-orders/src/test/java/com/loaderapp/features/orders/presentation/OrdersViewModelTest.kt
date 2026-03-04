@@ -65,20 +65,12 @@ class OrdersViewModelTest {
         try {
             testBody()
         } finally {
-            clearCreatedViewModels()
+            val clearMethod = androidx.lifecycle.ViewModel::class.java.getDeclaredMethod("clear")
+            clearMethod.isAccessible = true
+            createdViewModels.forEach { viewModel -> clearMethod.invoke(viewModel) }
+            createdViewModels.clear()
             advanceUntilIdle()
         }
-    }
-
-    private fun TestScope.clearCreatedViewModels() {
-        createdViewModels.forEach { it.clearForTest() }
-        createdViewModels.clear()
-    }
-
-    private fun OrdersViewModel.clearForTest() {
-        val clearMethod = androidx.lifecycle.ViewModel::class.java.getDeclaredMethod("clear")
-        clearMethod.isAccessible = true
-        clearMethod.invoke(this)
     }
 
     // ── OrderUiModel: canApply / canWithdraw correctness ─────────────────────
@@ -91,7 +83,7 @@ class OrdersViewModelTest {
                     orders = listOf(testOrder(id = 1L, status = OrderStatus.STAFFING)),
                     hasActiveAssignment = true,
                 )
-            val viewModel = buildViewModel(repository, loaderUser)
+            val viewModel = buildViewModel(repository, StaticCurrentUserProvider(loaderUser))
             advanceUntilIdle()
 
             val available = viewModel.uiState.value.availableOrders
@@ -108,7 +100,7 @@ class OrdersViewModelTest {
                     orders = listOf(testOrder(id = 1L, status = OrderStatus.STAFFING)),
                     activeApplicationsForLimitCount = 3,
                 )
-            val viewModel = buildViewModel(repository, loaderUser)
+            val viewModel = buildViewModel(repository, StaticCurrentUserProvider(loaderUser))
             advanceUntilIdle()
 
             val available = viewModel.uiState.value.availableOrders
@@ -125,7 +117,7 @@ class OrdersViewModelTest {
                     hasActiveAssignment = false,
                     activeApplicationsForLimitCount = 2,
                 )
-            val viewModel = buildViewModel(repository, loaderUser)
+            val viewModel = buildViewModel(repository, StaticCurrentUserProvider(loaderUser))
             advanceUntilIdle()
 
             val available = viewModel.uiState.value.availableOrders
@@ -149,7 +141,7 @@ class OrdersViewModelTest {
                             testOrder(id = 1L, status = OrderStatus.STAFFING, workersTotal = 2, applications = applications),
                         ),
                 )
-            val viewModel = buildViewModel(repository, dispatcherUser)
+            val viewModel = buildViewModel(repository, StaticCurrentUserProvider(dispatcherUser))
             advanceUntilIdle()
 
             val available = viewModel.uiState.value.availableOrders
@@ -172,7 +164,7 @@ class OrdersViewModelTest {
                             testOrder(id = 1L, status = OrderStatus.STAFFING, workersTotal = 2, applications = applications),
                         ),
                 )
-            val viewModel = buildViewModel(repository, dispatcherUser)
+            val viewModel = buildViewModel(repository, StaticCurrentUserProvider(dispatcherUser))
             advanceUntilIdle()
 
             val available = viewModel.uiState.value.availableOrders
@@ -191,7 +183,7 @@ class OrdersViewModelTest {
                             testOrder(id = 1L, status = OrderStatus.STAFFING, createdBy = "other-dispatcher"),
                         ),
                 )
-            val viewModel = buildViewModel(repository, dispatcherUser) // dispatcherUser = "dispatcher-1"
+            val viewModel = buildViewModel(repository, StaticCurrentUserProvider(dispatcherUser)) // dispatcherUser = "dispatcher-1"
             advanceUntilIdle()
 
             // non-creator dispatcher sees no orders (filtered by ObserveOrdersForRoleUseCase)
@@ -225,7 +217,7 @@ class OrdersViewModelTest {
     fun `refresh success toggles refreshing true to false`() =
         runOrdersTest {
             val repository = TestOrdersRepository(refreshMode = ExecutionMode.Success)
-            val viewModel = buildViewModel(repository, loaderUser)
+            val viewModel = buildViewModel(repository, StaticCurrentUserProvider(loaderUser))
             advanceUntilIdle()
 
             viewModel.refresh()
@@ -240,7 +232,7 @@ class OrdersViewModelTest {
     fun `refresh failure emits snackbar and clears refreshing`() =
         runOrdersTest {
             val repository = TestOrdersRepository(refreshMode = ExecutionMode.Success)
-            val viewModel = buildViewModel(repository, loaderUser)
+            val viewModel = buildViewModel(repository, StaticCurrentUserProvider(loaderUser))
             advanceUntilIdle()
 
             repository.refreshMode = ExecutionMode.Failure
@@ -258,7 +250,7 @@ class OrdersViewModelTest {
     fun `refresh cancellation clears refreshing without snackbar`() =
         runOrdersTest {
             val repository = TestOrdersRepository(refreshMode = ExecutionMode.Success)
-            val viewModel = buildViewModel(repository, loaderUser)
+            val viewModel = buildViewModel(repository, StaticCurrentUserProvider(loaderUser))
             advanceUntilIdle()
 
             repository.refreshMode = ExecutionMode.Cancel
@@ -283,7 +275,7 @@ class OrdersViewModelTest {
                     orders = listOf(testOrder(id = 1L, status = OrderStatus.STAFFING)),
                     applyMode = ExecutionMode.Success,
                 )
-            val viewModel = buildViewModel(repository, loaderUser)
+            val viewModel = buildViewModel(repository, StaticCurrentUserProvider(loaderUser))
             advanceUntilIdle()
 
             viewModel.onApplyClicked(1L)
@@ -302,7 +294,7 @@ class OrdersViewModelTest {
                     orders = listOf(testOrder(id = 1L, status = OrderStatus.STAFFING)),
                     applyMode = ExecutionMode.Cancel,
                 )
-            val viewModel = buildViewModel(repository, loaderUser)
+            val viewModel = buildViewModel(repository, StaticCurrentUserProvider(loaderUser))
             advanceUntilIdle()
 
             val snackbarCollector = backgroundScope.launch { viewModel.snackbarMessage.first() }
@@ -327,7 +319,7 @@ class OrdersViewModelTest {
     fun `responses badge is zero for empty orders`() =
         runOrdersTest {
             val repository = TestOrdersRepository(orders = emptyList())
-            val viewModel = buildViewModel(repository, dispatcherUser)
+            val viewModel = buildViewModel(repository, StaticCurrentUserProvider(dispatcherUser))
             advanceUntilIdle()
 
             assertTrue(viewModel.uiState.value.responsesBadge.totalResponses == 0)
@@ -359,7 +351,7 @@ class OrdersViewModelTest {
                     applications = listOf(OrderApplication(3L, "l4", OrderApplicationStatus.APPLIED, 0L)),
                 )
             val repository = TestOrdersRepository(orders = listOf(available, inProgress, history))
-            val viewModel = buildViewModel(repository, dispatcherUser)
+            val viewModel = buildViewModel(repository, StaticCurrentUserProvider(dispatcherUser))
 
             advanceUntilIdle()
             assertTrue(viewModel.uiState.value.responsesBadge.totalResponses == 1)
@@ -417,11 +409,6 @@ class OrdersViewModelTest {
         }
 
     // ── Builder ───────────────────────────────────────────────────────────────
-
-    private fun TestScope.buildViewModel(
-        repository: TestOrdersRepository,
-        user: CurrentUser,
-    ): OrdersViewModel = buildViewModel(repository, StaticCurrentUserProvider(user))
 
     private fun TestScope.buildViewModel(
         repository: TestOrdersRepository,

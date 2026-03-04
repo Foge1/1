@@ -108,7 +108,6 @@ class AppDatabaseMigrationTest {
         helper.runMigrationsAndValidate(testDb, 5, true, AppMigrations.MIGRATION_4_5)
     }
 
-
     @Test
     fun migrate5To6_dropsLegacyOrdersTables() {
         helper.createDatabase(testDb, 5).apply {
