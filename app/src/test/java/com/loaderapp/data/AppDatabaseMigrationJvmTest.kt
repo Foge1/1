@@ -88,7 +88,8 @@ class AppDatabaseMigrationJvmTest {
         onCreate: (SupportSQLiteDatabase) -> Unit,
     ) {
         val configuration =
-            SupportSQLiteOpenHelper.Configuration.builder(context)
+            SupportSQLiteOpenHelper.Configuration
+                .builder(context)
                 .name(dbFile.absolutePath)
                 .callback(
                     object : SupportSQLiteOpenHelper.Callback(version) {
@@ -100,8 +101,7 @@ class AppDatabaseMigrationJvmTest {
                             newVersion: Int,
                         ) = Unit
                     },
-                )
-                .build()
+                ).build()
 
         FrameworkSQLiteOpenHelperFactory().create(configuration).use { helper ->
             helper.writableDatabase
