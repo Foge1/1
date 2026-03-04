@@ -23,6 +23,11 @@ jobs:
       - name: Assemble Dev Debug
         run: ./gradlew :app:assembleDevDebug --no-daemon --stacktrace
 
+
+      - name: Migration tests (JVM)
+        run: |
+          ./gradlew testDebugUnitTest             --tests '*Migration*'             --no-daemon --stacktrace
+
       - name: Run Debug unit tests
         id: unit_tests
         continue-on-error: true
