@@ -80,9 +80,11 @@ class OrderDetailViewModel
             }
         }
 
-        fun onApply() = runAction { applyToOrderUseCase(orderId) }
+        fun onApply() =
+            runAction { applyToOrderUseCase(orderId) }
 
-        fun onWithdraw() = runAction { withdrawApplicationUseCase(orderId) }
+        fun onWithdraw() =
+            runAction { withdrawApplicationUseCase(orderId) }
 
         fun onSelectApplicant(loaderId: String) =
             runAction { selectApplicantUseCase(orderId, loaderId) }
@@ -90,12 +92,14 @@ class OrderDetailViewModel
         fun onUnselectApplicant(loaderId: String) =
             runAction { unselectApplicantUseCase(orderId, loaderId) }
 
-        fun onStart() = runAction { startOrderUseCase(orderId) }
+        fun onStart() =
+            runAction { startOrderUseCase(orderId) }
 
         fun onCancel(reason: String? = null) =
             runAction { cancelOrderUseCase(orderId, reason) }
 
-        fun onComplete() = runAction { completeOrderUseCase(orderId) }
+        fun onComplete() =
+            runAction { completeOrderUseCase(orderId) }
 
         private fun runAction(action: suspend () -> UseCaseResult<Unit>) {
             viewModelScope.launch {
