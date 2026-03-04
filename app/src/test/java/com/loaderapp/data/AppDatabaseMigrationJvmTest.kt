@@ -1,8 +1,8 @@
 package com.loaderapp.data
 
 import android.content.Context
-import androidx.room.Room
 import androidx.room.Database
+import androidx.room.Room
 import androidx.sqlite.db.SupportSQLiteDatabase
 import androidx.sqlite.db.SupportSQLiteOpenHelper
 import androidx.sqlite.db.framework.FrameworkSQLiteOpenHelperFactory
@@ -75,7 +75,10 @@ class AppDatabaseMigrationJvmTest {
             "schemas/com.loaderapp.data.AppDatabase/6.json",
             "app/schemas/com.loaderapp.data.AppDatabase/6.json",
         )
-        assertTrue("Expected committed schema file for version 6", schemaFile.exists())
+        assertTrue(
+            "Expected committed schema file for version 6",
+            schemaFile.exists(),
+        )
     }
 
     private fun createVersionedDb(
@@ -96,7 +99,8 @@ class AppDatabaseMigrationJvmTest {
                             newVersion: Int,
                         ) = Unit
                     },
-                ).build()
+                )
+                .build()
 
         FrameworkSQLiteOpenHelperFactory().create(configuration).use { helper ->
             helper.writableDatabase
