@@ -46,7 +46,7 @@ class AuthRepositoryImpl
         init {
             repositoryScope.launch {
                 dataStore.data
-                    .map { preferences -> preferences[CURRENT_USER_ID] }
+                    .map { preferences -> preferences[currentUserIdKey] }
                     .catch {
                         appLogger.breadcrumb("session", "restore_session_failed", mapOf("reason" to "datastore_read"))
                         appLogger.e(LOG_TAG, "Session restore failed due to DataStore read error", it)
@@ -117,7 +117,7 @@ class AuthRepositoryImpl
         override suspend fun logout(): AppResult<Unit> =
             withContext(repositoryScope.coroutineContext) {
                 appLogger.breadcrumb("auth", "logout_requested")
-                dataStore.edit { it.remove(CURRENT_USER_ID) }
+                dataStore.edit { it.remove(currentUserIdKey) }
                 sessionState.value = SessionState.Unauthenticated
                 appLogger.breadcrumb("auth", "logout_succeeded")
                 AppResult.Success(Unit)
@@ -195,12 +195,12 @@ class AuthRepositoryImpl
 
         private suspend fun persistUserId(userId: Long) {
             dataStore.edit { preferences ->
-                preferences[CURRENT_USER_ID] = userId
+                preferences[currentUserIdKey] = userId
             }
         }
 
         private suspend fun clearSessionSafely() {
-            dataStore.edit { preferences -> preferences.remove(CURRENT_USER_ID) }
+            dataStore.edit { preferences -> preferences.remove(currentUserIdKey) }
         }
 
         private fun UserModel.toAuthUser(): User =
@@ -218,6 +218,6 @@ class AuthRepositoryImpl
         companion object {
             private const val LOG_TAG = "AuthRepository"
 
-            private val CURRENT_USER_ID = longPreferencesKey("current_user_id")
+            private val currentUserIdKey = longPreferencesKey("current_user_id")
         }
     }

@@ -31,11 +31,11 @@ abstract class AppDatabase : RoomDatabase() {
 
     companion object {
         @Volatile
-        private var INSTANCE: AppDatabase? = null
+        private var instance: AppDatabase? = null
 
         fun getDatabase(context: Context): AppDatabase =
-            INSTANCE ?: synchronized(this) {
-                val instance =
+            instance ?: synchronized(this) {
+                val dbInstance =
                     Room
                         .databaseBuilder(
                             context.applicationContext,
@@ -44,8 +44,8 @@ abstract class AppDatabase : RoomDatabase() {
                         ).addMigrations(
                             migrations = AppMigrations.ALL,
                         ).build()
-                INSTANCE = instance
-                instance
+                instance = dbInstance
+                dbInstance
             }
     }
 }

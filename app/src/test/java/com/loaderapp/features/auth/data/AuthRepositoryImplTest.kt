@@ -32,7 +32,7 @@ class AuthRepositoryImplTest {
     fun `Given persisted user id When restoreSession Then emits authenticated state`() =
         runTest {
             val dataStore = testDataStore("restore")
-            dataStore.edit { it[CURRENT_USER_ID] = 7L }
+            dataStore.edit { it[currentUserIdKey] = 7L }
             val userRepository =
                 FakeUserRepository().apply {
                     users[7L] = testUser(7L, "Alex", UserRoleModel.LOADER)
@@ -83,7 +83,7 @@ class AuthRepositoryImplTest {
     fun `Given authenticated session When logout Then clears datastore and emits unauthenticated`() =
         runTest {
             val dataStore = testDataStore("logout")
-            dataStore.edit { it[CURRENT_USER_ID] = 1L }
+            dataStore.edit { it[currentUserIdKey] = 1L }
             val repository =
                 makeRepository(
                     scheduler = testScheduler,
@@ -102,7 +102,7 @@ class AuthRepositoryImplTest {
                 repository.logout()
 
                 assertTrue(awaitItem() is SessionState.Unauthenticated)
-                assertTrue(dataStore.data.first()[CURRENT_USER_ID] == null)
+                assertTrue(dataStore.data.first()[currentUserIdKey] == null)
                 cancelAndIgnoreRemainingEvents()
             }
         }
@@ -178,6 +178,6 @@ class AuthRepositoryImplTest {
     }
 
     companion object {
-        private val CURRENT_USER_ID = longPreferencesKey("current_user_id")
+        private val currentUserIdKey = longPreferencesKey("current_user_id")
     }
 }

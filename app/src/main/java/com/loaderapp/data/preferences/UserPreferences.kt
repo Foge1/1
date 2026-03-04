@@ -17,16 +17,16 @@ class UserPreferences(
     private val context: Context,
 ) {
     companion object {
-        private val CURRENT_USER_ID = longPreferencesKey("current_user_id")
-        private val DARK_THEME_KEY = booleanPreferencesKey("dark_theme")
-        private val NOTIFICATIONS_KEY = booleanPreferencesKey("notifications_enabled")
-        private val SOUND_KEY = booleanPreferencesKey("sound_enabled")
-        private val VIBRATION_KEY = booleanPreferencesKey("vibration_enabled")
+        private val currentUserIdKey = longPreferencesKey("current_user_id")
+        private val darkThemeKey = booleanPreferencesKey("dark_theme")
+        private val notificationsKey = booleanPreferencesKey("notifications_enabled")
+        private val soundKey = booleanPreferencesKey("sound_enabled")
+        private val vibrationKey = booleanPreferencesKey("vibration_enabled")
     }
 
     val currentUserId: Flow<Long?> =
         context.dataStore.data.map { preferences ->
-            preferences[CURRENT_USER_ID]
+            preferences[currentUserIdKey]
         }
 
     /**
@@ -36,57 +36,57 @@ class UserPreferences(
 
     val isDarkTheme: Flow<Boolean> =
         context.dataStore.data.map { preferences ->
-            preferences[DARK_THEME_KEY] ?: false
+            preferences[darkThemeKey] ?: false
         }
 
     val isNotificationsEnabled: Flow<Boolean> =
         context.dataStore.data.map { preferences ->
-            preferences[NOTIFICATIONS_KEY] ?: true
+            preferences[notificationsKey] ?: true
         }
 
     val isSoundEnabled: Flow<Boolean> =
         context.dataStore.data.map { preferences ->
-            preferences[SOUND_KEY] ?: true
+            preferences[soundKey] ?: true
         }
 
     val isVibrationEnabled: Flow<Boolean> =
         context.dataStore.data.map { preferences ->
-            preferences[VIBRATION_KEY] ?: true
+            preferences[vibrationKey] ?: true
         }
 
     suspend fun setCurrentUserId(userId: Long) {
         context.dataStore.edit { preferences ->
-            preferences[CURRENT_USER_ID] = userId
+            preferences[currentUserIdKey] = userId
         }
     }
 
     suspend fun clearCurrentUser() {
         context.dataStore.edit { preferences ->
-            preferences.remove(CURRENT_USER_ID)
+            preferences.remove(currentUserIdKey)
         }
     }
 
     suspend fun setDarkTheme(enabled: Boolean) {
         context.dataStore.edit { preferences ->
-            preferences[DARK_THEME_KEY] = enabled
+            preferences[darkThemeKey] = enabled
         }
     }
 
     suspend fun setNotificationsEnabled(enabled: Boolean) {
         context.dataStore.edit { preferences ->
-            preferences[NOTIFICATIONS_KEY] = enabled
+            preferences[notificationsKey] = enabled
         }
     }
 
     suspend fun setSoundEnabled(enabled: Boolean) {
         context.dataStore.edit { preferences ->
-            preferences[SOUND_KEY] = enabled
+            preferences[soundKey] = enabled
         }
     }
 
     suspend fun setVibrationEnabled(enabled: Boolean) {
         context.dataStore.edit { preferences ->
-            preferences[VIBRATION_KEY] = enabled
+            preferences[vibrationKey] = enabled
         }
     }
 }
