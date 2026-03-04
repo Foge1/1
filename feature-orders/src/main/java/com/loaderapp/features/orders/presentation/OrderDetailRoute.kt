@@ -32,7 +32,7 @@ import com.loaderapp.features.orders.domain.OrderStatus
 
 object OrderDetailRoute {
     const val ORDER_ID_ARG = "orderId"
-    const val routePattern = "feature-orders/order/{$ORDER_ID_ARG}"
+    const val ROUTE_PATTERN = "feature-orders/order/{$ORDER_ID_ARG}"
 
     fun createRoute(orderId: Long): String = "feature-orders/order/$orderId"
 }
@@ -46,7 +46,7 @@ fun NavGraphBuilder.orderDetailRoute(
     onOpenChat: (Long) -> Unit,
 ) {
     composable(
-        route = OrderDetailRoute.routePattern,
+        route = OrderDetailRoute.ROUTE_PATTERN,
         arguments = listOf(navArgument(OrderDetailRoute.ORDER_ID_ARG) { type = NavType.LongType }),
     ) {
         val viewModel: OrderDetailViewModel = hiltViewModel()
