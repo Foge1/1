@@ -1,14 +1,12 @@
 package com.loaderapp.features.orders.data.local.db
 
 import android.content.Context
-import androidx.room.Database
 import androidx.room.Room
 import androidx.sqlite.db.SupportSQLiteDatabase
 import androidx.sqlite.db.SupportSQLiteOpenHelper
 import androidx.sqlite.db.framework.FrameworkSQLiteOpenHelperFactory
 import androidx.test.core.app.ApplicationProvider
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -91,6 +89,15 @@ class OrdersDatabaseMigrationJvmTest {
             } finally {
                 assignmentsCursor.close()
             }
+
+            val expectedIdentityHash = readSchemaIdentityHash(currentSchemaFile())
+            val identityCursor = sqliteDb.query("SELECT identity_hash FROM room_master_table WHERE id = 42")
+            try {
+                assertTrue(identityCursor.moveToFirst())
+                assertEquals(expectedIdentityHash, identityCursor.getString(0))
+            } finally {
+                identityCursor.close()
+            }
         } finally {
             roomDb.close()
         }
@@ -98,17 +105,9 @@ class OrdersDatabaseMigrationJvmTest {
 
     @Test
     fun ordersDatabase_exportsSchemaAndCommittedSchemaExists() {
-        val annotation = OrdersDatabase::class.java.getAnnotation(Database::class.java)
-        assertNotNull(annotation)
-        assertTrue(annotation.exportSchema)
-        assertEquals(3, annotation.version)
-
-        val schemaFile =
-            resolveSchemaPath(
-                "schemas/com.loaderapp.features.orders.data.local.db.OrdersDatabase/3.json",
-                "feature-orders/schemas/com.loaderapp.features.orders.data.local.db.OrdersDatabase/3.json",
-            )
+        val schemaFile = currentSchemaFile()
         assertTrue("Expected committed schema file for OrdersDatabase v3", schemaFile.exists())
+        assertTrue(schemaFile.readText().contains("\"version\": 3"))
     }
 
     private fun createVersionedDb(
@@ -143,8 +142,23 @@ class OrdersDatabaseMigrationJvmTest {
     private fun openRoomDb(dbFile: File): OrdersDatabase =
         Room
             .databaseBuilder(context, OrdersDatabase::class.java, dbFile.absolutePath)
+            .allowMainThreadQueries()
             .addMigrations(*OrdersMigrations.ALL)
             .build()
+
+    private fun currentSchemaFile(): File =
+        resolveSchemaPath(
+            "schemas/com.loaderapp.features.orders.data.local.db.OrdersDatabase/3.json",
+            "feature-orders/schemas/com.loaderapp.features.orders.data.local.db.OrdersDatabase/3.json",
+        )
+
+    private fun readSchemaIdentityHash(schemaFile: File): String {
+        val regex = Regex("\"identityHash\"\\s*:\\s*\"([^\"]+)\"")
+        val match = regex.find(schemaFile.readText())
+        return requireNotNull(match?.groupValues?.get(1)) {
+            "identityHash not found in ${schemaFile.path}"
+        }
+    }
 
     private fun resolveSchemaPath(vararg candidates: String): File =
         candidates
