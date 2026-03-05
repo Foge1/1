@@ -253,7 +253,7 @@ private fun CancelOutlinedButton(
             modifier = Modifier.size(16.dp),
         )
         Spacer(Modifier.width(6.dp))
-        Text("Отменить заказ")
+        Text(if (pending) "Подождите..." else "Отменить заказ")
     }
 }
 

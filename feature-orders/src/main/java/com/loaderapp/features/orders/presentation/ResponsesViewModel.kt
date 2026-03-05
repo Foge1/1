@@ -154,7 +154,7 @@ internal fun List<OrderUiModel>.toResponsesItems(availability: Map<String, Respo
                 }
             val selectedCount = order.selectedApplicantsCount
             val requiredCount = order.order.workersTotal
-            val selectedHint = "Выберите $selectedCount из $requiredCount"
+            val selectedHint = selectionHint(selectedCount = selectedCount, requiredCount = requiredCount)
             OrderResponsesUiModel(
                 orderId = order.order.id,
                 address = order.order.address,
@@ -176,3 +176,15 @@ internal fun List<OrderUiModel>.toResponsesItems(availability: Map<String, Respo
                 it.responsesCount > 0 && it.selectedCount < it.requiredCount
             }.thenByDescending { it.responsesCount },
         ).toList()
+
+internal fun selectionHint(
+    selectedCount: Int,
+    requiredCount: Int,
+): String? {
+    val remainingCount = (requiredCount - selectedCount).coerceAtLeast(0)
+    return if (remainingCount > 0) {
+        "Нужно выбрать ещё $remainingCount (из $requiredCount)"
+    } else {
+        null
+    }
+}

@@ -8,6 +8,7 @@ import com.loaderapp.features.orders.domain.OrderStatus
 import com.loaderapp.features.orders.domain.OrderTime
 import com.loaderapp.features.orders.domain.Role
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -17,7 +18,22 @@ class ResponsesUiMapperTest {
         val item = listOf(orderUiModel(selected = false)).toResponsesItems(emptyMap()).single()
 
         assertFalse(item.canStart)
-        assertTrue(item.startDisabledReason?.contains("Выберите 0 из 1") == true)
+        assertTrue(item.startDisabledReason?.contains("Нужно выбрать ещё 1 (из 1)") == true)
+    }
+
+
+    @Test
+    fun `selection hint shows remaining applicants`() {
+        val hint = selectionHint(selectedCount = 2, requiredCount = 3)
+
+        assertTrue(hint == "Нужно выбрать ещё 1 (из 3)")
+    }
+
+    @Test
+    fun `selection hint is hidden when enough applicants selected`() {
+        val hint = selectionHint(selectedCount = 3, requiredCount = 3)
+
+        assertNull(hint)
     }
 
     @Test

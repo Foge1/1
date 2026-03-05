@@ -75,10 +75,8 @@ fun OrderCard(
             OrderMetaRow(order = order)
             OrderCommentBlock(comment = order.comment)
             if (actionContent != null) {
-                if (enabled) {
-                    Row(modifier = Modifier.padding(top = 20.dp)) {
-                        actionContent()
-                    }
+                Row(modifier = Modifier.padding(top = 20.dp)) {
+                    actionContent()
                 }
             } else {
                 OrderCTA(order = order, onClick = onClick, enabled = canTakeOrder)
