@@ -21,7 +21,6 @@ class ResponsesUiMapperTest {
         assertTrue(item.startDisabledReason?.contains("Нужно выбрать ещё 1 (из 1)") == true)
     }
 
-
     @Test
     fun `selection hint shows remaining applicants`() {
         val hint = selectionHint(selectedCount = 2, requiredCount = 3)
