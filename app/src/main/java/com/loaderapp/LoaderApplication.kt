@@ -21,12 +21,11 @@ class LoaderApplication : Application() {
             EntryPointAccessors.fromApplication(this, AppConfigEntryPoint::class.java)
         val appConfig = configEntryPoint.appConfig()
 
-        SentryAndroid.init(this) { options ->
-            if (BuildConfig.DEBUG) {
-                options.isEnabled = false
-                return@init
-            }
+        if (BuildConfig.DEBUG) {
+            return
+        }
 
+        SentryAndroid.init(this) { options ->
             val dsn = appConfig.sentryDsn
             if (dsn.isBlank()) {
                 options.isEnabled = false
