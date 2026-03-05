@@ -43,12 +43,15 @@ class OrderStateMachine
                 Role.LOADER -> {
                     val apply = decisionFor(order, OrderEvent.APPLY, actor, context)
                     val withdraw = decisionFor(order, OrderEvent.WITHDRAW, actor, context)
+                    val cancel = decisionFor(order, OrderEvent.CANCEL, actor, context)
                     val complete = decisionFor(order, OrderEvent.COMPLETE, actor, context)
                     OrderActions(
                         canApply = apply.isAllowed,
                         applyDisabledReason = apply.reason,
                         canWithdraw = withdraw.isAllowed,
                         withdrawDisabledReason = withdraw.reason,
+                        canCancel = cancel.isAllowed,
+                        cancelDisabledReason = cancel.reason,
                         canComplete = complete.isAllowed,
                         completeDisabledReason = complete.reason,
                         canOpenChat = canOpenChat(order, actor, context),
@@ -137,7 +140,7 @@ class OrderStateMachine
                 OrderEvent.SELECT -> canSelect(order, actor)
                 OrderEvent.UNSELECT -> canUnselect(order, actor)
                 OrderEvent.START -> canStart(order, actor)
-                OrderEvent.CANCEL -> canCancel(order, actor)
+                OrderEvent.CANCEL -> canCancel(order, actor, context)
                 OrderEvent.COMPLETE -> canComplete(order, actor, context)
                 OrderEvent.EXPIRE -> canExpire(order)
             }
@@ -249,14 +252,29 @@ class OrderStateMachine
         private fun canCancel(
             order: Order,
             actor: CurrentUser,
+            context: OrderRulesContext,
         ): Decision {
             if (order.status !in setOf(OrderStatus.STAFFING, OrderStatus.IN_PROGRESS)) {
                 return Decision.denied(OrderActionBlockReason.UnsupportedEventForStatus(OrderEvent.CANCEL, order.status))
             }
-            if (actor.role != Role.DISPATCHER || actor.id != order.createdByUserId) {
-                return Decision.denied(OrderActionBlockReason.OnlyDispatcherCreatorCanCancel)
+
+            return when (actor.role) {
+                Role.DISPATCHER -> {
+                    if (actor.id == order.createdByUserId) {
+                        Decision.allowed()
+                    } else {
+                        Decision.denied(OrderActionBlockReason.OnlyDispatcherCreatorCanCancel)
+                    }
+                }
+
+                Role.LOADER -> {
+                    if (context.loaderHasActiveAssignmentInThisOrder) {
+                        Decision.allowed()
+                    } else {
+                        Decision.denied(OrderActionBlockReason.LoaderNotAssignedToOrder)
+                    }
+                }
             }
-            return Decision.allowed()
         }
 
         private fun canComplete(

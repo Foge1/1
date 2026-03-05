@@ -226,6 +226,41 @@ class OrderStateMachineTest {
     }
 
     @Test
+    fun `loader can cancel assigned or in progress order but not terminal`() {
+        val assignedActions =
+            stateMachine.actionsFor(
+                baseOrder(status = OrderStatus.STAFFING),
+                loaderActor,
+                OrderRulesContext(loaderHasActiveAssignmentInThisOrder = true),
+            )
+        assertTrue(assignedActions.canCancel)
+
+        val inProgressActions =
+            stateMachine.actionsFor(
+                baseOrder(status = OrderStatus.IN_PROGRESS),
+                loaderActor,
+                OrderRulesContext(loaderHasActiveAssignmentInThisOrder = true),
+            )
+        assertTrue(inProgressActions.canCancel)
+
+        val completedActions =
+            stateMachine.actionsFor(
+                baseOrder(status = OrderStatus.COMPLETED),
+                loaderActor,
+                OrderRulesContext(loaderHasActiveAssignmentInThisOrder = true),
+            )
+        assertFalse(completedActions.canCancel)
+
+        val canceledActions =
+            stateMachine.actionsFor(
+                baseOrder(status = OrderStatus.CANCELED),
+                loaderActor,
+                OrderRulesContext(loaderHasActiveAssignmentInThisOrder = true),
+            )
+        assertFalse(canceledActions.canCancel)
+    }
+
+    @Test
     fun `cancel and complete permissions are enforced`() {
         val cancelDenied = stateMachine.transition(baseOrder(), OrderEvent.CANCEL, otherDispatcher, 0L)
         assertEquals(
