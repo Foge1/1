@@ -19,12 +19,23 @@ class LoaderApplication : Application() {
         super.onCreate()
         val configEntryPoint =
             EntryPointAccessors.fromApplication(this, AppConfigEntryPoint::class.java)
+        val appConfig = configEntryPoint.appConfig()
 
         SentryAndroid.init(this) { options ->
-            options.dsn = configEntryPoint.appConfig().sentryDsn
-            options.isEnabled = configEntryPoint.appConfig().sentryDsn.isNotBlank()
-            options.environment = configEntryPoint.appConfig().envName
-            options.isDebug = configEntryPoint.appConfig().verboseLogging
+            if (BuildConfig.DEBUG) {
+                options.isEnabled = false
+                return@init
+            }
+
+            val dsn = appConfig.sentryDsn
+            if (dsn.isBlank()) {
+                options.isEnabled = false
+                return@init
+            }
+
+            options.dsn = dsn
+            options.environment = appConfig.envName
+            options.isDebug = appConfig.verboseLogging
             options.release = buildReleaseName(configEntryPoint.appBuildInfo())
             options.tracesSampleRate = 0.0
         }
