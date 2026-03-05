@@ -40,6 +40,13 @@ class ResponsesViewModel
             observeResponses()
         }
 
+        fun refresh() = retry()
+
+        fun retry() {
+            _uiState.update { it.copy(errorMessage = null) }
+            submit(OrdersCommand.Refresh, pendingOrderId = null)
+        }
+
         private fun observeResponses() {
             viewModelScope.launch {
                 observeOrderUiModels().collect { result ->
@@ -95,9 +102,11 @@ class ResponsesViewModel
 
         private fun submit(
             command: OrdersCommand,
-            pendingOrderId: Long,
+            pendingOrderId: Long? = null,
         ) {
-            _uiState.update { it.copy(pendingActions = it.pendingActions + pendingOrderId) }
+            pendingOrderId?.let { orderId ->
+                _uiState.update { it.copy(pendingActions = it.pendingActions + orderId) }
+            }
 
             viewModelScope.launch {
                 var failureReason: String? = null
@@ -110,7 +119,9 @@ class ResponsesViewModel
                     if (throwable is CancellationException) throw throwable
                     failureReason = throwable.message ?: "Неизвестная ошибка"
                 }
-                _uiState.update { it.copy(pendingActions = it.pendingActions - pendingOrderId) }
+                pendingOrderId?.let { orderId ->
+                    _uiState.update { it.copy(pendingActions = it.pendingActions - orderId) }
+                }
 
                 failureReason?.let { reason ->
                     _uiState.update { it.copy(errorMessage = reason) }
