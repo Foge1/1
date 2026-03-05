@@ -12,13 +12,6 @@ def quoteBuildConfigString = { value ->
     return "\"${escaped}\""
 }
 
-def sentryDsnCommon = project.findProperty("SENTRY_DSN")
-def sentryDsnStage = project.findProperty("SENTRY_DSN_STAGE")
-def sentryDsnProd = project.findProperty("SENTRY_DSN_PROD")
-
-def sentryDsnStageValue = sentryDsnStage ?: sentryDsnCommon ?: ""
-def sentryDsnProdValue = sentryDsnProd ?: sentryDsnCommon ?: ""
-
 def readSigningValue = { name ->
     def envValue = System.getenv(name)
     if (envValue != null && !envValue.trim().isEmpty()) {
@@ -73,7 +66,6 @@ android {
             resValue "string", "app_name", "Loader App (Dev)"
             buildConfigField "String", "BASE_URL", quoteBuildConfigString("https://api-dev.loaderapp.local/")
             buildConfigField "boolean", "ENABLE_VERBOSE_LOGGING", "true"
-            buildConfigField "String", "SENTRY_DSN", quoteBuildConfigString("")
             buildConfigField "String", "ENV_NAME", quoteBuildConfigString("dev")
         }
 
@@ -84,7 +76,6 @@ android {
             resValue "string", "app_name", "Loader App (Stage)"
             buildConfigField "String", "BASE_URL", quoteBuildConfigString("https://api-stage.loaderapp.local/")
             buildConfigField "boolean", "ENABLE_VERBOSE_LOGGING", "true"
-            buildConfigField "String", "SENTRY_DSN", quoteBuildConfigString(sentryDsnStageValue)
             buildConfigField "String", "ENV_NAME", quoteBuildConfigString("stage")
         }
 
@@ -93,7 +84,6 @@ android {
             resValue "string", "app_name", "Loader App"
             buildConfigField "String", "BASE_URL", quoteBuildConfigString("https://api.loaderapp.local/")
             buildConfigField "boolean", "ENABLE_VERBOSE_LOGGING", "false"
-            buildConfigField "String", "SENTRY_DSN", quoteBuildConfigString(sentryDsnProdValue)
             buildConfigField "String", "ENV_NAME", quoteBuildConfigString("prod")
         }
     }
@@ -111,9 +101,12 @@ android {
 
     buildTypes {
         debug {
+            buildConfigField "String", "SENTRY_DSN", quoteBuildConfigString("")
         }
 
         release {
+            def sentryDsnRelease = project.findProperty("SENTRY_DSN") ?: ""
+            buildConfigField "String", "SENTRY_DSN", quoteBuildConfigString(sentryDsnRelease)
             minifyEnabled true
             shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
