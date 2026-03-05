@@ -25,6 +25,21 @@ jobs:
       - name: Assemble Dev Debug
         run: ./gradlew :app:assembleDevDebug --no-daemon --stacktrace
 
+      - name: List APK outputs
+        run: |
+          ls -R app/build/outputs/apk || true
+
+      - name: Upload devDebug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: LoaderApp-devDebug-apk
+          path: |
+            app/build/outputs/apk/**/devDebug/*.apk
+            app/build/outputs/apk/dev/debug/*.apk
+            app/build/outputs/apk/devDevDebug/*.apk
+          if-no-files-found: error
+          retention-days: 7
+
 
       - name: Migration tests (JVM)
         run: |
@@ -37,6 +52,20 @@ jobs:
 
       - name: Assemble Prod Release (smoke with minify)
         run: ./gradlew :app:assembleProdRelease --no-daemon --stacktrace
+
+      - name: List APK outputs (release)
+        run: |
+          ls -R app/build/outputs/apk || true
+
+      - name: Upload prodRelease APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: LoaderApp-prodRelease-apk
+          path: |
+            app/build/outputs/apk/**/prodRelease/*.apk
+            app/build/outputs/apk/prod/release/*.apk
+          if-no-files-found: warn
+          retention-days: 7
 
       - name: Upload unit test reports on failure
         if: ${{ failure() && steps.unit_tests.outcome == 'failure' }}
