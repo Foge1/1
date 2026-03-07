@@ -109,7 +109,8 @@ private fun AppTextButton(
 
     when (style) {
         AppButtonStyle.Primary,
-        AppButtonStyle.Danger -> {
+        AppButtonStyle.Danger,
+            -> {
             Button(
                 onClick = onClick,
                 enabled = effectiveEnabled,
