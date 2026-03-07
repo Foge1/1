@@ -2,6 +2,7 @@ package com.loaderapp.core.ui.components.input
 
 import androidx.compose.material3.TextFieldColors
 import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.unit.Dp
@@ -33,8 +34,10 @@ object AppTextFieldDefaults {
             verticalPadding = verticalPadding,
         )
 
+    @Composable
     fun textFieldColors(): TextFieldColors = defaultTextFieldColors()
 
+    @Composable
     fun outlinedTextFieldColors(): TextFieldColors = defaultTextFieldColors()
 
     val textStyle = AppTypography.bodyLarge
