@@ -136,7 +136,7 @@ private fun AppTextButton(
                 colors = colors,
                 border =
                     BorderStroke(
-                        width = ButtonDefaults.outlinedButtonBorder(enabled = effectiveEnabled).width,
+                        width = 1.dp,
                         color =
                             AppButtonDefaults.borderColor(
                                 color = colorScheme.outlinedBorderColor,

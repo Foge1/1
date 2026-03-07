@@ -1,8 +1,6 @@
 package com.loaderapp.core.ui.components.button
 
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
@@ -75,9 +73,8 @@ internal object AppButtonDefaults {
             disabledContainerColor(color)
         }
 
-    @Composable
     fun contentPadding(): PaddingValues =
-        ButtonDefaults.ContentPadding.copy(
+        PaddingValues(
             start = HorizontalPadding,
             top = VerticalPadding,
             end = HorizontalPadding,
