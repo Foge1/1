@@ -30,8 +30,8 @@ internal object AppButtonDefaults {
     val IconButtonSize: Dp = 48.dp
     val IconSize: Dp = 20.dp
 
-    private const val DisabledContainerOpacity: Float = 0.38f
-    private const val DisabledContentOpacity: Float = 0.6f
+    private const val DISABLED_CONTAINER_OPACITY: Float = 0.38f
+    private const val DISABLED_CONTENT_OPACITY: Float = 0.6f
 
     fun colorScheme(style: AppButtonStyle): AppButtonColorScheme =
         when (style) {
@@ -61,9 +61,9 @@ internal object AppButtonDefaults {
                 )
         }
 
-    fun disabledContainerColor(color: Color): Color = color.copy(alpha = DisabledContainerOpacity)
+    fun disabledContainerColor(color: Color): Color = color.copy(alpha = DISABLED_CONTAINER_OPACITY)
 
-    fun disabledContentColor(color: Color): Color = color.copy(alpha = DisabledContentOpacity)
+    fun disabledContentColor(color: Color): Color = color.copy(alpha = DISABLED_CONTENT_OPACITY)
 
     fun borderColor(
         color: Color,
