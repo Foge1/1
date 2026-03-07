@@ -15,6 +15,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
 import androidx.navigation.compose.rememberNavController
+import com.loaderapp.core.ui.theme.CoreUiTheme
 import com.loaderapp.navigation.AppNavGraph
 import com.loaderapp.navigation.Route
 import com.loaderapp.presentation.settings.SettingsViewModel
@@ -41,16 +42,18 @@ class MainActivity : ComponentActivity() {
         setContent {
             val isDarkTheme by settingsViewModel.isDarkTheme.collectAsState()
 
-            LoaderAppTheme(darkTheme = isDarkTheme) {
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background,
-                ) {
-                    AppNavGraph(
-                        navController = rememberNavController(),
-                        startDestination = Route.Splash.route,
-                        onRequestNotificationPermission = ::requestNotificationPermission,
-                    )
+            CoreUiTheme {
+                LoaderAppTheme(darkTheme = isDarkTheme) {
+                    Surface(
+                        modifier = Modifier.fillMaxSize(),
+                        color = MaterialTheme.colorScheme.background,
+                    ) {
+                        AppNavGraph(
+                            navController = rememberNavController(),
+                            startDestination = Route.Splash.route,
+                            onRequestNotificationPermission = ::requestNotificationPermission,
+                        )
+                    }
                 }
             }
         }
