@@ -3,13 +3,14 @@ package com.loaderapp.ui.components
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.loaderapp.core.ui.theme.AppSpacing
 import com.loaderapp.features.orders.presentation.OrdersTab
 
 private object OrdersSegmentedTabDefaults {
-    val TabsToPagerSpacing = 4.dp
+    val TabsToPagerSpacing = AppSpacing.xs
     val TabVerticalPadding = 6.dp
     val TabHorizontalPadding = 6.dp
-    val TrackHorizontalPadding = 16.dp
+    val TrackHorizontalPadding = AppSpacing.lg
 }
 
 data class OrdersTabCounts(

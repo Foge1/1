@@ -21,6 +21,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.loaderapp.core.ui.theme.AppSpacing
 import com.loaderapp.features.orders.presentation.DispatcherHistoryUiState
 import com.loaderapp.features.orders.presentation.mapper.toLegacyOrderModel
 
@@ -36,7 +37,7 @@ fun HistoryScreen(
         modifier =
             modifier
                 .fillMaxSize()
-                .padding(horizontal = 16.dp),
+                .padding(horizontal = AppSpacing.lg),
     ) {
         OutlinedTextField(
             value = state.query,
@@ -44,7 +45,7 @@ fun HistoryScreen(
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .padding(top = 8.dp),
+                    .padding(top = AppSpacing.sm),
             singleLine = true,
             label = { Text("Поиск по истории") },
         )
@@ -61,7 +62,7 @@ fun HistoryScreen(
         FadingEdgeLazyColumn(
             modifier = Modifier.fillMaxSize(),
             bottomFadeHeight = 36.dp,
-            contentPadding = PaddingValues(top = 12.dp, bottom = bottomPadding),
+            contentPadding = PaddingValues(top = AppSpacing.md, bottom = bottomPadding),
         ) {
             itemsIndexed(state.sections, key = { _, section -> section.key }) { index, section ->
                 Row(
@@ -72,7 +73,7 @@ fun HistoryScreen(
                     Text(section.title, style = MaterialTheme.typography.titleSmall)
                     Text(section.count.toString(), style = MaterialTheme.typography.labelMedium)
                 }
-                Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(AppSpacing.sm))
                 section.items.forEach { item ->
                     OrderCard(
                         order = item.order.toLegacyOrderModel(),
@@ -82,10 +83,10 @@ fun HistoryScreen(
                 }
                 if (index < state.sections.lastIndex) {
                     HorizontalDivider(
-                        modifier = Modifier.padding(vertical = 8.dp),
+                        modifier = Modifier.padding(vertical = AppSpacing.sm),
                         color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
                     )
-                    Spacer(Modifier.height(4.dp))
+                    Spacer(Modifier.height(AppSpacing.xs))
                 }
             }
         }
