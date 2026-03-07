@@ -81,11 +81,9 @@ object AppSurfaceDefaults {
                 )
         }
 
-    internal fun disabledContainerColor(color: Color): Color =
-        color.copy(alpha = DISABLED_CONTAINER_OPACITY)
+    internal fun disabledContainerColor(color: Color): Color = color.copy(alpha = DISABLED_CONTAINER_OPACITY)
 
-    internal fun disabledContentColor(color: Color): Color =
-        color.copy(alpha = DISABLED_CONTENT_OPACITY)
+    internal fun disabledContentColor(color: Color): Color = color.copy(alpha = DISABLED_CONTENT_OPACITY)
 
     internal fun borderColor(
         color: Color,
