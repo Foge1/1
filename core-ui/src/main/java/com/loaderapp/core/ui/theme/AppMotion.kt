@@ -1,7 +1,7 @@
 package com.loaderapp.core.ui.theme
 
 object AppMotion {
-    const val Fast = 100
-    const val Normal = 200
-    const val Slow = 300
+    const val FAST = 100
+    const val NORMAL = 200
+    const val SLOW = 300
 }
