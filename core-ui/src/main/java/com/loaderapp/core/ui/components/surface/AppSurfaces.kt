@@ -112,7 +112,7 @@ private fun AppSurfaceContainer(
     onClick: (() -> Unit)?,
     enabled: Boolean,
     style: AppSurfaceStyle,
-    content: @Composable () -> Unit,
+    content: @Composable ColumnScope.() -> Unit,
 ) {
     val colorScheme = AppSurfaceDefaults.colorScheme(style)
     val colors = cardColors(colorScheme = colorScheme)
@@ -165,7 +165,7 @@ private fun AppFilledSurfaceCard(
     enabled: Boolean,
     colors: CardColors,
     elevation: CardElevation,
-    content: @Composable () -> Unit,
+    content: @Composable ColumnScope.() -> Unit,
 ) {
     if (onClick != null) {
         Card(
@@ -196,7 +196,7 @@ private fun AppOutlinedSurfaceCard(
     border: BorderStroke,
     colors: CardColors,
     elevation: CardElevation,
-    content: @Composable () -> Unit,
+    content: @Composable ColumnScope.() -> Unit,
 ) {
     if (onClick != null) {
         OutlinedCard(
@@ -228,7 +228,7 @@ private fun AppElevatedSurfaceCard(
     enabled: Boolean,
     colors: CardColors,
     elevation: CardElevation,
-    content: @Composable () -> Unit,
+    content: @Composable ColumnScope.() -> Unit,
 ) {
     if (onClick != null) {
         ElevatedCard(
