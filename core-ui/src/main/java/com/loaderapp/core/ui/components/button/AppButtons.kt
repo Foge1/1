@@ -109,7 +109,7 @@ private fun AppTextButton(
 
     when (style) {
         AppButtonStyle.Primary,
-        AppButtonStyle.Danger ->
+        AppButtonStyle.Danger -> {
             Button(
                 onClick = onClick,
                 enabled = effectiveEnabled,
@@ -124,6 +124,7 @@ private fun AppTextButton(
                     contentColor = colorScheme.contentColor,
                 )
             }
+        }
 
         AppButtonStyle.Secondary ->
             OutlinedButton(
