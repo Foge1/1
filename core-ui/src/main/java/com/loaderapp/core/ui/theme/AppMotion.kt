@@ -10,22 +10,22 @@ import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 
 object AppMotion {
-    const val durationShort = 150
-    const val durationMedium = 200
-    const val durationLong = 280
-    const val durationScreen = 200
+    const val DURATION_SHORT = 150
+    const val DURATION_MEDIUM = 200
+    const val DURATION_LONG = 280
+    const val DURATION_SCREEN = 200
 
-    val easingStandard: Easing = CubicBezierEasing(0.2f, 0f, 0f, 1f)
-    val easingDecelerate: Easing = CubicBezierEasing(0f, 0f, 0f, 1f)
-    val easingAccelerate: Easing = CubicBezierEasing(0.3f, 0f, 1f, 1f)
+    val EASING_STANDARD: Easing = CubicBezierEasing(0.2f, 0f, 0f, 1f)
+    val EASING_DECELERATE: Easing = CubicBezierEasing(0f, 0f, 0f, 1f)
+    val EASING_ACCELERATE: Easing = CubicBezierEasing(0.3f, 0f, 1f, 1f)
 
-    val springMediumBounce: SpringSpec<Float> =
+    val SPRING_MEDIUM_BOUNCE: SpringSpec<Float> =
         spring(
             dampingRatio = Spring.DampingRatioMediumBouncy,
             stiffness = Spring.StiffnessMedium,
         )
 
-    val springLowBounce: SpringSpec<Float> =
+    val SPRING_LOW_BOUNCE: SpringSpec<Float> =
         spring(
             dampingRatio = Spring.DampingRatioLowBouncy,
             stiffness = Spring.StiffnessLow,
@@ -33,13 +33,13 @@ object AppMotion {
 
     fun tweenMedium(): AnimationSpec<Float> =
         tween(
-            durationMillis = durationMedium,
-            easing = easingStandard,
+            durationMillis = DURATION_MEDIUM,
+            easing = EASING_STANDARD,
         )
 
     fun tweenLong(): TweenSpec<Float> =
         tween(
-            durationMillis = durationLong,
-            easing = easingStandard,
+            durationMillis = DURATION_LONG,
+            easing = EASING_STANDARD,
         )
 }
