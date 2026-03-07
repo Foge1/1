@@ -5,9 +5,9 @@ import androidx.compose.runtime.Composable
 
 @Composable
 fun CoreUiTheme(
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     MaterialTheme(
-        content = content
+        content = content,
     )
 }
