@@ -1,22 +1,16 @@
 package com.loaderapp.ui.theme
 
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Shapes
-import androidx.compose.ui.unit.dp
+import com.loaderapp.core.ui.theme.AppShapes as CoreUiShapes
+import com.loaderapp.core.ui.theme.ShapeAvatar as CoreUiShapeAvatar
+import com.loaderapp.core.ui.theme.ShapeButton as CoreUiShapeButton
+import com.loaderapp.core.ui.theme.ShapeCard as CoreUiShapeCard
+import com.loaderapp.core.ui.theme.ShapeChip as CoreUiShapeChip
+import com.loaderapp.core.ui.theme.ShapeDialog as CoreUiShapeDialog
 
-// Единые токены радиусов — используем везде вместо хардкода
-val AppShapes =
-    Shapes(
-        extraSmall = RoundedCornerShape(6.dp), // чипы, бейджи
-        small = RoundedCornerShape(10.dp), // кнопки, маленькие карточки
-        medium = RoundedCornerShape(14.dp), // стандартные карточки
-        large = RoundedCornerShape(18.dp), // большие карточки, bottom sheet
-        extraLarge = RoundedCornerShape(28.dp), // диалоги, аватары
-    )
+val AppShapes = CoreUiShapes
 
-// Алиасы для удобства
-val ShapeCard get() = AppShapes.medium
-val ShapeButton get() = AppShapes.small
-val ShapeChip get() = AppShapes.extraSmall
-val ShapeDialog get() = AppShapes.extraLarge
-val ShapeAvatar get() = AppShapes.extraLarge
+val ShapeCard get() = CoreUiShapeCard
+val ShapeButton get() = CoreUiShapeButton
+val ShapeChip get() = CoreUiShapeChip
+val ShapeDialog get() = CoreUiShapeDialog
+val ShapeAvatar get() = CoreUiShapeAvatar
