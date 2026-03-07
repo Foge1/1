@@ -10,6 +10,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.loaderapp.core.ui.theme.AppSpacing
 
 /**
  * Универсальная заглушка для экранов в разработке.
@@ -28,8 +29,8 @@ fun PlaceholderContent(
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-            modifier = Modifier.padding(32.dp),
+            verticalArrangement = Arrangement.spacedBy(AppSpacing.md),
+            modifier = Modifier.padding(AppSpacing.xxxl),
         ) {
             Icon(
                 imageVector = icon,

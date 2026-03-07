@@ -39,6 +39,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.loaderapp.core.ui.theme.AppSpacing
 
 /**
  * Элемент нижней навигации.
@@ -82,7 +83,7 @@ fun AppBottomBar(
                 Modifier
                     .fillMaxWidth()
                     .navigationBarsPadding()
-                    .padding(horizontal = 4.dp, vertical = 8.dp),
+                    .padding(horizontal = AppSpacing.xs, vertical = AppSpacing.sm),
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.Top,
         ) {
@@ -109,12 +110,18 @@ private fun BottomNavItemView(
     val itemVisuals = rememberBottomNavItemVisuals(isSelected = isSelected)
 
     Column(
-        modifier = modifier.clickable(interactionSource = interactionSource, indication = null, onClick = onClick).padding(vertical = 4.dp),
+        modifier =
+            modifier
+                .clickable(
+                    interactionSource = interactionSource,
+                    indication = null,
+                    onClick = onClick,
+                ).padding(vertical = AppSpacing.xs),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Top,
     ) {
         TopSelectionIndicator(isSelected = isSelected)
-        Spacer(Modifier.height(4.dp))
+        Spacer(Modifier.height(AppSpacing.xs))
         IconCapsule(item = item, visuals = itemVisuals)
         Spacer(Modifier.height(3.dp))
         Text(

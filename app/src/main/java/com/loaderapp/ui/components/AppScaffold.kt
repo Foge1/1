@@ -21,6 +21,7 @@ import androidx.compose.ui.layout.SubcomposeLayout
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.loaderapp.core.ui.theme.AppSpacing
 
 val LocalTopBarHeightPx = compositionLocalOf { 0 }
 
@@ -64,7 +65,7 @@ private fun AppTopBar(
             Modifier
                 .fillMaxWidth()
                 .windowInsetsPadding(WindowInsets.statusBars)
-                .padding(horizontal = 16.dp, vertical = 10.dp),
+                .padding(horizontal = AppSpacing.lg, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(

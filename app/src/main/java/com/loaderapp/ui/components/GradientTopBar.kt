@@ -9,6 +9,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.loaderapp.core.ui.theme.AppSpacing
 
 /**
  * Единый TopBar для всего приложения.
@@ -41,7 +42,7 @@ fun GradientTopBar(
             modifier
                 .fillMaxWidth()
                 .windowInsetsPadding(WindowInsets.statusBars)
-                .padding(horizontal = 4.dp, vertical = 8.dp),
+                .padding(horizontal = AppSpacing.xs, vertical = AppSpacing.sm),
     ) {
         if (navigationIcon != null) {
             IconButton(
@@ -65,7 +66,7 @@ fun GradientTopBar(
                 Modifier
                     .align(Alignment.CenterStart)
                     .padding(
-                        start = if (navigationIcon != null) 56.dp else 12.dp,
+                        start = if (navigationIcon != null) 56.dp else AppSpacing.md,
                         end = 56.dp,
                     ),
         )

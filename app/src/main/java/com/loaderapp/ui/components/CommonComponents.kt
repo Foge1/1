@@ -15,6 +15,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.loaderapp.core.ui.theme.AppSpacing
 
 /**
  * Компонент пустого состояния
@@ -41,7 +42,7 @@ fun EmptyStateView(
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
         )
 
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(AppSpacing.lg))
 
         Text(
             text = title,
@@ -52,14 +53,14 @@ fun EmptyStateView(
         )
 
         if (message != null) {
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(AppSpacing.sm))
 
             Text(
                 text = message,
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,
-                modifier = Modifier.padding(horizontal = 32.dp),
+                modifier = Modifier.padding(horizontal = AppSpacing.xxxl),
             )
         }
     }
@@ -86,7 +87,7 @@ fun ErrorView(
             tint = MaterialTheme.colorScheme.error,
         )
 
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(AppSpacing.lg))
 
         Text(
             text = "Ошибка",
@@ -95,18 +96,18 @@ fun ErrorView(
             color = MaterialTheme.colorScheme.error,
         )
 
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(AppSpacing.sm))
 
         Text(
             text = message,
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
-            modifier = Modifier.padding(horizontal = 32.dp),
+            modifier = Modifier.padding(horizontal = AppSpacing.xxxl),
         )
 
         if (onRetry != null) {
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(AppSpacing.lg))
 
             Button(onClick = onRetry) {
                 Text("Повторить")
@@ -133,7 +134,7 @@ fun LoadingView(
             color = MaterialTheme.colorScheme.primary,
         )
 
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(AppSpacing.lg))
 
         Text(
             text = message,
@@ -165,15 +166,15 @@ fun SkeletonOrderCard(modifier: Modifier = Modifier) {
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
     ) {
         Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.padding(AppSpacing.lg),
+            verticalArrangement = Arrangement.spacedBy(AppSpacing.sm),
         ) {
             // Заголовок
             Box(
                 modifier =
                     Modifier
                         .fillMaxWidth(0.6f)
-                        .height(20.dp)
+                        .height(AppSpacing.xl)
                         .alpha(alpha)
                         .shimmerBackground(),
             )
@@ -183,12 +184,12 @@ fun SkeletonOrderCard(modifier: Modifier = Modifier) {
                 modifier =
                     Modifier
                         .fillMaxWidth(0.9f)
-                        .height(16.dp)
+                        .height(AppSpacing.lg)
                         .alpha(alpha)
                         .shimmerBackground(),
             )
 
-            Spacer(Modifier.height(4.dp))
+            Spacer(Modifier.height(AppSpacing.xs))
 
             // Параметры
             Row(
@@ -200,7 +201,7 @@ fun SkeletonOrderCard(modifier: Modifier = Modifier) {
                         modifier =
                             Modifier
                                 .width(60.dp)
-                                .height(16.dp)
+                                .height(AppSpacing.lg)
                                 .alpha(alpha)
                                 .shimmerBackground(),
                     )

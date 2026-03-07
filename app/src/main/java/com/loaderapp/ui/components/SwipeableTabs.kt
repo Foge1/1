@@ -23,6 +23,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.loaderapp.core.ui.theme.AppSpacing
 import kotlinx.coroutines.launch
 
 /**
@@ -67,10 +68,10 @@ fun SwipeableTabs(
     modifier: Modifier = Modifier,
     initialPage: Int = 0,
     onPageChanged: (Int) -> Unit = {},
-    tabsToPagerSpacing: Dp = 8.dp,
+    tabsToPagerSpacing: Dp = AppSpacing.sm,
     tabVerticalPadding: Dp = 10.dp,
-    tabHorizontalPadding: Dp = 8.dp,
-    tabRowHorizontalPadding: Dp = 16.dp,
+    tabHorizontalPadding: Dp = AppSpacing.sm,
+    tabRowHorizontalPadding: Dp = AppSpacing.lg,
     content: @Composable (pageIndex: Int) -> Unit,
 ) {
     val pagerState = rememberPagerState(initialPage = initialPage, pageCount = { tabs.size })
@@ -141,10 +142,10 @@ fun PillTabRow(
     onTabSelected: (Int) -> Unit,
     modifier: Modifier = Modifier,
     trackCornerRadius: Dp = 50.dp,
-    indicatorPadding: Dp = 4.dp,
+    indicatorPadding: Dp = AppSpacing.xs,
     tabVerticalPadding: Dp = 10.dp,
-    tabHorizontalPadding: Dp = 8.dp,
-    tabRowHorizontalPadding: Dp = 16.dp,
+    tabHorizontalPadding: Dp = AppSpacing.sm,
+    tabRowHorizontalPadding: Dp = AppSpacing.lg,
 ) {
     val primary = MaterialTheme.colorScheme.primary
     val trackColor = primary.copy(alpha = 0.10f)
@@ -237,7 +238,7 @@ private fun PillTab(
     primary: Color = MaterialTheme.colorScheme.primary,
     unselectedColor: Color = MaterialTheme.colorScheme.onSurfaceVariant,
     verticalPadding: Dp = 10.dp,
-    horizontalPadding: Dp = 8.dp,
+    horizontalPadding: Dp = AppSpacing.sm,
 ) {
     // Плавная интерполяция цвета текста синхронно со свайпом
     val textColor = lerp(unselectedColor, primary, selectionFraction)
