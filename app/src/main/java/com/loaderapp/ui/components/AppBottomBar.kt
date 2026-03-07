@@ -116,8 +116,7 @@ private fun BottomNavItemView(
                     interactionSource = interactionSource,
                     indication = null,
                     onClick = onClick,
-                )
-                .padding(vertical = AppSpacing.xs),
+                ).padding(vertical = AppSpacing.xs),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Top,
     ) {
