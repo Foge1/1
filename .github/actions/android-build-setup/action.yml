@@ -16,10 +16,7 @@ runs:
     - name: Set up Android SDK packages
       uses: android-actions/setup-android@v3
       with:
-        packages: |
-          platform-tools
-          platforms;android-34
-          build-tools;34.0.0
+        packages: platform-tools platforms;android-34 build-tools;34.0.0
 
     - name: Ensure Android SDK licenses are accepted (non-interactive)
       shell: bash
