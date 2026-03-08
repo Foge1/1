@@ -77,20 +77,19 @@ fun SegmentedTabs(
                 )
 
             Box(
-                modifier =
-                    Modifier
-                        .weight(1f)
-                        .clip(AppShapes.small)
-                        .background(backgroundColor)
-                        .selectable(
-                            selected = isSelected,
-                            onClick = { onSelectedChange(index) },
-                            role = Role.Tab,
-                        )
-                        .padding(
-                            horizontal = AppSpacing.md,
-                            vertical = AppSpacing.sm,
-                        ),
+                modifier = Modifier
+                    .weight(1f)
+                    .clip(AppShapes.small)
+                    .background(backgroundColor)
+                    .selectable(
+                        selected = isSelected,
+                        onClick = { onSelectedChange(index) },
+                        role = Role.Tab,
+                    )
+                    .padding(
+                        horizontal = AppSpacing.md,
+                        vertical = AppSpacing.sm,
+                    ),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
