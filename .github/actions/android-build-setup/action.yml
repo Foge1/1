@@ -20,7 +20,7 @@ runs:
 
     - name: Ensure Android SDK licenses are accepted (non-interactive)
       shell: bash
-      run: yes | sdkmanager --sdk_root="${ANDROID_SDK_ROOT}" --licenses >/dev/null
+      run: yes | sdkmanager --sdk_root="${ANDROID_SDK_ROOT}" --licenses >/dev/null || true
 
     - name: Verify required Android SDK packages
       shell: bash
