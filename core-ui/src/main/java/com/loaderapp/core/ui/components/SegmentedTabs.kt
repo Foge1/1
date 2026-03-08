@@ -86,8 +86,7 @@ fun SegmentedTabs(
                             selected = isSelected,
                             onClick = { onSelectedChange(index) },
                             role = Role.Tab,
-                        )
-                        .padding(
+                        ).padding(
                             horizontal = AppSpacing.md,
                             vertical = AppSpacing.sm,
                         ),
