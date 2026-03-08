@@ -152,3 +152,5 @@ style:
     multiLine: "always"
   UnusedPrivateMember:
     active: true
+    ignoreAnnotated:
+      - Preview

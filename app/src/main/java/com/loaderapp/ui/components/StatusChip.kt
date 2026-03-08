@@ -11,11 +11,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.tooling.preview.Preview
 import com.loaderapp.core.ui.theme.AppColors
 import com.loaderapp.core.ui.theme.AppMotion
 import com.loaderapp.core.ui.theme.AppSpacing
 import com.loaderapp.core.ui.theme.ShapeStatusPill
 import com.loaderapp.domain.model.OrderStatusModel
+import com.loaderapp.ui.theme.LoaderAppTheme
 
 @Composable
 fun StatusChip(
@@ -102,3 +104,11 @@ private fun OrderStatusModel.toStatusChipUiState(): StatusChipUiState =
                 contentColor = AppColors.StatusCanceledFg,
             )
     }
+
+@Preview(showBackground = true)
+@Composable
+private fun StatusChipPreview() {
+    LoaderAppTheme {
+        StatusChip(status = OrderStatusModel.AVAILABLE)
+    }
+}
