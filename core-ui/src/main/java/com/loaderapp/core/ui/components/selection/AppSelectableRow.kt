@@ -48,7 +48,7 @@ fun AppSelectableRow(
         contentColor = contentColor,
         border =
             BorderStroke(
-                width = AppSelectionDefaults.borderWidth,
+                width = AppSelectionDefaults.BORDER_WIDTH,
                 color = borderColor,
             ),
     ) {

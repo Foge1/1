@@ -29,7 +29,7 @@ data class AppSelectableRowStyle(
 object AppSelectionDefaults {
     private const val DisabledAlpha = 0.38f
 
-    val borderWidth: Dp = 1.dp
+    val BORDER_WIDTH: Dp = 1.dp
 
     @Composable
     fun checkboxColors(): CheckboxColors =
