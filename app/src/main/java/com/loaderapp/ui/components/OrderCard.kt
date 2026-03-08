@@ -37,7 +37,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -92,7 +91,7 @@ fun OrderCardHeader(order: OrderModel) {
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.Top,
     ) {
-        OrderStatusChip(status = order.status)
+        StatusChip(status = order.status)
         Row(verticalAlignment = Alignment.Bottom) {
             Text(
                 text = "₽${order.pricePerHour.toInt()}",
@@ -184,40 +183,9 @@ fun OrderMetaRow(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        OrderMetaChip(icon = Icons.Rounded.LocalShipping, text = order.cargoDescription)
-        OrderMetaChip(icon = Icons.Rounded.Timer, text = "${order.estimatedHours}ч мин")
-        OrderMetaChip(icon = Icons.Rounded.Groups, text = "$currentWorkers/${order.requiredWorkers}")
-    }
-}
-
-@Composable
-private fun OrderMetaChip(
-    icon: ImageVector,
-    text: String,
-) {
-    Surface(
-        color = MaterialTheme.colorScheme.surfaceVariant,
-        shape = RoundedCornerShape(8.dp),
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                modifier = Modifier.size(14.dp),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Text(
-                text = text,
-                style = orderMetaTextStyle(),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-        }
+        MetaChip(icon = Icons.Rounded.LocalShipping, text = order.cargoDescription)
+        MetaChip(icon = Icons.Rounded.Timer, text = "${order.estimatedHours}ч мин")
+        MetaChip(icon = Icons.Rounded.Groups, text = "$currentWorkers/${order.requiredWorkers}")
     }
 }
 
@@ -365,64 +333,6 @@ fun DispatcherOrderCard(
 }
 
 @Composable
-fun OrderStatusChip(status: OrderStatusModel) {
-    val (text, containerColor, textColor) =
-        when (status) {
-            OrderStatusModel.AVAILABLE ->
-                Triple(
-                    "Новый",
-                    MaterialTheme.colorScheme.tertiaryContainer,
-                    MaterialTheme.colorScheme.onTertiaryContainer,
-                )
-
-            OrderStatusModel.TAKEN ->
-                Triple(
-                    "Принят",
-                    MaterialTheme.colorScheme.secondaryContainer,
-                    MaterialTheme.colorScheme.onSecondaryContainer,
-                )
-
-            OrderStatusModel.IN_PROGRESS ->
-                Triple(
-                    "В работе",
-                    MaterialTheme.colorScheme.secondaryContainer,
-                    MaterialTheme.colorScheme.onSecondaryContainer,
-                )
-
-            OrderStatusModel.COMPLETED ->
-                Triple(
-                    "Завершён",
-                    MaterialTheme.colorScheme.surfaceVariant,
-                    MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-
-            OrderStatusModel.CANCELLED ->
-                Triple(
-                    "Отменён",
-                    MaterialTheme.colorScheme.errorContainer,
-                    MaterialTheme.colorScheme.onErrorContainer,
-                )
-        }
-
-    Surface(
-        color = containerColor,
-        shape = RoundedCornerShape(50),
-    ) {
-        Text(
-            text = text,
-            style =
-                MaterialTheme.typography.labelSmall.copy(
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Medium,
-                    letterSpacing = 0.2.sp,
-                ),
-            color = textColor,
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
-        )
-    }
-}
-
-@Composable
 private fun orderPriceTextStyle(): TextStyle =
     MaterialTheme.typography.headlineSmall.copy(
         fontSize = 24.sp,
@@ -440,13 +350,6 @@ private fun orderTitleTextStyle(): TextStyle =
 
 @Composable
 private fun orderDateTextStyle(): TextStyle = MaterialTheme.typography.bodySmall.copy(fontSize = 14.sp)
-
-@Composable
-private fun orderMetaTextStyle(): TextStyle =
-    MaterialTheme.typography.labelSmall.copy(
-        fontSize = 12.sp,
-        fontWeight = FontWeight.Medium,
-    )
 
 @Composable
 private fun orderActionTextStyle(): TextStyle =
