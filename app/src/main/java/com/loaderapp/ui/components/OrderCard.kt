@@ -378,12 +378,10 @@ fun DispatcherOrderCard(
 }
 
 @Composable
-private fun orderPriceTextStyle(): TextStyle =
-    MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold)
+private fun orderPriceTextStyle(): TextStyle = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold)
 
 @Composable
-private fun orderAddressTextStyle(): TextStyle =
-    MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
+private fun orderAddressTextStyle(): TextStyle = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
 
 @Composable
 private fun orderMetaTextStyle(): TextStyle = MaterialTheme.typography.bodyMedium
@@ -393,8 +391,7 @@ private fun orderActionTextStyle(): TextStyle = MaterialTheme.typography.labelLa
 
 fun formatOrderDate(timestamp: Long): String = DateLabelFormatter.dateLabel(timestampMillis = timestamp)
 
-fun formatOrderTime(order: OrderModel): String =
-    if (order.isAsap) {
+fun formatOrderTime(order: OrderModel): String = if (order.isAsap) {
         "Ближайшее время"
     } else {
         SimpleDateFormat("HH:mm", Locale("ru")).format(Date(order.dateTime))
