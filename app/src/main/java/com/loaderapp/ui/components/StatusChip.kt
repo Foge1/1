@@ -2,8 +2,6 @@ package com.loaderapp.ui.components
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -13,13 +11,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.tooling.preview.Preview
 import com.loaderapp.core.ui.theme.AppColors
 import com.loaderapp.core.ui.theme.AppMotion
 import com.loaderapp.core.ui.theme.AppSpacing
 import com.loaderapp.core.ui.theme.ShapeStatusPill
 import com.loaderapp.domain.model.OrderStatusModel
-import com.loaderapp.ui.theme.LoaderAppTheme
 
 @Composable
 fun StatusChip(
@@ -106,17 +102,3 @@ private fun OrderStatusModel.toStatusChipUiState(): StatusChipUiState =
                 contentColor = AppColors.StatusCanceledFg,
             )
     }
-
-@Preview(showBackground = true)
-@Composable
-private fun StatusChipPreview() {
-    LoaderAppTheme {
-        Column(verticalArrangement = Arrangement.spacedBy(AppSpacing.sm)) {
-            StatusChip(status = OrderStatusModel.AVAILABLE)
-            StatusChip(status = OrderStatusModel.TAKEN)
-            StatusChip(status = OrderStatusModel.IN_PROGRESS)
-            StatusChip(status = OrderStatusModel.COMPLETED)
-            StatusChip(status = OrderStatusModel.CANCELLED)
-        }
-    }
-}
