@@ -391,8 +391,7 @@ private fun orderMetaTextStyle(): TextStyle = MaterialTheme.typography.bodyMediu
 @Composable
 private fun orderActionTextStyle(): TextStyle = MaterialTheme.typography.labelLarge
 
-fun formatOrderDate(timestamp: Long): String =
-    DateLabelFormatter.dateLabel(timestampMillis = timestamp)
+fun formatOrderDate(timestamp: Long): String = DateLabelFormatter.dateLabel(timestampMillis = timestamp)
 
 fun formatOrderTime(order: OrderModel): String =
     if (order.isAsap) {
