@@ -27,7 +27,7 @@ data class AppSelectableRowStyle(
 )
 
 object AppSelectionDefaults {
-    private const val DisabledAlpha = 0.38f
+    private const val DISABLED_ALPHA = 0.38f
 
     val BORDER_WIDTH: Dp = 1.dp
 
@@ -37,9 +37,9 @@ object AppSelectionDefaults {
             checkedColor = AppColors.Primary,
             uncheckedColor = AppColors.Border,
             checkmarkColor = AppColors.Surface,
-            disabledCheckedColor = AppColors.Primary.copy(alpha = DisabledAlpha),
-            disabledUncheckedColor = AppColors.Border.copy(alpha = DisabledAlpha),
-            disabledIndeterminateColor = AppColors.Primary.copy(alpha = DisabledAlpha),
+            disabledCheckedColor = AppColors.Primary.copy(alpha = DISABLED_ALPHA),
+            disabledUncheckedColor = AppColors.Border.copy(alpha = DISABLED_ALPHA),
+            disabledIndeterminateColor = AppColors.Primary.copy(alpha = DISABLED_ALPHA),
         )
 
     @Composable
@@ -47,8 +47,8 @@ object AppSelectionDefaults {
         RadioButtonDefaults.colors(
             selectedColor = AppColors.Primary,
             unselectedColor = AppColors.Border,
-            disabledSelectedColor = AppColors.Primary.copy(alpha = DisabledAlpha),
-            disabledUnselectedColor = AppColors.Border.copy(alpha = DisabledAlpha),
+            disabledSelectedColor = AppColors.Primary.copy(alpha = DISABLED_ALPHA),
+            disabledUnselectedColor = AppColors.Border.copy(alpha = DISABLED_ALPHA),
         )
 
     @Composable
@@ -62,14 +62,14 @@ object AppSelectionDefaults {
             uncheckedTrackColor = AppColors.Surface,
             uncheckedBorderColor = AppColors.Border,
             uncheckedIconColor = AppColors.OnPrimary,
-            disabledCheckedThumbColor = AppColors.Primary.copy(alpha = DisabledAlpha),
+            disabledCheckedThumbColor = AppColors.Primary.copy(alpha = DISABLED_ALPHA),
             disabledCheckedTrackColor = AppColors.Primary.copy(alpha = 0.16f),
-            disabledCheckedBorderColor = AppColors.Primary.copy(alpha = DisabledAlpha),
-            disabledCheckedIconColor = AppColors.Surface.copy(alpha = DisabledAlpha),
-            disabledUncheckedThumbColor = AppColors.Surface.copy(alpha = DisabledAlpha),
+            disabledCheckedBorderColor = AppColors.Primary.copy(alpha = DISABLED_ALPHA),
+            disabledCheckedIconColor = AppColors.Surface.copy(alpha = DISABLED_ALPHA),
+            disabledUncheckedThumbColor = AppColors.Surface.copy(alpha = DISABLED_ALPHA),
             disabledUncheckedTrackColor = AppColors.Surface.copy(alpha = 0.5f),
-            disabledUncheckedBorderColor = AppColors.Border.copy(alpha = DisabledAlpha),
-            disabledUncheckedIconColor = AppColors.OnPrimary.copy(alpha = DisabledAlpha),
+            disabledUncheckedBorderColor = AppColors.Border.copy(alpha = DISABLED_ALPHA),
+            disabledUncheckedIconColor = AppColors.OnPrimary.copy(alpha = DISABLED_ALPHA),
         )
 
     fun selectableRowStyle(
@@ -100,7 +100,7 @@ object AppSelectionDefaults {
         if (enabled) {
             AppColors.Foreground
         } else {
-            AppColors.Foreground.copy(alpha = DisabledAlpha)
+            AppColors.Foreground.copy(alpha = DISABLED_ALPHA)
         }
 
     fun selectableRowBorderColor(selected: Boolean, enabled: Boolean): Color {
@@ -114,7 +114,7 @@ object AppSelectionDefaults {
         return if (enabled) {
             baseColor
         } else {
-            baseColor.copy(alpha = DisabledAlpha)
+            baseColor.copy(alpha = DISABLED_ALPHA)
         }
     }
 }
