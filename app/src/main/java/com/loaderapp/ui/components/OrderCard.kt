@@ -391,7 +391,8 @@ private fun orderActionTextStyle(): TextStyle = MaterialTheme.typography.labelLa
 
 fun formatOrderDate(timestamp: Long): String = DateLabelFormatter.dateLabel(timestampMillis = timestamp)
 
-fun formatOrderTime(order: OrderModel): String = if (order.isAsap) {
+fun formatOrderTime(order: OrderModel): String =
+    if (order.isAsap) {
         "Ближайшее время"
     } else {
         SimpleDateFormat("HH:mm", Locale("ru")).format(Date(order.dateTime))
