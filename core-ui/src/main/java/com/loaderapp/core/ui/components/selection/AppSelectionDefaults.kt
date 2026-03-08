@@ -103,7 +103,10 @@ object AppSelectionDefaults {
             AppColors.Foreground.copy(alpha = DISABLED_ALPHA)
         }
 
-    fun selectableRowBorderColor(selected: Boolean, enabled: Boolean): Color {
+    fun selectableRowBorderColor(
+        selected: Boolean,
+        enabled: Boolean,
+    ): Color {
         val baseColor =
             if (selected) {
                 AppColors.Primary
