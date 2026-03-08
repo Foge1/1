@@ -85,8 +85,7 @@ fun OrderCard(
                 .graphicsLayer {
                     scaleX = scale
                     scaleY = scale
-                }
-                .clickable(
+                }.clickable(
                     enabled = enabled,
                     interactionSource = interactionSource,
                     indication = null,
@@ -241,8 +240,7 @@ private fun OrderCardCommentBlock(comment: String) {
                 .background(
                     color = AppColors.Muted,
                     shape = ShapeChip,
-                )
-                .padding(horizontal = AppSpacing.md, vertical = AppSpacing.sm),
+                ).padding(horizontal = AppSpacing.md, vertical = AppSpacing.sm),
         horizontalArrangement = Arrangement.spacedBy(AppSpacing.sm),
         verticalAlignment = Alignment.Top,
     ) {
