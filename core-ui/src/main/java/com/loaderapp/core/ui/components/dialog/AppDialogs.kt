@@ -97,9 +97,9 @@ fun AppAlertDialog(
                     .padding(top = AppDialogDefaults.BodyActionsSpacing),
             horizontalArrangement =
                 Arrangement.spacedBy(
-                space = AppDialogDefaults.ActionButtonsSpacing,
-                alignment = Alignment.End,
-            ),
+                    space = AppDialogDefaults.ActionButtonsSpacing,
+                    alignment = Alignment.End,
+                ),
         ) {
             dismissButton?.invoke()
             confirmButton()
