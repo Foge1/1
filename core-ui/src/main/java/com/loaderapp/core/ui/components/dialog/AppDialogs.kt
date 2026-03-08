@@ -95,7 +95,8 @@ fun AppAlertDialog(
                 Modifier
                     .fillMaxWidth()
                     .padding(top = AppDialogDefaults.BodyActionsSpacing),
-            horizontalArrangement = Arrangement.spacedBy(
+            horizontalArrangement =
+                Arrangement.spacedBy(
                 space = AppDialogDefaults.ActionButtonsSpacing,
                 alignment = Alignment.End,
             ),
