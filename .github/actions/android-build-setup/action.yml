@@ -16,7 +16,6 @@ runs:
     - name: Set up Android SDK
       uses: android-actions/setup-android@v3
       with:
-        accept-android-sdk-licenses: true
         packages: |
           platform-tools
           platforms;android-34
