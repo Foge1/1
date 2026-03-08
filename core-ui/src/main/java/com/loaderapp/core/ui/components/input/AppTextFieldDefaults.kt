@@ -43,6 +43,7 @@ object AppTextFieldDefaults {
     val textStyle = AppTypography.bodyLarge
     val placeholderTextStyle = AppTypography.bodyMedium
 
+    @Composable
     private fun defaultTextFieldColors(): TextFieldColors =
         TextFieldDefaults.colors(
             focusedContainerColor = AppColors.Surface,
