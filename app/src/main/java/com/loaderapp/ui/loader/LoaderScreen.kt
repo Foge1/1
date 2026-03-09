@@ -40,13 +40,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.loaderapp.R
+import com.loaderapp.core.ui.theme.AppSpacing
 import com.loaderapp.features.orders.domain.OrderApplicationStatus
 import com.loaderapp.features.orders.presentation.DispatcherHistoryUiState
 import com.loaderapp.features.orders.presentation.OrderUiModel
@@ -64,6 +63,15 @@ import com.loaderapp.ui.components.OrdersHeaderDimens
 import com.loaderapp.ui.components.OrdersSegmentedTabs
 import com.loaderapp.ui.components.OrdersTabCounts
 import com.loaderapp.ui.main.LocalBottomNavHeight
+
+private object LoaderScreenLayoutDefaults {
+    val HistoryBottomPadding = 72.dp
+    val SnackbarBottomPadding = AppSpacing.sm
+    val ListHorizontalPadding = AppSpacing.lg
+    val ListTopPadding = AppSpacing.md
+    val ListBottomPadding = AppSpacing.xxxl
+    val ListItemSpacing = AppSpacing.md
+}
 
 @Composable
 fun LoaderScreen(
@@ -159,7 +167,7 @@ fun LoaderScreen(
             hostState = snackbarHostState,
             modifier =
                 Modifier
-                    .padding(bottom = bottomNavHeight + dimensionResource(id = R.dimen.order_spacing_8)),
+                    .padding(bottom = bottomNavHeight + LoaderScreenLayoutDefaults.SnackbarBottomPadding),
         )
     }
 }
@@ -175,7 +183,7 @@ private fun LoaderHistoryPage(
         state = historyState,
         onQueryChange = onHistoryQueryChanged,
         onOrderClick = onOrderClick,
-        bottomPadding = bottomNavHeight + 72.dp,
+        bottomPadding = bottomNavHeight + LoaderScreenLayoutDefaults.HistoryBottomPadding,
     )
 }
 
@@ -397,10 +405,10 @@ private fun OrdersListPage(
         bottomFadeHeight = 36.dp,
         contentPadding =
             PaddingValues(
-                start = dimensionResource(id = R.dimen.order_spacing_16),
-                end = dimensionResource(id = R.dimen.order_spacing_16),
-                top = dimensionResource(id = R.dimen.order_spacing_8),
-                bottom = bottomNavHeight + dimensionResource(id = R.dimen.order_spacing_24),
+                start = LoaderScreenLayoutDefaults.ListHorizontalPadding,
+                end = LoaderScreenLayoutDefaults.ListHorizontalPadding,
+                top = LoaderScreenLayoutDefaults.ListTopPadding,
+                bottom = bottomNavHeight + LoaderScreenLayoutDefaults.ListBottomPadding,
             ),
     ) {
         items(orders, key = { it.order.id }) { order ->
@@ -411,7 +419,7 @@ private fun OrdersListPage(
                 enabled = !pending,
                 actionContent = { actionSlot(order) },
             )
-            Spacer(Modifier.height(dimensionResource(id = R.dimen.order_spacing_12)))
+            Spacer(Modifier.height(LoaderScreenLayoutDefaults.ListItemSpacing))
         }
     }
 }

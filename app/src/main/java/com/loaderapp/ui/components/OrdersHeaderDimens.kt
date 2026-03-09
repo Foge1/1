@@ -1,7 +1,7 @@
 package com.loaderapp.ui.components
 
-import androidx.compose.ui.unit.dp
+import com.loaderapp.core.ui.theme.AppSpacing
 
 object OrdersHeaderDimens {
-    val tabsTopPadding = 2.dp
+    val tabsTopPadding = AppSpacing.sm
 }
