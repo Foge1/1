@@ -1,6 +1,5 @@
 package com.loaderapp.ui.components
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -9,7 +8,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Assignment
 import androidx.compose.material.icons.outlined.Group
@@ -34,10 +32,8 @@ import com.loaderapp.core.ui.theme.AppTypography
 private object OrdersScreenHeaderDefaults {
     val HorizontalPadding = AppSpacing.lg
     val HeaderTopPadding = AppSpacing.sm
-    val RoleTopPadding = AppSpacing.md
-    val StatsTopPadding = AppSpacing.md
     val TitleSubtitleSpacing = AppSpacing.xxs
-    val RoleRowInnerPadding = AppSpacing.xs
+    val RoleLabelTopSpacing = AppSpacing.xs
     val StatsCardPadding = AppSpacing.sm
     val StatsCardSpacing = AppSpacing.xs
     val StatsIconSize = AppSpacing.lg
@@ -64,41 +60,14 @@ fun OrdersScreenHeader(
     title: String,
     subtitle: String?,
     role: OrdersScreenRole,
-    summary: OrdersSummaryUi,
-    modifier: Modifier = Modifier,
-) {
-    Column(
-        modifier =
-            modifier
-                .fillMaxWidth()
-                .padding(horizontal = OrdersScreenHeaderDefaults.HorizontalPadding),
-    ) {
-        OrdersHeaderRow(
-            title = title,
-            subtitle = subtitle,
-            modifier = Modifier.padding(top = OrdersScreenHeaderDefaults.HeaderTopPadding),
-        )
-
-        OrdersRoleSelector(
-            selectedRole = role,
-            modifier = Modifier.padding(top = OrdersScreenHeaderDefaults.RoleTopPadding),
-        )
-
-        OrdersStatsSummary(
-            summary = summary,
-            modifier = Modifier.padding(top = OrdersScreenHeaderDefaults.StatsTopPadding),
-        )
-    }
-}
-
-@Composable
-private fun OrdersHeaderRow(
-    title: String,
-    subtitle: String?,
     modifier: Modifier = Modifier,
 ) {
     Row(
-        modifier = modifier.fillMaxWidth(),
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .padding(horizontal = OrdersScreenHeaderDefaults.HorizontalPadding)
+                .padding(top = OrdersScreenHeaderDefaults.HeaderTopPadding),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(modifier = Modifier.weight(1f)) {
@@ -119,6 +88,14 @@ private fun OrdersHeaderRow(
                     overflow = TextOverflow.Ellipsis,
                 )
             }
+            Spacer(modifier = Modifier.height(OrdersScreenHeaderDefaults.RoleLabelTopSpacing))
+            Text(
+                text = role.title,
+                style = AppTypography.labelMedium,
+                color = AppColors.MutedForeground,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
         }
 
         IconButton(onClick = {}) {
@@ -139,70 +116,15 @@ private fun OrdersHeaderRow(
 }
 
 @Composable
-private fun OrdersRoleSelector(
-    selectedRole: OrdersScreenRole,
-    modifier: Modifier = Modifier,
-) {
-    Surface(
-        modifier = modifier.fillMaxWidth(),
-        color = AppColors.Surface,
-        shape = AppShapes.medium,
-    ) {
-        Row(
-            modifier =
-                Modifier
-                    .padding(OrdersScreenHeaderDefaults.RoleRowInnerPadding)
-                    .fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(AppSpacing.xs),
-        ) {
-            RoleChip(
-                title = OrdersScreenRole.Dispatcher.title,
-                selected = selectedRole == OrdersScreenRole.Dispatcher,
-                modifier = Modifier.weight(1f),
-            )
-            RoleChip(
-                title = OrdersScreenRole.Loader.title,
-                selected = selectedRole == OrdersScreenRole.Loader,
-                modifier = Modifier.weight(1f),
-            )
-        }
-    }
-}
-
-@Composable
-private fun RoleChip(
-    title: String,
-    selected: Boolean,
-    modifier: Modifier = Modifier,
-) {
-    val background = if (selected) AppColors.Primary else AppColors.Surface
-    val foreground = if (selected) AppColors.OnPrimary else AppColors.MutedForeground
-
-    Row(
-        modifier =
-            modifier
-                .background(
-                    color = background,
-                    shape = RoundedCornerShape(AppSpacing.sm + AppSpacing.xxs),
-                ).padding(vertical = AppSpacing.sm),
-        horizontalArrangement = Arrangement.Center,
-    ) {
-        Text(
-            text = title,
-            style = AppTypography.labelLarge,
-            color = foreground,
-            maxLines = 1,
-        )
-    }
-}
-
-@Composable
-private fun OrdersStatsSummary(
+fun OrdersStatsSummary(
     summary: OrdersSummaryUi,
     modifier: Modifier = Modifier,
 ) {
     Row(
-        modifier = modifier.fillMaxWidth(),
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .padding(horizontal = OrdersScreenHeaderDefaults.HorizontalPadding),
         horizontalArrangement = Arrangement.spacedBy(OrdersScreenHeaderDefaults.StatsCardSpacing),
     ) {
         SummaryCard(
