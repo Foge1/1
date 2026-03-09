@@ -137,17 +137,19 @@ private fun SegmentedTabRow(
             val density = LocalDensity.current
             val indicatorOffsetPx = with(density) { (tabWidth * indicatorProgress).toPx() }
 
-            Box(
-                modifier =
-                    Modifier
-                        .offset { IntOffset(x = indicatorOffsetPx.roundToInt(), y = 0) }
-                        .width(tabWidth)
-                        .fillMaxHeight()
-                        .background(
-                            color = AppColors.Primary,
-                            shape = SwipeableTabsDefaults.TAB_SHAPE,
-                        ),
-            )
+            Box(modifier = Modifier.fillMaxWidth()) {
+                Box(
+                    modifier =
+                        Modifier
+                            .offset { IntOffset(x = indicatorOffsetPx.roundToInt(), y = 0) }
+                            .width(tabWidth)
+                            .fillMaxHeight()
+                            .background(
+                                color = AppColors.Primary,
+                                shape = SwipeableTabsDefaults.TAB_SHAPE,
+                            ),
+                )
+            }
         }
 
         Row(modifier = Modifier.fillMaxWidth()) {
