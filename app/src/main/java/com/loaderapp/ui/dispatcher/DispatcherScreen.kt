@@ -55,8 +55,10 @@ import com.loaderapp.ui.components.HistoryScreen
 import com.loaderapp.ui.components.LoadingView
 import com.loaderapp.ui.components.LocalTopBarHeightPx
 import com.loaderapp.ui.components.OrderCard
-import com.loaderapp.ui.components.OrdersHeaderDimens
+import com.loaderapp.ui.components.OrdersScreenHeader
+import com.loaderapp.ui.components.OrdersScreenRole
 import com.loaderapp.ui.components.OrdersSegmentedTabs
+import com.loaderapp.ui.components.OrdersSummaryUi
 import com.loaderapp.ui.components.OrdersTabCounts
 import com.loaderapp.ui.main.LocalBottomNavHeight
 
@@ -91,70 +93,86 @@ fun DispatcherScreen(
     var selectedTab by rememberSaveable { mutableStateOf(OrdersTab.Available) }
 
     AppScaffold(title = "Диспетчер") {
-        val topBarHeightPx = LocalTopBarHeightPx.current
-        val density = LocalDensity.current
-        val topBarHeight = with(density) { topBarHeightPx.toDp() }
         val bottomNavHeight = LocalBottomNavHeight.current
 
         if (state.loading) {
             LoadingView()
         } else {
-            OrdersSegmentedTabs(
-                selected = selectedTab,
-                onSelect = { selectedTab = it },
-                counts =
-                    OrdersTabCounts(
-                        available = state.availableOrders.size,
-                        inProgress = state.inProgressOrders.size,
-                        history = state.historyOrders.size,
-                    ),
+            Column(
                 modifier =
                     Modifier
                         .fillMaxSize()
-                        .padding(top = topBarHeight + OrdersHeaderDimens.tabsTopPadding),
-            ) { page ->
-                when (page) {
-                    0 ->
-                        DispatcherOrdersPage(
-                            orders = state.availableOrders,
-                            bottomNavHeight = bottomNavHeight,
-                            emptyIcon = Icons.Default.Assignment,
-                            emptyTitle = "Нет доступных заказов",
-                            emptyMessage = "Создайте первый заказ, нажав +",
-                            pendingActions = state.pendingActions,
-                            onOrderClick = onOrderClick,
-                            actionSlot = { order ->
-                                StaffingOrderActions(
-                                    order = order,
-                                    pending = state.pendingActions.contains(order.order.id),
-                                    onCancel = { viewModel.onCancelClicked(order.order.id) },
-                                )
-                            },
-                        )
-                    1 ->
-                        DispatcherOrdersPage(
-                            orders = state.inProgressOrders,
-                            bottomNavHeight = bottomNavHeight,
-                            emptyIcon = Icons.Default.WorkOff,
-                            emptyTitle = "Нет заказов в работе",
-                            emptyMessage = "Активные заказы появятся здесь",
-                            pendingActions = state.pendingActions,
-                            onOrderClick = onOrderClick,
-                            actionSlot = { order ->
-                                InProgressOrderActions(
-                                    order = order,
-                                    pending = state.pendingActions.contains(order.order.id),
-                                    onCancel = { viewModel.onCancelClicked(order.order.id) },
-                                )
-                            },
-                        )
-                    2 ->
-                        DispatcherHistoryPage(
-                            historyState = state.history,
-                            onHistoryQueryChanged = viewModel::onHistoryQueryChanged,
-                            bottomNavHeight = bottomNavHeight,
-                            onOrderClick = onOrderClick,
-                        )
+                        .padding(top = with(LocalDensity.current) { LocalTopBarHeightPx.current.toDp() }),
+            ) {
+                OrdersScreenHeader(
+                    title = "Заказы",
+                    subtitle = "Управление заказами",
+                    role = OrdersScreenRole.Dispatcher,
+                    summary =
+                        OrdersSummaryUi(
+                            available = state.availableOrders.size,
+                            inProgress = state.inProgressOrders.size,
+                            history = state.historyOrders.size,
+                            responses = state.responsesBadge.totalResponses,
+                        ),
+                )
+
+                OrdersSegmentedTabs(
+                    selected = selectedTab,
+                    onSelect = { selectedTab = it },
+                    counts =
+                        OrdersTabCounts(
+                            available = state.availableOrders.size,
+                            inProgress = state.inProgressOrders.size,
+                            history = state.historyOrders.size,
+                        ),
+                    modifier = Modifier.fillMaxSize(),
+                ) { page ->
+                    when (page) {
+                        0 ->
+                            DispatcherOrdersPage(
+                                orders = state.availableOrders,
+                                bottomNavHeight = bottomNavHeight,
+                                emptyIcon = Icons.Default.Assignment,
+                                emptyTitle = "Нет доступных заказов",
+                                emptyMessage = "Создайте первый заказ, нажав +",
+                                pendingActions = state.pendingActions,
+                                onOrderClick = onOrderClick,
+                                actionSlot = { order ->
+                                    StaffingOrderActions(
+                                        order = order,
+                                        pending = state.pendingActions.contains(order.order.id),
+                                        onCancel = { viewModel.onCancelClicked(order.order.id) },
+                                    )
+                                },
+                            )
+
+                        1 ->
+                            DispatcherOrdersPage(
+                                orders = state.inProgressOrders,
+                                bottomNavHeight = bottomNavHeight,
+                                emptyIcon = Icons.Default.WorkOff,
+                                emptyTitle = "Нет заказов в работе",
+                                emptyMessage = "Активные заказы появятся здесь",
+                                pendingActions = state.pendingActions,
+                                onOrderClick = onOrderClick,
+                                actionSlot = { order ->
+                                    InProgressOrderActions(
+                                        order = order,
+                                        pending = state.pendingActions.contains(order.order.id),
+                                        onCancel = { viewModel.onCancelClicked(order.order.id) },
+                                    )
+                                },
+                            )
+
+                        2 ->
+                            DispatcherHistoryPage(
+                                historyState = state.history,
+                                onHistoryQueryChanged = viewModel::onHistoryQueryChanged,
+                                bottomNavHeight = bottomNavHeight,
+                                onOrderClick = onOrderClick,
+                            )
+                    }
                 }
             }
         }
