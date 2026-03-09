@@ -30,8 +30,8 @@ private object StatsBarDefaults {
     val ItemVerticalPadding = AppSpacing.sm
     val ItemHorizontalPadding = AppSpacing.md
     val ItemSpacing = AppSpacing.xs
-    val ActiveItemAlpha = 0.16f
-    val InactiveItemAlpha = 0f
+    const val ActiveItemAlpha = 0.16f
+    const val InactiveItemAlpha = 0f
 }
 
 @Composable
