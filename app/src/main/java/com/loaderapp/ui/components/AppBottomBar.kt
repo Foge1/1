@@ -156,10 +156,11 @@ private fun rememberBottomNavItemVisuals(isSelected: Boolean): BottomNavItemVisu
             } else {
                 AppColors.MutedForeground.copy(alpha = INACTIVE_CONTENT_ALPHA)
             },
-        animationSpec = androidx.compose.animation.core.tween(
-            durationMillis = AppMotion.DURATION_MEDIUM,
-            easing = AppMotion.EASING_STANDARD,
-        ),
+        animationSpec =
+            androidx.compose.animation.core.tween(
+                durationMillis = AppMotion.DURATION_MEDIUM,
+                easing = AppMotion.EASING_STANDARD,
+            ),
         label = "bottomNavContentColor",
     )
     val capsuleAlpha by animateFloatAsState(
