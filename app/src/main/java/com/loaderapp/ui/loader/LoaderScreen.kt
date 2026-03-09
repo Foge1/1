@@ -61,8 +61,8 @@ import com.loaderapp.ui.components.LocalTopBarHeightPx
 import com.loaderapp.ui.components.OrderCard
 import com.loaderapp.ui.components.OrdersScreenHeader
 import com.loaderapp.ui.components.OrdersScreenRole
-import com.loaderapp.ui.components.OrdersSummaryUi
 import com.loaderapp.ui.components.OrdersSegmentedTabs
+import com.loaderapp.ui.components.OrdersSummaryUi
 import com.loaderapp.ui.components.OrdersTabCounts
 import com.loaderapp.ui.main.LocalBottomNavHeight
 

@@ -45,7 +45,9 @@ private object OrdersScreenHeaderDefaults {
     val StatsLabelTopSpacing = AppSpacing.xxs
 }
 
-enum class OrdersScreenRole(val title: String) {
+enum class OrdersScreenRole(
+    val title: String,
+) {
     Dispatcher("Диспетчер"),
     Loader("Грузчик"),
 }
