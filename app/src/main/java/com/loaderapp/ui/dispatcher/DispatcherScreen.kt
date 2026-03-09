@@ -58,6 +58,7 @@ import com.loaderapp.ui.components.OrderCard
 import com.loaderapp.ui.components.OrdersScreenHeader
 import com.loaderapp.ui.components.OrdersScreenRole
 import com.loaderapp.ui.components.OrdersSegmentedTabs
+import com.loaderapp.ui.components.OrdersStatsSummary
 import com.loaderapp.ui.components.OrdersSummaryUi
 import com.loaderapp.ui.components.OrdersTabCounts
 import com.loaderapp.ui.main.LocalBottomNavHeight
@@ -108,6 +109,9 @@ fun DispatcherScreen(
                     title = "Заказы",
                     subtitle = "Управление заказами",
                     role = OrdersScreenRole.Dispatcher,
+                )
+                Spacer(modifier = Modifier.height(AppSpacing.md))
+                OrdersStatsSummary(
                     summary =
                         OrdersSummaryUi(
                             available = state.availableOrders.size,
@@ -116,6 +120,7 @@ fun DispatcherScreen(
                             responses = state.responsesBadge.totalResponses,
                         ),
                 )
+                Spacer(modifier = Modifier.height(AppSpacing.md))
 
                 OrdersSegmentedTabs(
                     selected = selectedTab,

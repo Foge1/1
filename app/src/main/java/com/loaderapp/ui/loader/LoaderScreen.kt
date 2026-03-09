@@ -62,6 +62,7 @@ import com.loaderapp.ui.components.OrderCard
 import com.loaderapp.ui.components.OrdersScreenHeader
 import com.loaderapp.ui.components.OrdersScreenRole
 import com.loaderapp.ui.components.OrdersSegmentedTabs
+import com.loaderapp.ui.components.OrdersStatsSummary
 import com.loaderapp.ui.components.OrdersSummaryUi
 import com.loaderapp.ui.components.OrdersTabCounts
 import com.loaderapp.ui.main.LocalBottomNavHeight
@@ -105,6 +106,9 @@ fun LoaderScreen(
                     title = "Заказы",
                     subtitle = "Лента заказов",
                     role = OrdersScreenRole.Loader,
+                )
+                Spacer(modifier = Modifier.height(AppSpacing.md))
+                OrdersStatsSummary(
                     summary =
                         OrdersSummaryUi(
                             available = state.availableOrders.size,
@@ -113,6 +117,7 @@ fun LoaderScreen(
                             responses = state.responsesBadge.totalResponses,
                         ),
                 )
+                Spacer(modifier = Modifier.height(AppSpacing.md))
 
                 OrdersSegmentedTabs(
                     selected = selectedTab,
