@@ -26,10 +26,14 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -112,6 +116,8 @@ private fun SegmentedTabRow(
     modifier: Modifier = Modifier,
 ) {
     val indicatorProgress = pagerState.currentPage + pagerState.currentPageOffsetFraction
+    var tabRowHeightPx by remember { mutableIntStateOf(0) }
+    val density = LocalDensity.current
 
     BoxWithConstraints(
         modifier =
@@ -123,37 +129,49 @@ private fun SegmentedTabRow(
                     shape = SwipeableTabsDefaults.TRACK_SHAPE,
                 ).padding(SwipeableTabsDefaults.TRACK_INNER_PADDING),
     ) {
-        if (tabs.isNotEmpty()) {
-            val tabWidth = maxWidth / tabs.size
-            val density = LocalDensity.current
-            val indicatorOffsetPx = with(density) { (tabWidth * indicatorProgress).toPx() }
+        Box(modifier = Modifier.fillMaxWidth()) {
+            if (tabs.isNotEmpty() && tabRowHeightPx > 0) {
+                val tabWidth = maxWidth / tabs.size
+                val indicatorOffsetPx = with(density) { (tabWidth * indicatorProgress).toPx() }
+                val indicatorHeight = with(density) { tabRowHeightPx.toDp() }
 
-            Box(modifier = Modifier.fillMaxWidth()) {
                 Box(
                     modifier =
                         Modifier
-                            .offset { IntOffset(x = indicatorOffsetPx.roundToInt(), y = 0) }
-                            .width(tabWidth)
-                            .fillMaxHeight()
-                            .background(
-                                color = AppColors.Primary,
-                                shape = SwipeableTabsDefaults.TAB_SHAPE,
-                            ),
-                )
+                            .fillMaxWidth()
+                            .height(indicatorHeight),
+                ) {
+                    Box(
+                        modifier =
+                            Modifier
+                                .offset { IntOffset(x = indicatorOffsetPx.roundToInt(), y = 0) }
+                                .width(tabWidth)
+                                .fillMaxHeight()
+                                .background(
+                                    color = AppColors.Primary,
+                                    shape = SwipeableTabsDefaults.TAB_SHAPE,
+                                ),
+                    )
+                }
             }
-        }
 
-        Row(modifier = Modifier.fillMaxWidth()) {
-            tabs.forEachIndexed { index, tab ->
-                SegmentedTab(
-                    label = tab.label,
-                    badgeCount = tab.badgeCount,
-                    isSelected = pagerState.currentPage == index,
-                    onClick = { onTabSelected(index) },
-                    modifier = Modifier.weight(1f),
-                    verticalPadding = tabVerticalPadding,
-                    horizontalPadding = tabHorizontalPadding,
-                )
+            Row(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .onSizeChanged { tabRowHeightPx = it.height },
+            ) {
+                tabs.forEachIndexed { index, tab ->
+                    SegmentedTab(
+                        label = tab.label,
+                        badgeCount = tab.badgeCount,
+                        isSelected = pagerState.currentPage == index,
+                        onClick = { onTabSelected(index) },
+                        modifier = Modifier.weight(1f),
+                        verticalPadding = tabVerticalPadding,
+                        horizontalPadding = tabHorizontalPadding,
+                    )
+                }
             }
         }
     }
