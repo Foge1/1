@@ -51,13 +51,13 @@ data class TabItem(
 )
 
 private object SwipeableTabsDefaults {
-    val TrackShape = AppShapes.small
-    val TabShape = RoundedCornerShape(AppSpacing.sm + AppSpacing.xxs)
-    val TrackInnerPadding = AppSpacing.xs
-    val TabVerticalPadding = AppSpacing.sm
-    val TabHorizontalPadding = AppSpacing.md
-    const val BadgeAlphaActive = 0.2f
-    val BadgeSpacing = AppSpacing.xs
+    val TRACK_SHAPE = AppShapes.small
+    val TAB_SHAPE = RoundedCornerShape(AppSpacing.sm + AppSpacing.xxs)
+    val TRACK_INNER_PADDING = AppSpacing.xs
+    val TAB_VERTICAL_PADDING = AppSpacing.sm
+    val TAB_HORIZONTAL_PADDING = AppSpacing.md
+    const val BADGE_ALPHA_ACTIVE = 0.2f
+    val BADGE_SPACING = AppSpacing.xs
 }
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -68,8 +68,8 @@ fun SwipeableTabs(
     initialPage: Int = 0,
     onPageChanged: (Int) -> Unit = {},
     tabsToPagerSpacing: Dp = AppSpacing.sm,
-    tabVerticalPadding: Dp = SwipeableTabsDefaults.TabVerticalPadding,
-    tabHorizontalPadding: Dp = SwipeableTabsDefaults.TabHorizontalPadding,
+    tabVerticalPadding: Dp = SwipeableTabsDefaults.TAB_VERTICAL_PADDING,
+    tabHorizontalPadding: Dp = SwipeableTabsDefaults.TAB_HORIZONTAL_PADDING,
     tabRowHorizontalPadding: Dp = AppSpacing.lg,
     content: @Composable (pageIndex: Int) -> Unit,
 ) {
@@ -129,9 +129,9 @@ private fun SegmentedTabRow(
                 .padding(horizontal = tabRowHorizontalPadding)
                 .background(
                     color = AppColors.Muted,
-                    shape = SwipeableTabsDefaults.TrackShape,
+                    shape = SwipeableTabsDefaults.TRACK_SHAPE,
                 )
-                .padding(SwipeableTabsDefaults.TrackInnerPadding),
+                .padding(SwipeableTabsDefaults.TRACK_INNER_PADDING),
     ) {
         if (tabs.isNotEmpty()) {
             val tabWidth = maxWidth / tabs.size
@@ -146,7 +146,7 @@ private fun SegmentedTabRow(
                         .fillMaxHeight()
                         .background(
                             color = AppColors.Primary,
-                            shape = SwipeableTabsDefaults.TabShape,
+                            shape = SwipeableTabsDefaults.TAB_SHAPE,
                         ),
             )
         }
@@ -203,12 +203,12 @@ private fun SegmentedTab(
         )
 
         if (badgeCount > 0) {
-            Spacer(modifier = Modifier.width(SwipeableTabsDefaults.BadgeSpacing))
+            Spacer(modifier = Modifier.width(SwipeableTabsDefaults.BADGE_SPACING))
 
             Badge(
                 containerColor =
                     if (isSelected) {
-                        AppColors.OnPrimary.copy(alpha = SwipeableTabsDefaults.BadgeAlphaActive)
+                        AppColors.OnPrimary.copy(alpha = SwipeableTabsDefaults.BADGE_ALPHA_ACTIVE)
                     } else {
                         AppColors.Border
                     },
