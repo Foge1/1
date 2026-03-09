@@ -41,6 +41,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.loaderapp.core.ui.theme.AppColors
+import com.loaderapp.core.ui.theme.AppSpacing
 import com.loaderapp.features.orders.presentation.DispatcherHistoryUiState
 import com.loaderapp.features.orders.presentation.OrderUiModel
 import com.loaderapp.features.orders.presentation.OrdersTab
@@ -57,6 +59,17 @@ import com.loaderapp.ui.components.OrdersHeaderDimens
 import com.loaderapp.ui.components.OrdersSegmentedTabs
 import com.loaderapp.ui.components.OrdersTabCounts
 import com.loaderapp.ui.main.LocalBottomNavHeight
+
+private object DispatcherScreenLayoutDefaults {
+    val FabHorizontalPadding = AppSpacing.lg
+    val FabBottomPadding = AppSpacing.lg
+    val SnackbarBottomPadding = AppSpacing.sm
+    val HistoryBottomPadding = 80.dp
+    val ListHorizontalPadding = AppSpacing.lg
+    val ListTopPadding = AppSpacing.md
+    val ListBottomPadding = 80.dp
+    val ListItemSpacing = AppSpacing.md
+}
 
 /**
  * Экран диспетчера. Использует [OrdersViewModel] и [OrderUiModel] как единственный
@@ -150,14 +163,17 @@ fun DispatcherScreen(
             modifier =
                 Modifier
                     .fillMaxSize()
-                    .padding(end = 16.dp, bottom = bottomNavHeight + 16.dp),
+                    .padding(
+                        end = DispatcherScreenLayoutDefaults.FabHorizontalPadding,
+                        bottom = bottomNavHeight + DispatcherScreenLayoutDefaults.FabBottomPadding,
+                    ),
             contentAlignment = Alignment.BottomEnd,
         ) {
             ExtendedFloatingActionButton(
                 onClick = onNavigateToCreateOrder,
                 icon = { Icon(Icons.Default.Add, contentDescription = "Создать заказ") },
                 text = { Text("Создать заказ") },
-                containerColor = MaterialTheme.colorScheme.primary,
+                containerColor = AppColors.Primary,
             )
         }
 
@@ -166,7 +182,7 @@ fun DispatcherScreen(
             modifier =
                 Modifier
                     .align(Alignment.BottomCenter)
-                    .padding(bottom = bottomNavHeight + 8.dp),
+                    .padding(bottom = bottomNavHeight + DispatcherScreenLayoutDefaults.SnackbarBottomPadding),
         )
     }
 }
@@ -292,7 +308,7 @@ private fun DispatcherHistoryPage(
         state = historyState,
         onQueryChange = onHistoryQueryChanged,
         onOrderClick = onOrderClick,
-        bottomPadding = bottomNavHeight + 80.dp,
+        bottomPadding = bottomNavHeight + DispatcherScreenLayoutDefaults.HistoryBottomPadding,
     )
 }
 
@@ -319,10 +335,10 @@ private fun DispatcherOrdersPage(
         bottomFadeHeight = 36.dp,
         contentPadding =
             PaddingValues(
-                start = 16.dp,
-                end = 16.dp,
-                top = 8.dp,
-                bottom = bottomNavHeight + 80.dp, // extra space for FAB
+                start = DispatcherScreenLayoutDefaults.ListHorizontalPadding,
+                end = DispatcherScreenLayoutDefaults.ListHorizontalPadding,
+                top = DispatcherScreenLayoutDefaults.ListTopPadding,
+                bottom = bottomNavHeight + DispatcherScreenLayoutDefaults.ListBottomPadding, // extra space for FAB
             ),
     ) {
         items(orders, key = { it.order.id }) { order ->
@@ -333,7 +349,7 @@ private fun DispatcherOrdersPage(
                 enabled = !pending,
                 actionContent = { actionSlot(order) },
             )
-            Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(DispatcherScreenLayoutDefaults.ListItemSpacing))
         }
     }
 }
