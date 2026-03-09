@@ -1,10 +1,7 @@
 package com.loaderapp.ui.components
 
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.Spring
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.spring
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -20,10 +17,15 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -32,20 +34,32 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.scale
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import com.loaderapp.core.ui.theme.AppColors
+import com.loaderapp.core.ui.theme.AppMotion
 import com.loaderapp.core.ui.theme.AppSpacing
+import com.loaderapp.core.ui.theme.AppTypography
+import com.loaderapp.core.ui.theme.ShapeBottomBar
+import com.loaderapp.ui.theme.LoaderAppTheme
+
+private const val MAX_BADGE_VALUE = 99
+private const val ACTIVE_CONTENT_ALPHA = 1f
+private const val INACTIVE_CONTENT_ALPHA = 0.64f
+private const val ACTIVE_CAPSULE_ALPHA = 0.42f
+private const val INACTIVE_INDICATOR_ALPHA = 0f
+private const val SELECTED_SCALE = 1.08f
+private const val UNSELECTED_SCALE = 1f
 
 /**
  * Элемент нижней навигации.
  */
 data class BottomNavItem(
-    val icon: androidx.compose.ui.graphics.vector.ImageVector,
+    val icon: ImageVector,
     val label: String,
     val badgeCount: Int = 0,
 )
@@ -57,26 +71,10 @@ fun AppBottomBar(
     onItemSelected: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val shadowColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.20f)
-
     Surface(
-        modifier =
-            modifier
-                .fillMaxWidth()
-                .drawBehind {
-                    drawRect(
-                        brush =
-                            Brush.verticalGradient(
-                                colors = listOf(Color.Transparent, shadowColor.copy(alpha = 0.55f)),
-                                startY = -24.dp.toPx(),
-                                endY = 0f,
-                            ),
-                    )
-                },
-        shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp),
-        color = MaterialTheme.colorScheme.surface,
-        tonalElevation = 0.dp,
-        shadowElevation = 12.dp,
+        modifier = modifier.fillMaxWidth(),
+        shape = ShapeBottomBar,
+        color = AppColors.Surface,
     ) {
         Row(
             modifier =
@@ -120,14 +118,16 @@ private fun BottomNavItemView(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Top,
     ) {
-        TopSelectionIndicator(isSelected = isSelected)
+        TopSelectionIndicator(indicatorAlpha = itemVisuals.indicatorAlpha)
         Spacer(Modifier.height(AppSpacing.xs))
         IconCapsule(item = item, visuals = itemVisuals)
-        Spacer(Modifier.height(3.dp))
+        Spacer(Modifier.height(AppSpacing.xs))
         Text(
             text = item.label,
-            fontSize = 10.sp,
-            fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
+            style =
+                AppTypography.labelSmall.copy(
+                    fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium,
+                ),
             color = itemVisuals.contentColor,
             maxLines = 1,
         )
@@ -138,37 +138,58 @@ private data class BottomNavItemVisuals(
     val scale: Float,
     val contentColor: Color,
     val capsuleAlpha: Float,
+    val indicatorAlpha: Float,
 )
 
 @Composable
 private fun rememberBottomNavItemVisuals(isSelected: Boolean): BottomNavItemVisuals {
     val scale by animateFloatAsState(
-        targetValue = if (isSelected) 1.08f else 1f,
-        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium),
-        label = "scale",
+        targetValue = if (isSelected) SELECTED_SCALE else UNSELECTED_SCALE,
+        animationSpec = AppMotion.SPRING_MEDIUM_BOUNCE,
+        label = "bottomNavScale",
     )
-    val contentColor by androidx.compose.animation.animateColorAsState(
-        targetValue = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-        animationSpec = tween(200, easing = FastOutSlowInEasing),
-        label = "contentColor",
+    val contentColor by animateColorAsState(
+        targetValue =
+            if (isSelected) {
+                AppColors.Primary.copy(alpha = ACTIVE_CONTENT_ALPHA)
+            } else {
+                AppColors.MutedForeground.copy(alpha = INACTIVE_CONTENT_ALPHA)
+            },
+        animationSpec =
+            androidx.compose.animation.core.tween(
+                durationMillis = AppMotion.DURATION_MEDIUM,
+                easing = AppMotion.EASING_STANDARD,
+            ),
+        label = "bottomNavContentColor",
     )
     val capsuleAlpha by animateFloatAsState(
-        targetValue = if (isSelected) 1f else 0f,
-        animationSpec = tween(200, easing = FastOutSlowInEasing),
-        label = "capsuleAlpha",
+        targetValue = if (isSelected) ACTIVE_CAPSULE_ALPHA else 0f,
+        animationSpec = AppMotion.tweenMedium(),
+        label = "bottomNavCapsuleAlpha",
     )
-    return BottomNavItemVisuals(scale = scale, contentColor = contentColor, capsuleAlpha = capsuleAlpha)
+    val indicatorAlpha by animateFloatAsState(
+        targetValue = if (isSelected) ACTIVE_CONTENT_ALPHA else INACTIVE_INDICATOR_ALPHA,
+        animationSpec = AppMotion.tweenMedium(),
+        label = "bottomNavIndicatorAlpha",
+    )
+
+    return BottomNavItemVisuals(
+        scale = scale,
+        contentColor = contentColor,
+        capsuleAlpha = capsuleAlpha,
+        indicatorAlpha = indicatorAlpha,
+    )
 }
 
 @Composable
-private fun TopSelectionIndicator(isSelected: Boolean) {
+private fun TopSelectionIndicator(indicatorAlpha: Float) {
     Box(
         modifier =
             Modifier
                 .width(24.dp)
                 .height(2.dp)
-                .clip(RoundedCornerShape(1.dp))
-                .background(if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent),
+                .clip(RoundedCornerShape(percent = 50))
+                .background(AppColors.Primary.copy(alpha = indicatorAlpha)),
     )
 }
 
@@ -182,8 +203,8 @@ private fun IconCapsule(
         modifier =
             Modifier
                 .scale(visuals.scale)
-                .clip(RoundedCornerShape(50))
-                .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = visuals.capsuleAlpha * 0.6f))
+                .clip(RoundedCornerShape(percent = 50))
+                .background(AppColors.PrimaryContainer.copy(alpha = visuals.capsuleAlpha))
                 .padding(horizontal = 14.dp, vertical = 6.dp),
     ) {
         if (item.badgeCount > 0) {
@@ -201,8 +222,20 @@ private fun BadgedIcon(
 ) {
     BadgedBox(
         badge = {
-            Badge {
-                Text(text = if (item.badgeCount > 99) "99+" else "${item.badgeCount}", fontSize = 8.sp)
+            Badge(
+                containerColor = AppColors.Accent,
+                contentColor = AppColors.OnPrimary,
+            ) {
+                val badgeText =
+                    if (item.badgeCount > MAX_BADGE_VALUE) {
+                        "$MAX_BADGE_VALUE+"
+                    } else {
+                        item.badgeCount.toString()
+                    }
+                Text(
+                    text = badgeText,
+                    style = AppTypography.labelSmall,
+                )
             }
         },
     ) {
@@ -221,4 +254,23 @@ private fun BaseIcon(
         tint = color,
         modifier = Modifier.size(22.dp),
     )
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun AppBottomBarPreview() {
+    LoaderAppTheme {
+        AppBottomBar(
+            items =
+                listOf(
+                    BottomNavItem(Icons.Default.Home, "Заказы"),
+                    BottomNavItem(Icons.Default.History, "Отклики", badgeCount = 3),
+                    BottomNavItem(Icons.Default.Star, "Рейтинг"),
+                    BottomNavItem(Icons.Default.Person, "Профиль"),
+                    BottomNavItem(Icons.Default.Settings, "Настройки"),
+                ),
+            selectedIndex = 0,
+            onItemSelected = {},
+        )
+    }
 }
