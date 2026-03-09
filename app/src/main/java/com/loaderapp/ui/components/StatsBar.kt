@@ -30,8 +30,8 @@ private object StatsBarDefaults {
     val ItemVerticalPadding = AppSpacing.sm
     val ItemHorizontalPadding = AppSpacing.md
     val ItemSpacing = AppSpacing.xs
-    const val ActiveItemAlpha = 0.16f
-    const val InactiveItemAlpha = 0f
+    const val ACTIVE_ITEM_ALPHA = 0.16f
+    const val INACTIVE_ITEM_ALPHA = 0f
 }
 
 @Composable
@@ -81,9 +81,9 @@ private fun StatsItem(
 ) {
     val itemBackgroundAlpha =
         if (isActive) {
-            StatsBarDefaults.ActiveItemAlpha
+            StatsBarDefaults.ACTIVE_ITEM_ALPHA
         } else {
-            StatsBarDefaults.InactiveItemAlpha
+            StatsBarDefaults.INACTIVE_ITEM_ALPHA
         }
     val labelColor = if (isActive) AppColors.Foreground else AppColors.MutedForeground
 
