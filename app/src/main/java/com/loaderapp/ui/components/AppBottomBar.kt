@@ -108,14 +108,11 @@ private fun BottomNavItemView(
     val itemVisuals = rememberBottomNavItemVisuals(isSelected = isSelected)
 
     Column(
-        modifier =
-            modifier
-                .clickable(
-                    interactionSource = interactionSource,
-                    indication = null,
-                    onClick = onClick,
-                )
-                .padding(vertical = AppSpacing.xs),
+        modifier = modifier.clickable(
+            interactionSource = interactionSource,
+            indication = null,
+            onClick = onClick,
+        ).padding(vertical = AppSpacing.xs),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Top,
     ) {
