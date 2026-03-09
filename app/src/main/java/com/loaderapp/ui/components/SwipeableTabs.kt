@@ -129,9 +129,11 @@ private fun SegmentedTabRow(
                     shape = SwipeableTabsDefaults.TRACK_SHAPE,
                 ).padding(SwipeableTabsDefaults.TRACK_INNER_PADDING),
     ) {
+        val trackWidth = maxWidth
+
         Box(modifier = Modifier.fillMaxWidth()) {
             if (tabs.isNotEmpty() && tabRowHeightPx > 0) {
-                val tabWidth = maxWidth / tabs.size
+                val tabWidth = trackWidth / tabs.size
                 val indicatorOffsetPx = with(density) { (tabWidth * indicatorProgress).toPx() }
                 val indicatorHeight = with(density) { tabRowHeightPx.toDp() }
 
