@@ -72,7 +72,9 @@ fun AppBottomBar(
     modifier: Modifier = Modifier,
 ) {
     Surface(
-        modifier = modifier.fillMaxWidth(),
+        modifier =
+            modifier
+                .fillMaxWidth(),
         shape = ShapeBottomBar,
         color = AppColors.Surface,
     ) {
