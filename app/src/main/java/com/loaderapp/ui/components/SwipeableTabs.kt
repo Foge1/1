@@ -130,8 +130,7 @@ private fun SegmentedTabRow(
                 .background(
                     color = AppColors.Muted,
                     shape = SwipeableTabsDefaults.TRACK_SHAPE,
-                )
-                .padding(SwipeableTabsDefaults.TRACK_INNER_PADDING),
+                ).padding(SwipeableTabsDefaults.TRACK_INNER_PADDING),
     ) {
         if (tabs.isNotEmpty()) {
             val tabWidth = maxWidth / tabs.size
