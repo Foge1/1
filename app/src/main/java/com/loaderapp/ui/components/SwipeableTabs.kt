@@ -1,6 +1,5 @@
 package com.loaderapp.ui.components
 
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -27,7 +26,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
@@ -38,7 +36,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import com.loaderapp.core.ui.theme.AppColors
-import com.loaderapp.core.ui.theme.AppMotion
 import com.loaderapp.core.ui.theme.AppShapes
 import com.loaderapp.core.ui.theme.AppSpacing
 import com.loaderapp.ui.theme.LoaderAppTheme
@@ -114,13 +111,7 @@ private fun SegmentedTabRow(
     onTabSelected: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val indicatorProgressTarget = pagerState.currentPage + pagerState.currentPageOffsetFraction
-    val indicatorProgress by
-        animateFloatAsState(
-            targetValue = indicatorProgressTarget,
-            animationSpec = AppMotion.tweenLong(),
-            label = "segmented_tabs_indicator",
-        )
+    val indicatorProgress = pagerState.currentPage + pagerState.currentPageOffsetFraction
 
     BoxWithConstraints(
         modifier =
