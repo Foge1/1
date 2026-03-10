@@ -9,12 +9,13 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
+import com.loaderapp.R
 import com.loaderapp.core.ui.theme.AppColors
 import com.loaderapp.core.ui.theme.AppMotion
-import com.loaderapp.core.ui.theme.AppSpacing
 import com.loaderapp.core.ui.theme.ShapeStatusPill
 import com.loaderapp.domain.model.OrderStatusModel
 import com.loaderapp.ui.theme.LoaderAppTheme
@@ -44,7 +45,10 @@ fun StatusChip(
         )
 
     Surface(
-        modifier = modifier.semantics { contentDescription = "Статус: ${chipState.label}" },
+        modifier =
+            modifier.semantics {
+                contentDescription = stringResource(R.string.status_chip_content_description, chipState.label)
+            },
         color = containerColor.value,
         shape = ShapeStatusPill,
     ) {
@@ -52,11 +56,7 @@ fun StatusChip(
             text = chipState.label,
             style = MaterialTheme.typography.labelMedium,
             color = contentColor.value,
-            modifier =
-                Modifier.padding(
-                    horizontal = AppSpacing.sm,
-                    vertical = AppSpacing.xs,
-                ),
+            modifier = Modifier.padding(ChipDefaults.ContentPadding),
         )
     }
 }
