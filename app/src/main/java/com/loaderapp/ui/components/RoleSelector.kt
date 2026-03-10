@@ -45,15 +45,16 @@ fun RoleSelector(
                     } else {
                         AppColors.Surface
                     },
-                border = BorderStroke(
-                    width = RoleSelectorDefaults.BORDER_WIDTH,
-                    color =
-                        if (isSelected) {
-                            AppColors.Primary
-                        } else {
-                            AppColors.Border
-                        },
-                ),
+                border =
+                    BorderStroke(
+                        width = RoleSelectorDefaults.BORDER_WIDTH,
+                        color =
+                            if (isSelected) {
+                                AppColors.Primary
+                            } else {
+                                AppColors.Border
+                            },
+                    ),
             ) {
                 Text(
                     text = role.title,
