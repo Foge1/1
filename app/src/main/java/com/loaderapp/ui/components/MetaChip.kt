@@ -20,7 +20,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import com.loaderapp.core.ui.theme.AppColors
 import com.loaderapp.core.ui.theme.AppSpacing
-import com.loaderapp.core.ui.theme.ShapeChip
+import com.loaderapp.core.ui.theme.ShapeStatusPill
 import com.loaderapp.ui.theme.LoaderAppTheme
 
 @Composable
@@ -32,14 +32,10 @@ fun MetaChip(
     Surface(
         modifier = modifier.semantics { contentDescription = text },
         color = AppColors.Muted,
-        shape = ShapeChip,
+        shape = ShapeStatusPill,
     ) {
         Row(
-            modifier =
-                Modifier.padding(
-                    horizontal = AppSpacing.sm,
-                    vertical = AppSpacing.xs,
-                ),
+            modifier = Modifier.padding(ChipDefaults.ContentPadding),
             horizontalArrangement = Arrangement.spacedBy(AppSpacing.xs),
             verticalAlignment = Alignment.CenterVertically,
         ) {

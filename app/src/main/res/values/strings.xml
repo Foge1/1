@@ -13,4 +13,6 @@
     <string name="error_storage_db">Ошибка локальной базы данных</string>
     <string name="error_storage_serialization">Ошибка обработки локальных данных</string>
     <string name="error_unknown">Произошла неизвестная ошибка</string>
+
+    <string name="status_chip_content_description">Статус: %1$s</string>
 </resources>
