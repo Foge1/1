@@ -49,6 +49,7 @@ import com.loaderapp.features.orders.presentation.OrdersViewModel
 import com.loaderapp.features.orders.presentation.mapper.toLegacyOrderModel
 import com.loaderapp.ui.components.EmptyStateView
 import com.loaderapp.ui.components.FadingEdgeLazyColumn
+import com.loaderapp.ui.components.GradientBackground
 import com.loaderapp.ui.components.HistoryScreen
 import com.loaderapp.ui.components.LoadingView
 import com.loaderapp.ui.components.OrderCard
@@ -56,7 +57,6 @@ import com.loaderapp.ui.components.OrdersScreenHeader
 import com.loaderapp.ui.components.OrdersScreenRole
 import com.loaderapp.ui.components.OrdersSegmentedTabs
 import com.loaderapp.ui.components.OrdersTabCounts
-import com.loaderapp.ui.components.GradientBackground
 import com.loaderapp.ui.components.RoleSelector
 import com.loaderapp.ui.components.StatsBar
 import com.loaderapp.ui.components.toStatsBarUiModel
