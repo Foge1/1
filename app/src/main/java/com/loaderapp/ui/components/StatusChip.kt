@@ -43,11 +43,16 @@ fun StatusChip(
             animationSpec = colorAnimationSpec,
             label = "status_chip_content",
         )
+    val statusContentDescription =
+        stringResource(
+            R.string.status_chip_content_description,
+            chipState.label,
+        )
 
     Surface(
         modifier =
             modifier.semantics {
-                contentDescription = stringResource(R.string.status_chip_content_description, chipState.label)
+                contentDescription = statusContentDescription
             },
         color = containerColor.value,
         shape = ShapeStatusPill,
