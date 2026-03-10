@@ -3,14 +3,14 @@ package com.loaderapp.core.ui.theme
 import androidx.compose.ui.graphics.Color
 
 object AppColors {
-    val Background = Color(0xFF0F1416)
-    val Surface = Color(0xFF161C1F)
-    val Muted = Color(0xFF253238)
-    val Border = Color(0xFF4A5C62)
+    val Background = Color(0xFF0F1C1F)
+    val Surface = Color(0xFF121A1D)
+    val Muted = Color(0xFF1E2A2E)
+    val Border = Color(0xFF26363C)
 
-    val Primary = Color(0xFF4DD8E8)
-    val PrimaryContainer = Color(0xFF004F5A)
-    val OnPrimary = Color(0xFF00363D)
+    val Primary = Color(0xFF00A8A8)
+    val PrimaryContainer = Color(0xFF1E2A2E)
+    val OnPrimary = Color(0xFFFFFFFF)
     val Accent = Color(0xFF5EC8A0)
 
     val MutedForeground = Color(0xFFB8C4C8)
