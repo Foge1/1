@@ -39,7 +39,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
@@ -52,19 +51,19 @@ import com.loaderapp.features.orders.presentation.OrderUiModel
 import com.loaderapp.features.orders.presentation.OrdersTab
 import com.loaderapp.features.orders.presentation.OrdersViewModel
 import com.loaderapp.features.orders.presentation.mapper.toLegacyOrderModel
-import com.loaderapp.ui.components.AppScaffold
 import com.loaderapp.ui.components.EmptyStateView
 import com.loaderapp.ui.components.FadingEdgeLazyColumn
 import com.loaderapp.ui.components.HistoryScreen
 import com.loaderapp.ui.components.LoadingView
-import com.loaderapp.ui.components.LocalTopBarHeightPx
 import com.loaderapp.ui.components.OrderCard
 import com.loaderapp.ui.components.OrdersScreenHeader
 import com.loaderapp.ui.components.OrdersScreenRole
 import com.loaderapp.ui.components.OrdersSegmentedTabs
-import com.loaderapp.ui.components.OrdersStatsSummary
 import com.loaderapp.ui.components.OrdersTabCounts
-import com.loaderapp.ui.components.toOrdersSummaryUi
+import com.loaderapp.ui.components.GradientBackground
+import com.loaderapp.ui.components.RoleSelector
+import com.loaderapp.ui.components.StatsBar
+import com.loaderapp.ui.components.toStatsBarUiModel
 import com.loaderapp.ui.main.LocalBottomNavHeight
 
 private object LoaderScreenLayoutDefaults {
@@ -89,101 +88,99 @@ fun LoaderScreen(
     }
 
     var selectedTab by rememberSaveable { mutableStateOf(OrdersTab.Available) }
+    val bottomNavHeight = LocalBottomNavHeight.current
 
-    AppScaffold(title = "Заказы") {
-        val bottomNavHeight = LocalBottomNavHeight.current
+    GradientBackground {
+        Box(modifier = Modifier.fillMaxSize()) {
+            if (state.loading) {
+                LoadingView()
+            } else {
+                Column(modifier = Modifier.fillMaxSize()) {
+                    OrdersScreenHeader(
+                        title = "Заказы",
+                        subtitle = "Лента заказов",
+                        role = OrdersScreenRole.Loader,
+                    )
+                    Spacer(modifier = Modifier.height(AppSpacing.md))
+                    RoleSelector(currentRole = OrdersScreenRole.Loader)
+                    Spacer(modifier = Modifier.height(AppSpacing.md))
+                    StatsBar(
+                        stats = state.toStatsBarUiModel(),
+                        modifier = Modifier.padding(horizontal = AppSpacing.lg),
+                    )
+                    Spacer(modifier = Modifier.height(AppSpacing.md))
 
-        if (state.loading) {
-            LoadingView()
-        } else {
-            Column(
-                modifier =
-                    Modifier
-                        .fillMaxSize()
-                        .padding(top = with(LocalDensity.current) { LocalTopBarHeightPx.current.toDp() }),
-            ) {
-                OrdersScreenHeader(
-                    title = "Заказы",
-                    subtitle = "Лента заказов",
-                    role = OrdersScreenRole.Loader,
-                )
-                Spacer(modifier = Modifier.height(AppSpacing.md))
-                OrdersStatsSummary(summary = state.toOrdersSummaryUi())
-                Spacer(modifier = Modifier.height(AppSpacing.md))
-
-                OrdersSegmentedTabs(
-                    selected = selectedTab,
-                    onSelect = { selectedTab = it },
-                    counts =
-                        OrdersTabCounts(
-                            available = state.availableOrders.size,
-                            inProgress = state.inProgressOrders.size,
-                            history = state.historyOrders.size,
-                        ),
-                    modifier = Modifier.fillMaxSize(),
-                ) { page ->
-                    when (page) {
-                        0 ->
-                            OrdersListPage(
-                                orders = state.availableOrders,
-                                bottomNavHeight = bottomNavHeight,
-                                emptyTitle = "Нет доступных заказов",
-                                emptyMessage = "Обновите страницу позже",
-                                emptyIcon = Icons.Default.SearchOff,
-                                pendingActions = state.pendingActions,
-                                onOrderClick = onOrderClick,
-                                actionSlot = { order ->
-                                    // Всё решение принимается на основе order.myApplicationStatus
-                                    // (статус заявки текущего грузчика) и computed-флагов из StateMachine.
-                                    LoaderAvailableActions(
-                                        order = order,
-                                        pending = state.pendingActions.contains(order.order.id),
-                                        onApply = { viewModel.onApplyClicked(order.order.id) },
-                                        onWithdraw = { viewModel.onWithdrawClicked(order.order.id) },
-                                    )
-                                },
-                            )
-
-                        1 ->
-                            OrdersListPage(
-                                orders = state.inProgressOrders,
-                                bottomNavHeight = bottomNavHeight,
-                                emptyTitle = "Нет заказов в работе",
-                                emptyMessage = "Активные заказы появятся здесь",
-                                emptyIcon = Icons.Default.WorkOff,
-                                pendingActions = state.pendingActions,
-                                onOrderClick = onOrderClick,
-                                actionSlot = { order ->
-                                    // canCancel уже вычислен StateMachine — грузчик может отменять
-                                    // только если у него есть ACTIVE assignment (по доменным правилам).
-                                    if (order.canCancel) {
-                                        SecondaryOutlinedButton(
-                                            label = "Отменить",
+                    OrdersSegmentedTabs(
+                        selected = selectedTab,
+                        onSelect = { selectedTab = it },
+                        counts =
+                            OrdersTabCounts(
+                                available = state.availableOrders.size,
+                                inProgress = state.inProgressOrders.size,
+                                history = state.historyOrders.size,
+                            ),
+                        modifier = Modifier.fillMaxSize(),
+                    ) { page ->
+                        when (page) {
+                            0 ->
+                                OrdersListPage(
+                                    orders = state.availableOrders,
+                                    bottomNavHeight = bottomNavHeight,
+                                    emptyTitle = "Нет доступных заказов",
+                                    emptyMessage = "Обновите страницу позже",
+                                    emptyIcon = Icons.Default.SearchOff,
+                                    pendingActions = state.pendingActions,
+                                    onOrderClick = onOrderClick,
+                                    actionSlot = { order ->
+                                        LoaderAvailableActions(
+                                            order = order,
                                             pending = state.pendingActions.contains(order.order.id),
-                                            onClick = { viewModel.onCancelClicked(order.order.id) },
+                                            onApply = { viewModel.onApplyClicked(order.order.id) },
+                                            onWithdraw = { viewModel.onWithdrawClicked(order.order.id) },
                                         )
-                                    }
-                                },
-                            )
+                                    },
+                                )
 
-                        2 ->
-                            LoaderHistoryPage(
-                                historyState = state.history,
-                                onHistoryQueryChanged = viewModel::onHistoryQueryChanged,
-                                bottomNavHeight = bottomNavHeight,
-                                onOrderClick = onOrderClick,
-                            )
+                            1 ->
+                                OrdersListPage(
+                                    orders = state.inProgressOrders,
+                                    bottomNavHeight = bottomNavHeight,
+                                    emptyTitle = "Нет заказов в работе",
+                                    emptyMessage = "Активные заказы появятся здесь",
+                                    emptyIcon = Icons.Default.WorkOff,
+                                    pendingActions = state.pendingActions,
+                                    onOrderClick = onOrderClick,
+                                    actionSlot = { order ->
+                                        if (order.canCancel) {
+                                            SecondaryOutlinedButton(
+                                                label = "Отменить",
+                                                pending = state.pendingActions.contains(order.order.id),
+                                                onClick = { viewModel.onCancelClicked(order.order.id) },
+                                            )
+                                        }
+                                    },
+                                )
+
+                            2 ->
+                                LoaderHistoryPage(
+                                    historyState = state.history,
+                                    onHistoryQueryChanged = viewModel::onHistoryQueryChanged,
+                                    bottomNavHeight = bottomNavHeight,
+                                    onOrderClick = onOrderClick,
+                                )
+                        }
                     }
                 }
             }
-        }
 
-        SnackbarHost(
-            hostState = snackbarHostState,
-            modifier =
-                Modifier
-                    .padding(bottom = bottomNavHeight + LoaderScreenLayoutDefaults.SnackbarBottomPadding),
-        )
+            SnackbarHost(
+                hostState = snackbarHostState,
+                modifier =
+                    Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(bottom = bottomNavHeight + LoaderScreenLayoutDefaults.SnackbarBottomPadding),
+            )
+        }
     }
 }
 

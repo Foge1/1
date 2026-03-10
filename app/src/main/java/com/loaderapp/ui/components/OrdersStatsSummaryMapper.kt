@@ -5,11 +5,11 @@ import com.loaderapp.features.orders.presentation.OrdersUiState
 
 private const val EMPTY_INCOME_VALUE = "—"
 
-fun OrdersUiState.toOrdersSummaryUi(): OrdersSummaryUi {
+fun OrdersUiState.toStatsBarUiModel(): StatsBarUiModel {
     val completedOrdersCount = historyOrders.count { it.order.status == OrderStatus.COMPLETED }
     val canceledOrdersCount = historyOrders.count { it.order.status == OrderStatus.CANCELED }
 
-    return OrdersSummaryUi(
+    return StatsBarUiModel(
         active = (availableOrders.size + inProgressOrders.size).toString(),
         completed = completedOrdersCount.toString(),
         canceled = canceledOrdersCount.toString(),
