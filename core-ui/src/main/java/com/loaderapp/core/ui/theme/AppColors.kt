@@ -25,4 +25,5 @@ object AppColors {
     val StatusCompletedFg = Color(0xFFA5D6B4)
     val StatusCanceledBg = Color(0xFF46262A)
     val StatusCanceledFg = Color(0xFFFFB3B8)
+    val StatIncomeAmber = Color(0xFFFFC857)
 }
