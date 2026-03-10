@@ -25,14 +25,10 @@ import androidx.compose.material.icons.rounded.Place
 import androidx.compose.material.icons.rounded.Schedule
 import androidx.compose.material.icons.rounded.Timer
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -41,16 +37,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
+import com.loaderapp.core.ui.components.button.AppDangerButton
+import com.loaderapp.core.ui.components.button.AppPrimaryButton
+import com.loaderapp.core.ui.components.button.AppSecondaryButton
 import com.loaderapp.core.ui.theme.AppColors
 import com.loaderapp.core.ui.theme.AppMotion
+import com.loaderapp.core.ui.theme.AppShapes
 import com.loaderapp.core.ui.theme.AppSpacing
-import com.loaderapp.core.ui.theme.ShapeButton
-import com.loaderapp.core.ui.theme.ShapeCard
-import com.loaderapp.core.ui.theme.ShapeChip
 import com.loaderapp.domain.model.OrderModel
 import com.loaderapp.domain.model.OrderStatusModel
 import com.loaderapp.ui.common.DateLabelFormatter
@@ -58,7 +52,8 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-private val OrderCardBorderWidth = 1.dp
+private val OrderCardBorderWidth = AppSpacing.xxs / 2
+private val OrderCardActionHeight = AppSpacing.xxxl + AppSpacing.lg
 
 @Composable
 fun OrderCard(
@@ -91,7 +86,7 @@ fun OrderCard(
                     indication = null,
                     onClick = onClick,
                 ),
-        shape = ShapeCard,
+        shape = AppShapes.medium,
         color = AppColors.Surface,
         border = BorderStroke(width = OrderCardBorderWidth, color = AppColors.Border),
     ) {
@@ -128,13 +123,13 @@ private fun OrderCardPrice(pricePerHour: Double) {
     Row(verticalAlignment = Alignment.Bottom) {
         Text(
             text = "₽${pricePerHour.toInt()}",
-            style = orderPriceTextStyle(),
-            color = MaterialTheme.colorScheme.onSurface,
+            style = MaterialTheme.typography.headlineSmall,
+            color = AppColors.Foreground,
         )
         Text(
             text = "/ч",
             style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            color = AppColors.MutedForeground,
             modifier = Modifier.padding(start = AppSpacing.xxs, bottom = AppSpacing.xxs),
         )
     }
@@ -151,12 +146,12 @@ private fun OrderCardAddressRow(address: String) {
             imageVector = Icons.Rounded.Place,
             contentDescription = null,
             modifier = Modifier.size(AppSpacing.lg),
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            tint = AppColors.MutedForeground,
         )
         Text(
             text = address,
-            style = orderAddressTextStyle(),
-            color = MaterialTheme.colorScheme.onSurface,
+            style = MaterialTheme.typography.titleMedium,
+            color = AppColors.Foreground,
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.weight(1f),
@@ -179,17 +174,17 @@ private fun OrderCardDateTimeRow(order: OrderModel) {
                 imageVector = Icons.Rounded.CalendarToday,
                 contentDescription = null,
                 modifier = Modifier.size(AppSpacing.md),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                tint = AppColors.MutedForeground,
             )
             Text(
                 text = formatOrderDate(order.dateTime),
-                style = orderMetaTextStyle(),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.bodyMedium,
+                color = AppColors.MutedForeground,
             )
         }
         Surface(
             modifier = Modifier.size(AppSpacing.xs),
-            shape = ShapeChip,
+            shape = AppShapes.extraSmall,
             color = AppColors.MutedForeground,
         ) {}
         Row(
@@ -200,12 +195,12 @@ private fun OrderCardDateTimeRow(order: OrderModel) {
                 imageVector = Icons.Rounded.Schedule,
                 contentDescription = null,
                 modifier = Modifier.size(AppSpacing.md),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                tint = AppColors.MutedForeground,
             )
             Text(
                 text = formatOrderTime(order),
-                style = orderMetaTextStyle(),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.bodyMedium,
+                color = AppColors.MutedForeground,
             )
         }
     }
@@ -239,7 +234,7 @@ private fun OrderCardCommentBlock(comment: String) {
                 .padding(top = AppSpacing.lg)
                 .background(
                     color = AppColors.Muted,
-                    shape = ShapeChip,
+                    shape = AppShapes.extraSmall,
                 ).padding(horizontal = AppSpacing.md, vertical = AppSpacing.sm),
         horizontalArrangement = Arrangement.spacedBy(AppSpacing.sm),
         verticalAlignment = Alignment.Top,
@@ -248,12 +243,12 @@ private fun OrderCardCommentBlock(comment: String) {
             imageVector = Icons.Rounded.Message,
             contentDescription = null,
             modifier = Modifier.size(AppSpacing.md),
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            tint = AppColors.MutedForeground,
         )
         Text(
             text = comment,
             style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            color = AppColors.MutedForeground,
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.weight(1f),
@@ -267,42 +262,49 @@ private fun OrderCTA(
     onClick: () -> Unit,
     enabled: Boolean,
 ) {
-    val (title, colors) =
-        when (order.status) {
-            OrderStatusModel.AVAILABLE ->
-                "Взять заказ" to
-                    ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.onSurface,
-                        contentColor = MaterialTheme.colorScheme.surface,
-                    )
-
-            OrderStatusModel.TAKEN, OrderStatusModel.IN_PROGRESS ->
-                "Чат" to
-                    ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.secondary,
-                        contentColor = MaterialTheme.colorScheme.onSecondary,
-                    )
-
-            OrderStatusModel.COMPLETED, OrderStatusModel.CANCELLED ->
-                "Завершён" to
-                    ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.onSurface,
-                        contentColor = MaterialTheme.colorScheme.surface,
-                    )
+    when (order.status) {
+        OrderStatusModel.AVAILABLE -> {
+            AppPrimaryButton(
+                text = "Взять заказ",
+                onClick = onClick,
+                enabled = enabled,
+                modifier =
+                    Modifier
+                        .padding(top = AppSpacing.xl)
+                        .fillMaxWidth()
+                        .height(OrderCardActionHeight),
+            )
         }
 
-    Button(
-        onClick = onClick,
-        enabled = enabled,
-        modifier =
-            Modifier
-                .padding(top = AppSpacing.xl)
-                .fillMaxWidth()
-                .height(48.dp),
-        shape = ShapeButton,
-        colors = colors,
-    ) {
-        Text(text = title, style = orderActionTextStyle())
+        OrderStatusModel.TAKEN,
+        OrderStatusModel.IN_PROGRESS,
+        -> {
+            AppSecondaryButton(
+                text = "Чат",
+                onClick = onClick,
+                enabled = enabled,
+                modifier =
+                    Modifier
+                        .padding(top = AppSpacing.xl)
+                        .fillMaxWidth()
+                        .height(OrderCardActionHeight),
+            )
+        }
+
+        OrderStatusModel.COMPLETED,
+        OrderStatusModel.CANCELLED,
+        -> {
+            AppPrimaryButton(
+                text = "Завершён",
+                onClick = onClick,
+                enabled = enabled,
+                modifier =
+                    Modifier
+                        .padding(top = AppSpacing.xl)
+                        .fillMaxWidth()
+                        .height(OrderCardActionHeight),
+            )
+        }
     }
 }
 
@@ -325,7 +327,7 @@ fun DispatcherOrderCard(
                 Text(
                     text = "Взяли",
                     style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSecondaryContainer,
+                    color = AppColors.Accent,
                     modifier = Modifier.padding(bottom = AppSpacing.sm),
                 )
             }
@@ -333,20 +335,15 @@ fun DispatcherOrderCard(
                 order.status == OrderStatusModel.AVAILABLE ||
                 order.status == OrderStatusModel.TAKEN
             ) {
-                OutlinedButton(
+                AppDangerButton(
+                    text = "Отменить",
                     onClick = { showCancelDialog = true },
+                    enabled = true,
                     modifier =
                         Modifier
                             .fillMaxWidth()
-                            .height(48.dp),
-                    shape = ShapeButton,
-                    colors =
-                        ButtonDefaults.outlinedButtonColors(
-                            contentColor = MaterialTheme.colorScheme.error,
-                        ),
-                ) {
-                    Text("Отменить", style = orderActionTextStyle())
-                }
+                            .height(OrderCardActionHeight),
+                )
             }
         },
     )
@@ -357,35 +354,23 @@ fun DispatcherOrderCard(
             title = { Text("Отменить заказ?") },
             text = { Text("Вы уверены что хотите отменить этот заказ?") },
             confirmButton = {
-                TextButton(
+                AppDangerButton(
+                    text = "Отменить заказ",
                     onClick = {
                         onCancel()
                         showCancelDialog = false
                     },
-                    colors =
-                        ButtonDefaults.textButtonColors(
-                            contentColor = MaterialTheme.colorScheme.error,
-                        ),
-                ) { Text("Отменить заказ") }
+                )
             },
             dismissButton = {
-                TextButton(onClick = { showCancelDialog = false }) { Text("Назад") }
+                AppSecondaryButton(
+                    text = "Назад",
+                    onClick = { showCancelDialog = false },
+                )
             },
         )
     }
 }
-
-@Composable
-private fun orderPriceTextStyle(): TextStyle = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold)
-
-@Composable
-private fun orderAddressTextStyle(): TextStyle = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
-
-@Composable
-private fun orderMetaTextStyle(): TextStyle = MaterialTheme.typography.bodyMedium
-
-@Composable
-private fun orderActionTextStyle(): TextStyle = MaterialTheme.typography.labelLarge
 
 fun formatOrderDate(timestamp: Long): String = DateLabelFormatter.dateLabel(timestampMillis = timestamp)
 
