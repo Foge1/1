@@ -9,14 +9,15 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Assignment
-import androidx.compose.material.icons.outlined.Group
-import androidx.compose.material.icons.outlined.History
+import androidx.compose.material.icons.outlined.AccountBalanceWallet
+import androidx.compose.material.icons.outlined.Cancel
 import androidx.compose.material.icons.outlined.NotificationsNone
 import androidx.compose.material.icons.outlined.PlayCircleOutline
 import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material.icons.outlined.TaskAlt
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -49,10 +50,10 @@ enum class OrdersScreenRole(
 }
 
 data class OrdersSummaryUi(
-    val available: Int,
-    val inProgress: Int,
-    val history: Int,
-    val responses: Int,
+    val active: String,
+    val completed: String,
+    val canceled: String,
+    val income: String,
 )
 
 @Composable
@@ -127,38 +128,38 @@ fun OrdersStatsSummary(
                 .padding(horizontal = OrdersScreenHeaderDefaults.HorizontalPadding),
         horizontalArrangement = Arrangement.spacedBy(OrdersScreenHeaderDefaults.StatsCardSpacing),
     ) {
-        SummaryCard(
-            icon = Icons.Outlined.Assignment,
-            label = "Доступно",
-            value = summary.available,
-            modifier = Modifier.weight(1f),
-        )
-        SummaryCard(
+        StatsSummaryCard(
             icon = Icons.Outlined.PlayCircleOutline,
-            label = "В работе",
-            value = summary.inProgress,
+            label = "Активные",
+            value = summary.active,
             modifier = Modifier.weight(1f),
         )
-        SummaryCard(
-            icon = Icons.Outlined.History,
-            label = "История",
-            value = summary.history,
+        StatsSummaryCard(
+            icon = Icons.Outlined.TaskAlt,
+            label = "Завершено",
+            value = summary.completed,
             modifier = Modifier.weight(1f),
         )
-        SummaryCard(
-            icon = Icons.Outlined.Group,
-            label = "Отклики",
-            value = summary.responses,
+        StatsSummaryCard(
+            icon = Icons.Outlined.Cancel,
+            label = "Отменено",
+            value = summary.canceled,
+            modifier = Modifier.weight(1f),
+        )
+        StatsSummaryCard(
+            icon = Icons.Outlined.AccountBalanceWallet,
+            label = "Доход",
+            value = summary.income,
             modifier = Modifier.weight(1f),
         )
     }
 }
 
 @Composable
-private fun SummaryCard(
+private fun StatsSummaryCard(
     icon: ImageVector,
     label: String,
-    value: Int,
+    value: String,
     modifier: Modifier = Modifier,
 ) {
     Surface(
@@ -178,15 +179,15 @@ private fun SummaryCard(
             )
             Spacer(modifier = Modifier.height(OrdersScreenHeaderDefaults.StatsValueTopSpacing))
             Text(
-                text = value.toString(),
-                style = AppTypography.titleMedium,
+                text = value,
+                style = MaterialTheme.typography.titleMedium,
                 color = AppColors.Foreground,
                 maxLines = 1,
             )
             Spacer(modifier = Modifier.height(OrdersScreenHeaderDefaults.StatsLabelTopSpacing))
             Text(
                 text = label,
-                style = AppTypography.labelSmall,
+                style = MaterialTheme.typography.labelSmall,
                 color = AppColors.MutedForeground,
                 maxLines = 1,
             )
