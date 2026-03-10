@@ -47,13 +47,23 @@ fun RoleSelector(
                     },
                 border = BorderStroke(
                     width = RoleSelectorDefaults.BORDER_WIDTH,
-                    color = if (isSelected) AppColors.Primary else AppColors.Border,
+                    color =
+                        if (isSelected) {
+                            AppColors.Primary
+                        } else {
+                            AppColors.Border
+                        },
                 ),
             ) {
                 Text(
                     text = role.title,
                     style = AppTypography.labelLarge,
-                    color = if (isSelected) AppColors.Primary else AppColors.MutedForeground,
+                    color =
+                        if (isSelected) {
+                            AppColors.Primary
+                        } else {
+                            AppColors.MutedForeground
+                        },
                     modifier = Modifier.padding(RoleSelectorDefaults.CONTENT_PADDING),
                 )
             }
