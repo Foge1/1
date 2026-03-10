@@ -20,7 +20,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Badge
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -40,8 +39,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import com.loaderapp.core.ui.theme.AppColors
-import com.loaderapp.core.ui.theme.AppShapes
+import com.loaderapp.core.ui.theme.AppMotion
 import com.loaderapp.core.ui.theme.AppSpacing
+import com.loaderapp.core.ui.theme.ShapeStatusPill
 import com.loaderapp.ui.theme.LoaderAppTheme
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
@@ -52,13 +52,14 @@ data class TabItem(
 )
 
 private object SwipeableTabsDefaults {
-    val TRACK_SHAPE = AppShapes.small
-    val TAB_SHAPE = RoundedCornerShape(AppSpacing.sm + AppSpacing.xxs)
+    val TRACK_SHAPE = ShapeStatusPill
+    val TAB_SHAPE = ShapeStatusPill
     val TRACK_INNER_PADDING = AppSpacing.xs
     val TAB_VERTICAL_PADDING = AppSpacing.sm
     val TAB_HORIZONTAL_PADDING = AppSpacing.md
     const val BADGE_ALPHA_ACTIVE = 0.2f
     val BADGE_SPACING = AppSpacing.xs
+    const val MAX_BADGE_COUNT = 99
 }
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -77,6 +78,15 @@ fun SwipeableTabs(
     val pagerState = rememberPagerState(initialPage = initialPage, pageCount = { tabs.size })
     val scope = rememberCoroutineScope()
 
+    LaunchedEffect(initialPage) {
+        if (initialPage != pagerState.currentPage) {
+            pagerState.animateScrollToPage(
+                page = initialPage,
+                animationSpec = AppMotion.tweenMedium(),
+            )
+        }
+    }
+
     LaunchedEffect(pagerState.currentPage) {
         onPageChanged(pagerState.currentPage)
     }
@@ -89,7 +99,12 @@ fun SwipeableTabs(
             tabHorizontalPadding = tabHorizontalPadding,
             tabRowHorizontalPadding = tabRowHorizontalPadding,
             onTabSelected = { index ->
-                scope.launch { pagerState.animateScrollToPage(index) }
+                scope.launch {
+                    pagerState.animateScrollToPage(
+                        page = index,
+                        animationSpec = AppMotion.tweenMedium(),
+                    )
+                }
             },
         )
 
@@ -115,7 +130,10 @@ private fun SegmentedTabRow(
     onTabSelected: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val indicatorProgress = pagerState.currentPage + pagerState.currentPageOffsetFraction
+    val maxIndicatorProgress = (tabs.size - 1).coerceAtLeast(0).toFloat()
+    val indicatorProgress =
+        (pagerState.currentPage + pagerState.currentPageOffsetFraction)
+            .coerceIn(0f, maxIndicatorProgress)
     var tabRowHeightPx by remember { mutableIntStateOf(0) }
     val density = LocalDensity.current
 
@@ -227,7 +245,12 @@ private fun SegmentedTab(
                 contentColor = if (isSelected) AppColors.OnPrimary else AppColors.MutedForeground,
             ) {
                 Text(
-                    text = if (badgeCount > 99) "99+" else badgeCount.toString(),
+                    text =
+                        if (badgeCount > SwipeableTabsDefaults.MAX_BADGE_COUNT) {
+                            "${SwipeableTabsDefaults.MAX_BADGE_COUNT}+"
+                        } else {
+                            badgeCount.toString()
+                        },
                     style = MaterialTheme.typography.labelSmall,
                 )
             }
