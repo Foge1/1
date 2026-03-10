@@ -37,7 +37,7 @@ fun RoleSelector(
         OrdersScreenRole.entries.forEach { role ->
             val isSelected = role == currentRole
             Surface(
-                modifier = 
+                modifier =
                     Modifier.weight(1f),
                 shape = AppShapes.medium,
                 color =
@@ -66,7 +66,7 @@ fun RoleSelector(
                         } else {
                             AppColors.MutedForeground
                         },
-                    modifier = 
+                    modifier =
                         Modifier.padding(RoleSelectorDefaults.CONTENT_PADDING),
                 )
             }
