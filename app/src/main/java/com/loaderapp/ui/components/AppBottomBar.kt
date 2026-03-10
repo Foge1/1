@@ -1,6 +1,5 @@
 package com.loaderapp.ui.components
 
-import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -16,7 +15,6 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Home
@@ -26,6 +24,7 @@ import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -37,23 +36,25 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import com.loaderapp.core.ui.theme.AppColors
 import com.loaderapp.core.ui.theme.AppMotion
 import com.loaderapp.core.ui.theme.AppSpacing
-import com.loaderapp.core.ui.theme.AppTypography
 import com.loaderapp.core.ui.theme.ShapeBottomBar
+import com.loaderapp.core.ui.theme.ShapeStatusPill
 import com.loaderapp.ui.theme.LoaderAppTheme
 
 private const val MAX_BADGE_VALUE = 99
-private const val ACTIVE_CONTENT_ALPHA = 1f
-private const val INACTIVE_CONTENT_ALPHA = 0.64f
 private const val ACTIVE_CAPSULE_ALPHA = 0.42f
+private const val ACTIVE_INDICATOR_ALPHA = 1f
 private const val INACTIVE_INDICATOR_ALPHA = 0f
 private const val SELECTED_SCALE = 1.08f
 private const val UNSELECTED_SCALE = 1f
+
+private object BottomBarDefaults {
+    val ICON_CAPSULE_HORIZONTAL_PADDING = AppSpacing.md + AppSpacing.xxs
+    val ICON_CAPSULE_VERTICAL_PADDING = AppSpacing.xs + AppSpacing.xxs
+}
 
 /**
  * Элемент нижней навигации.
@@ -124,10 +125,7 @@ private fun BottomNavItemView(
         Spacer(Modifier.height(AppSpacing.xs))
         Text(
             text = item.label,
-            style =
-                AppTypography.labelSmall.copy(
-                    fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium,
-                ),
+            style = MaterialTheme.typography.labelSmall,
             color = itemVisuals.contentColor,
             maxLines = 1,
         )
@@ -148,34 +146,20 @@ private fun rememberBottomNavItemVisuals(isSelected: Boolean): BottomNavItemVisu
         animationSpec = AppMotion.SPRING_MEDIUM_BOUNCE,
         label = "bottomNavScale",
     )
-    val contentColor by animateColorAsState(
-        targetValue =
-            if (isSelected) {
-                AppColors.Primary.copy(alpha = ACTIVE_CONTENT_ALPHA)
-            } else {
-                AppColors.MutedForeground.copy(alpha = INACTIVE_CONTENT_ALPHA)
-            },
-        animationSpec =
-            androidx.compose.animation.core.tween(
-                durationMillis = AppMotion.DURATION_MEDIUM,
-                easing = AppMotion.EASING_STANDARD,
-            ),
-        label = "bottomNavContentColor",
-    )
     val capsuleAlpha by animateFloatAsState(
         targetValue = if (isSelected) ACTIVE_CAPSULE_ALPHA else 0f,
         animationSpec = AppMotion.tweenMedium(),
         label = "bottomNavCapsuleAlpha",
     )
     val indicatorAlpha by animateFloatAsState(
-        targetValue = if (isSelected) ACTIVE_CONTENT_ALPHA else INACTIVE_INDICATOR_ALPHA,
+        targetValue = if (isSelected) ACTIVE_INDICATOR_ALPHA else INACTIVE_INDICATOR_ALPHA,
         animationSpec = AppMotion.tweenMedium(),
         label = "bottomNavIndicatorAlpha",
     )
 
     return BottomNavItemVisuals(
         scale = scale,
-        contentColor = contentColor,
+        contentColor = if (isSelected) AppColors.Primary else AppColors.MutedForeground,
         capsuleAlpha = capsuleAlpha,
         indicatorAlpha = indicatorAlpha,
     )
@@ -186,9 +170,9 @@ private fun TopSelectionIndicator(indicatorAlpha: Float) {
     Box(
         modifier =
             Modifier
-                .width(24.dp)
-                .height(2.dp)
-                .clip(RoundedCornerShape(percent = 50))
+                .width(AppSpacing.xxl)
+                .height(AppSpacing.xxs)
+                .clip(ShapeStatusPill)
                 .background(AppColors.Primary.copy(alpha = indicatorAlpha)),
     )
 }
@@ -203,9 +187,12 @@ private fun IconCapsule(
         modifier =
             Modifier
                 .scale(visuals.scale)
-                .clip(RoundedCornerShape(percent = 50))
+                .clip(ShapeStatusPill)
                 .background(AppColors.PrimaryContainer.copy(alpha = visuals.capsuleAlpha))
-                .padding(horizontal = 14.dp, vertical = 6.dp),
+                .padding(
+                    horizontal = BottomBarDefaults.ICON_CAPSULE_HORIZONTAL_PADDING,
+                    vertical = BottomBarDefaults.ICON_CAPSULE_VERTICAL_PADDING,
+                ),
     ) {
         if (item.badgeCount > 0) {
             BadgedIcon(item = item, color = visuals.contentColor)
@@ -234,7 +221,7 @@ private fun BadgedIcon(
                     }
                 Text(
                     text = badgeText,
-                    style = AppTypography.labelSmall,
+                    style = MaterialTheme.typography.labelSmall,
                 )
             }
         },
@@ -252,7 +239,7 @@ private fun BaseIcon(
         imageVector = item.icon,
         contentDescription = item.label,
         tint = color,
-        modifier = Modifier.size(22.dp),
+        modifier = Modifier.size(AppSpacing.xl + AppSpacing.xxs),
     )
 }
 
