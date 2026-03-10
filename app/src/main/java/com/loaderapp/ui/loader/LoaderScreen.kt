@@ -63,8 +63,8 @@ import com.loaderapp.ui.components.OrdersScreenHeader
 import com.loaderapp.ui.components.OrdersScreenRole
 import com.loaderapp.ui.components.OrdersSegmentedTabs
 import com.loaderapp.ui.components.OrdersStatsSummary
-import com.loaderapp.ui.components.toOrdersSummaryUi
 import com.loaderapp.ui.components.OrdersTabCounts
+import com.loaderapp.ui.components.toOrdersSummaryUi
 import com.loaderapp.ui.main.LocalBottomNavHeight
 
 private object LoaderScreenLayoutDefaults {
