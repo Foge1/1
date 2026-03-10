@@ -15,11 +15,11 @@ import com.loaderapp.core.ui.theme.AppSpacing
 import com.loaderapp.core.ui.theme.AppTypography
 
 private object RoleSelectorDefaults {
-    val HorizontalPadding = AppSpacing.lg
-    val ContentPadding = AppSpacing.sm
-    val ItemSpacing = AppSpacing.xs
-    const val SelectedContainerAlpha = 0.16f
-    val BorderWidth = AppSpacing.xxs / 2
+    val HORIZONTAL_PADDING = AppSpacing.lg
+    val CONTENT_PADDING = AppSpacing.sm
+    val ITEM_SPACING = AppSpacing.xs
+    const val SELECTED_CONTAINER_ALPHA = 0.16f
+    val BORDER_WIDTH = AppSpacing.xxs / 2
 }
 
 @Composable
@@ -31,8 +31,8 @@ fun RoleSelector(
         modifier =
             modifier
                 .fillMaxWidth()
-                .padding(horizontal = RoleSelectorDefaults.HorizontalPadding),
-        horizontalArrangement = Arrangement.spacedBy(RoleSelectorDefaults.ItemSpacing),
+                .padding(horizontal = RoleSelectorDefaults.HORIZONTAL_PADDING),
+        horizontalArrangement = Arrangement.spacedBy(RoleSelectorDefaults.ITEM_SPACING),
     ) {
         OrdersScreenRole.entries.forEach { role ->
             val isSelected = role == currentRole
@@ -41,12 +41,12 @@ fun RoleSelector(
                 shape = AppShapes.medium,
                 color =
                     if (isSelected) {
-                        AppColors.Primary.copy(alpha = RoleSelectorDefaults.SelectedContainerAlpha)
+                        AppColors.Primary.copy(alpha = RoleSelectorDefaults.SELECTED_CONTAINER_ALPHA)
                     } else {
                         AppColors.Surface
                     },
                 border = BorderStroke(
-                    width = RoleSelectorDefaults.BorderWidth,
+                    width = RoleSelectorDefaults.BORDER_WIDTH,
                     color = if (isSelected) AppColors.Primary else AppColors.Border,
                 ),
             ) {
@@ -54,7 +54,7 @@ fun RoleSelector(
                     text = role.title,
                     style = AppTypography.labelLarge,
                     color = if (isSelected) AppColors.Primary else AppColors.MutedForeground,
-                    modifier = Modifier.padding(RoleSelectorDefaults.ContentPadding),
+                    modifier = Modifier.padding(RoleSelectorDefaults.CONTENT_PADDING),
                 )
             }
         }

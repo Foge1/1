@@ -1,6 +1,7 @@
 package com.loaderapp.ui.loader
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -49,10 +50,12 @@ import com.loaderapp.features.orders.domain.OrderApplicationStatus
 import com.loaderapp.features.orders.presentation.DispatcherHistoryUiState
 import com.loaderapp.features.orders.presentation.OrderUiModel
 import com.loaderapp.features.orders.presentation.OrdersTab
+import com.loaderapp.features.orders.presentation.OrdersUiState
 import com.loaderapp.features.orders.presentation.OrdersViewModel
 import com.loaderapp.features.orders.presentation.mapper.toLegacyOrderModel
 import com.loaderapp.ui.components.EmptyStateView
 import com.loaderapp.ui.components.FadingEdgeLazyColumn
+import com.loaderapp.ui.components.GradientBackground
 import com.loaderapp.ui.components.HistoryScreen
 import com.loaderapp.ui.components.LoadingView
 import com.loaderapp.ui.components.OrderCard
@@ -60,7 +63,6 @@ import com.loaderapp.ui.components.OrdersScreenHeader
 import com.loaderapp.ui.components.OrdersScreenRole
 import com.loaderapp.ui.components.OrdersSegmentedTabs
 import com.loaderapp.ui.components.OrdersTabCounts
-import com.loaderapp.ui.components.GradientBackground
 import com.loaderapp.ui.components.RoleSelector
 import com.loaderapp.ui.components.StatsBar
 import com.loaderapp.ui.components.toStatsBarUiModel
@@ -95,82 +97,17 @@ fun LoaderScreen(
             if (state.loading) {
                 LoadingView()
             } else {
-                Column(modifier = Modifier.fillMaxSize()) {
-                    OrdersScreenHeader(
-                        title = "Заказы",
-                        subtitle = "Лента заказов",
-                        role = OrdersScreenRole.Loader,
-                    )
-                    Spacer(modifier = Modifier.height(AppSpacing.md))
-                    RoleSelector(currentRole = OrdersScreenRole.Loader)
-                    Spacer(modifier = Modifier.height(AppSpacing.md))
-                    StatsBar(
-                        stats = state.toStatsBarUiModel(),
-                        modifier = Modifier.padding(horizontal = AppSpacing.lg),
-                    )
-                    Spacer(modifier = Modifier.height(AppSpacing.md))
-
-                    OrdersSegmentedTabs(
-                        selected = selectedTab,
-                        onSelect = { selectedTab = it },
-                        counts =
-                            OrdersTabCounts(
-                                available = state.availableOrders.size,
-                                inProgress = state.inProgressOrders.size,
-                                history = state.historyOrders.size,
-                            ),
-                        modifier = Modifier.fillMaxSize(),
-                    ) { page ->
-                        when (page) {
-                            0 ->
-                                OrdersListPage(
-                                    orders = state.availableOrders,
-                                    bottomNavHeight = bottomNavHeight,
-                                    emptyTitle = "Нет доступных заказов",
-                                    emptyMessage = "Обновите страницу позже",
-                                    emptyIcon = Icons.Default.SearchOff,
-                                    pendingActions = state.pendingActions,
-                                    onOrderClick = onOrderClick,
-                                    actionSlot = { order ->
-                                        LoaderAvailableActions(
-                                            order = order,
-                                            pending = state.pendingActions.contains(order.order.id),
-                                            onApply = { viewModel.onApplyClicked(order.order.id) },
-                                            onWithdraw = { viewModel.onWithdrawClicked(order.order.id) },
-                                        )
-                                    },
-                                )
-
-                            1 ->
-                                OrdersListPage(
-                                    orders = state.inProgressOrders,
-                                    bottomNavHeight = bottomNavHeight,
-                                    emptyTitle = "Нет заказов в работе",
-                                    emptyMessage = "Активные заказы появятся здесь",
-                                    emptyIcon = Icons.Default.WorkOff,
-                                    pendingActions = state.pendingActions,
-                                    onOrderClick = onOrderClick,
-                                    actionSlot = { order ->
-                                        if (order.canCancel) {
-                                            SecondaryOutlinedButton(
-                                                label = "Отменить",
-                                                pending = state.pendingActions.contains(order.order.id),
-                                                onClick = { viewModel.onCancelClicked(order.order.id) },
-                                            )
-                                        }
-                                    },
-                                )
-
-                            2 ->
-                                LoaderHistoryPage(
-                                    historyState = state.history,
-                                    onHistoryQueryChanged = viewModel::onHistoryQueryChanged,
-                                    bottomNavHeight = bottomNavHeight,
-                                    onOrderClick = onOrderClick,
-                                )
-                        }
-                    }
-                }
+                LoaderScreenContent(
+                    state = state,
+                    selectedTab = selectedTab,
+                    onTabSelected = { selectedTab = it },
+                    bottomNavHeight = bottomNavHeight,
+                    onOrderClick = onOrderClick,
+                    onApplyClicked = viewModel::onApplyClicked,
+                    onWithdrawClicked = viewModel::onWithdrawClicked,
+                    onCancelClicked = viewModel::onCancelClicked,
+                    onHistoryQueryChanged = viewModel::onHistoryQueryChanged,
+                )
             }
 
             SnackbarHost(
@@ -180,6 +117,121 @@ fun LoaderScreen(
                         .align(Alignment.BottomCenter)
                         .padding(bottom = bottomNavHeight + LoaderScreenLayoutDefaults.SnackbarBottomPadding),
             )
+        }
+    }
+}
+
+@Composable
+private fun LoaderScreenContent(
+    state: OrdersUiState,
+    selectedTab: OrdersTab,
+    onTabSelected: (OrdersTab) -> Unit,
+    bottomNavHeight: Dp,
+    onOrderClick: (Long) -> Unit,
+    onApplyClicked: (Long) -> Unit,
+    onWithdrawClicked: (Long) -> Unit,
+    onCancelClicked: (Long) -> Unit,
+    onHistoryQueryChanged: (String) -> Unit,
+) {
+    Column(modifier = Modifier.fillMaxSize()) {
+        OrdersScreenHeader(
+            title = "Заказы",
+            subtitle = "Лента заказов",
+            role = OrdersScreenRole.Loader,
+        )
+        Spacer(modifier = Modifier.height(AppSpacing.md))
+        RoleSelector(currentRole = OrdersScreenRole.Loader)
+        Spacer(modifier = Modifier.height(AppSpacing.md))
+        StatsBar(
+            stats = state.toStatsBarUiModel(),
+            modifier = Modifier.padding(horizontal = AppSpacing.lg),
+        )
+        Spacer(modifier = Modifier.height(AppSpacing.md))
+
+        LoaderOrdersTabsContent(
+            state = state,
+            selectedTab = selectedTab,
+            onTabSelected = onTabSelected,
+            bottomNavHeight = bottomNavHeight,
+            onOrderClick = onOrderClick,
+            onApplyClicked = onApplyClicked,
+            onWithdrawClicked = onWithdrawClicked,
+            onCancelClicked = onCancelClicked,
+            onHistoryQueryChanged = onHistoryQueryChanged,
+        )
+    }
+}
+
+@Composable
+private fun LoaderOrdersTabsContent(
+    state: OrdersUiState,
+    selectedTab: OrdersTab,
+    onTabSelected: (OrdersTab) -> Unit,
+    bottomNavHeight: Dp,
+    onOrderClick: (Long) -> Unit,
+    onApplyClicked: (Long) -> Unit,
+    onWithdrawClicked: (Long) -> Unit,
+    onCancelClicked: (Long) -> Unit,
+    onHistoryQueryChanged: (String) -> Unit,
+) {
+    OrdersSegmentedTabs(
+        selected = selectedTab,
+        onSelect = onTabSelected,
+        counts =
+            OrdersTabCounts(
+                available = state.availableOrders.size,
+                inProgress = state.inProgressOrders.size,
+                history = state.historyOrders.size,
+            ),
+        modifier = Modifier.fillMaxSize(),
+    ) { page ->
+        when (page) {
+            0 ->
+                OrdersListPage(
+                    orders = state.availableOrders,
+                    bottomNavHeight = bottomNavHeight,
+                    emptyTitle = "Нет доступных заказов",
+                    emptyMessage = "Обновите страницу позже",
+                    emptyIcon = Icons.Default.SearchOff,
+                    pendingActions = state.pendingActions,
+                    onOrderClick = onOrderClick,
+                    actionSlot = { order ->
+                        LoaderAvailableActions(
+                            order = order,
+                            pending = state.pendingActions.contains(order.order.id),
+                            onApply = { onApplyClicked(order.order.id) },
+                            onWithdraw = { onWithdrawClicked(order.order.id) },
+                        )
+                    },
+                )
+
+            1 ->
+                OrdersListPage(
+                    orders = state.inProgressOrders,
+                    bottomNavHeight = bottomNavHeight,
+                    emptyTitle = "Нет заказов в работе",
+                    emptyMessage = "Активные заказы появятся здесь",
+                    emptyIcon = Icons.Default.WorkOff,
+                    pendingActions = state.pendingActions,
+                    onOrderClick = onOrderClick,
+                    actionSlot = { order ->
+                        if (order.canCancel) {
+                            SecondaryOutlinedButton(
+                                label = "Отменить",
+                                pending = state.pendingActions.contains(order.order.id),
+                                onClick = { onCancelClicked(order.order.id) },
+                            )
+                        }
+                    },
+                )
+
+            2 ->
+                LoaderHistoryPage(
+                    historyState = state.history,
+                    onHistoryQueryChanged = onHistoryQueryChanged,
+                    bottomNavHeight = bottomNavHeight,
+                    onOrderClick = onOrderClick,
+                )
         }
     }
 }
