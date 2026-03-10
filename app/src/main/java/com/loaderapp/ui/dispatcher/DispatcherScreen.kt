@@ -59,7 +59,7 @@ import com.loaderapp.ui.components.OrdersScreenHeader
 import com.loaderapp.ui.components.OrdersScreenRole
 import com.loaderapp.ui.components.OrdersSegmentedTabs
 import com.loaderapp.ui.components.OrdersStatsSummary
-import com.loaderapp.ui.components.OrdersSummaryUi
+import com.loaderapp.ui.components.toOrdersSummaryUi
 import com.loaderapp.ui.components.OrdersTabCounts
 import com.loaderapp.ui.main.LocalBottomNavHeight
 
@@ -111,15 +111,7 @@ fun DispatcherScreen(
                     role = OrdersScreenRole.Dispatcher,
                 )
                 Spacer(modifier = Modifier.height(AppSpacing.md))
-                OrdersStatsSummary(
-                    summary =
-                        OrdersSummaryUi(
-                            available = state.availableOrders.size,
-                            inProgress = state.inProgressOrders.size,
-                            history = state.historyOrders.size,
-                            responses = state.responsesBadge.totalResponses,
-                        ),
-                )
+                OrdersStatsSummary(summary = state.toOrdersSummaryUi())
                 Spacer(modifier = Modifier.height(AppSpacing.md))
 
                 OrdersSegmentedTabs(
