@@ -35,11 +35,25 @@ fun Modifier.pressScale(
     enabled: Boolean = true,
     config: PressScaleConfig = PressScaleConfig(),
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
+): Modifier =
+    if (enabled) {
+        pressScaleEnabled(
+            config = config,
+            interactionSource = interactionSource,
+        )
+    } else {
+        this
+    }
+
+@Composable
+private fun Modifier.pressScaleEnabled(
+    config: PressScaleConfig,
+    interactionSource: MutableInteractionSource,
 ): Modifier {
     val isPressed by interactionSource.collectIsPressedAsState()
     val scale by
         animateFloatAsState(
-            targetValue = if (enabled && isPressed) config.scaleDown else 1f,
+            targetValue = if (isPressed) config.scaleDown else 1f,
             animationSpec = tween(durationMillis = config.duration, easing = config.easing),
             label = "press_scale",
         )
