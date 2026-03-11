@@ -246,37 +246,107 @@ private fun ActionPanel(
             modifier = Modifier.fillMaxWidth().padding(OrderDetailDefaults.CardPadding),
             verticalArrangement = Arrangement.spacedBy(OrderDetailDefaults.ItemSpacing),
         ) {
-            if (model.canOpenChat) {
-                Button(onClick = onOpenChat, enabled = !inProgress, modifier = Modifier.fillMaxWidth()) {
-                    Text("Открыть чат")
-                }
-            }
-            if (model.canApply) {
-                Button(onClick = onApply, enabled = !inProgress, modifier = Modifier.fillMaxWidth()) {
-                    Text("Откликнуться")
-                }
-            }
-            if (model.canWithdraw) {
-                OutlinedButton(onClick = onWithdraw, enabled = !inProgress, modifier = Modifier.fillMaxWidth()) {
-                    Text("Отозвать отклик")
-                }
-            }
-            if (model.canStart && model.order.status == OrderStatus.STAFFING) {
-                Button(onClick = onStart, enabled = !inProgress, modifier = Modifier.fillMaxWidth()) {
-                    Text("Начать")
-                }
-            }
-            if (model.canComplete && model.order.status == OrderStatus.IN_PROGRESS) {
-                Button(onClick = onComplete, enabled = !inProgress, modifier = Modifier.fillMaxWidth()) {
-                    Text("Завершить")
-                }
-            }
-            if (model.canCancel) {
-                OutlinedButton(onClick = onCancel, enabled = !inProgress, modifier = Modifier.fillMaxWidth()) {
-                    Text("Отменить")
-                }
-            }
+            PrimaryActionButton(
+                visible = model.canOpenChat,
+                text = "Открыть чат",
+                enabled = !inProgress,
+                onClick = onOpenChat,
+            )
+            PrimaryActionButton(
+                visible = model.canApply,
+                text = "Откликнуться",
+                enabled = !inProgress,
+                onClick = onApply,
+            )
+            SecondaryActionButton(
+                visible = model.canWithdraw,
+                text = "Отозвать отклик",
+                enabled = !inProgress,
+                onClick = onWithdraw,
+            )
+            StartActionButton(
+                model = model,
+                enabled = !inProgress,
+                onStart = onStart,
+            )
+            CompleteActionButton(
+                model = model,
+                enabled = !inProgress,
+                onComplete = onComplete,
+            )
+            SecondaryActionButton(
+                visible = model.canCancel,
+                text = "Отменить",
+                enabled = !inProgress,
+                onClick = onCancel,
+            )
         }
+    }
+}
+
+@Composable
+private fun StartActionButton(
+    model: OrderUiModel,
+    enabled: Boolean,
+    onStart: () -> Unit,
+) {
+    PrimaryActionButton(
+        visible = model.canStart && model.order.status == OrderStatus.STAFFING,
+        text = "Начать",
+        enabled = enabled,
+        onClick = onStart,
+    )
+}
+
+@Composable
+private fun CompleteActionButton(
+    model: OrderUiModel,
+    enabled: Boolean,
+    onComplete: () -> Unit,
+) {
+    PrimaryActionButton(
+        visible = model.canComplete && model.order.status == OrderStatus.IN_PROGRESS,
+        text = "Завершить",
+        enabled = enabled,
+        onClick = onComplete,
+    )
+}
+
+@Composable
+private fun PrimaryActionButton(
+    visible: Boolean,
+    text: String,
+    enabled: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    if (!visible) return
+
+    Button(
+        onClick = onClick,
+        enabled = enabled,
+        modifier = modifier.fillMaxWidth(),
+    ) {
+        Text(text)
+    }
+}
+
+@Composable
+private fun SecondaryActionButton(
+    visible: Boolean,
+    text: String,
+    enabled: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    if (!visible) return
+
+    OutlinedButton(
+        onClick = onClick,
+        enabled = enabled,
+        modifier = modifier.fillMaxWidth(),
+    ) {
+        Text(text)
     }
 }
 
