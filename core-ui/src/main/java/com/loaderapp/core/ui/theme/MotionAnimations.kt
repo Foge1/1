@@ -1,7 +1,7 @@
 package com.loaderapp.core.ui.theme
 
-import androidx.compose.animation.core.TweenSpec
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.TweenSpec
 
 fun <T> tweenMedium(): TweenSpec<T> =
     tween(
