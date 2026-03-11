@@ -152,23 +152,36 @@ private fun ProfileContent(
 
         HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.35f))
 
+        val profileDataSectionState =
+            ProfileDataSectionState(
+                name = user.name.ifBlank { "—" },
+                phone = user.phone.ifBlank { "Не указан" },
+                birthDate =
+                    user.birthDate?.let {
+                        "${dateFormat.format(Date(it))}${age?.let { years -> " ($years лет)" } ?: ""}"
+                    } ?: "Не указана",
+                isEditing = isEditing,
+                editName = editName,
+                editPhone = editPhone,
+                editBirthDate = editBirthDate,
+            )
+        val profileDataSectionActions =
+            ProfileDataSectionActions(
+                onNameChange = { editName = it },
+                onPhoneChange = { editPhone = it },
+                onShowDatePicker = { showDatePicker = true },
+                onSave = {
+                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    onSaveProfile(editName, editPhone, editBirthDate)
+                    isEditing = false
+                },
+                onEditClick = { isEditing = true },
+            )
+
         ProfileDataSection(
-            user = user,
-            isEditing = isEditing,
-            editName = editName,
-            editPhone = editPhone,
-            editBirthDate = editBirthDate,
+            state = profileDataSectionState,
+            actions = profileDataSectionActions,
             dateFormat = dateFormat,
-            age = age,
-            onNameChange = { editName = it },
-            onPhoneChange = { editPhone = it },
-            onShowDatePicker = { showDatePicker = true },
-            onSave = {
-                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                onSaveProfile(editName, editPhone, editBirthDate)
-                isEditing = false
-            },
-            onEditClick = { isEditing = true },
         )
     }
 
@@ -370,20 +383,29 @@ private fun BirthDatePickerDialog(
     }
 }
 
+private data class ProfileDataSectionState(
+    val name: String,
+    val phone: String,
+    val birthDate: String,
+    val isEditing: Boolean,
+    val editName: String,
+    val editPhone: String,
+    val editBirthDate: Long?,
+)
+
+private data class ProfileDataSectionActions(
+    val onNameChange: (String) -> Unit,
+    val onPhoneChange: (String) -> Unit,
+    val onShowDatePicker: () -> Unit,
+    val onSave: () -> Unit,
+    val onEditClick: () -> Unit,
+)
+
 @Composable
 private fun ProfileDataSection(
-    user: UserModel,
-    isEditing: Boolean,
-    editName: String,
-    editPhone: String,
-    editBirthDate: Long?,
+    state: ProfileDataSectionState,
+    actions: ProfileDataSectionActions,
     dateFormat: SimpleDateFormat,
-    age: Int?,
-    onNameChange: (String) -> Unit,
-    onPhoneChange: (String) -> Unit,
-    onShowDatePicker: () -> Unit,
-    onSave: () -> Unit,
-    onEditClick: () -> Unit,
 ) {
     Text(
         text = "Личные данные",
@@ -391,23 +413,23 @@ private fun ProfileDataSection(
         color = MaterialTheme.colorScheme.primary,
     )
 
-    AnimatedVisibility(visible = !isEditing) {
+    AnimatedVisibility(visible = !state.isEditing) {
         Column {
-            ProfileInfoRow(Icons.Default.Person, "Имя", user.name.ifBlank { "—" })
-            ProfileInfoRow(Icons.Default.Phone, "Телефон", user.phone.ifBlank { "Не указан" })
+            ProfileInfoRow(Icons.Default.Person, "Имя", state.name)
+            ProfileInfoRow(Icons.Default.Phone, "Телефон", state.phone)
             ProfileInfoRow(
                 Icons.Default.Cake,
                 "Дата рождения",
-                user.birthDate?.let { "${dateFormat.format(Date(it))}${age?.let { years -> " ($years лет)" } ?: ""}" } ?: "Не указана",
+                state.birthDate,
             )
         }
     }
 
-    AnimatedVisibility(visible = isEditing) {
+    AnimatedVisibility(visible = state.isEditing) {
         Column(verticalArrangement = Arrangement.spacedBy(AppSpacing.md)) {
             OutlinedTextField(
-                value = editName,
-                onValueChange = onNameChange,
+                value = state.editName,
+                onValueChange = actions.onNameChange,
                 label = { Text("Имя") },
                 leadingIcon = { Icon(Icons.Default.Person, contentDescription = null) },
                 modifier = Modifier.fillMaxWidth(),
@@ -415,8 +437,8 @@ private fun ProfileDataSection(
                 keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words),
             )
             OutlinedTextField(
-                value = editPhone,
-                onValueChange = onPhoneChange,
+                value = state.editPhone,
+                onValueChange = actions.onPhoneChange,
                 label = { Text("Телефон") },
                 leadingIcon = { Icon(Icons.Default.Phone, contentDescription = null) },
                 modifier = Modifier.fillMaxWidth(),
@@ -424,21 +446,21 @@ private fun ProfileDataSection(
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
             )
             OutlinedButton(
-                onClick = onShowDatePicker,
+                onClick = actions.onShowDatePicker,
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Icon(Icons.Default.Cake, contentDescription = null)
                 Spacer(modifier = Modifier.width(AppSpacing.sm))
-                Text(editBirthDate?.let { "ДР: ${dateFormat.format(Date(it))}" } ?: "Указать дату рождения")
+                Text(state.editBirthDate?.let { "ДР: ${dateFormat.format(Date(it))}" } ?: "Указать дату рождения")
             }
-            Button(onClick = onSave, modifier = Modifier.fillMaxWidth().height(48.dp)) {
+            Button(onClick = actions.onSave, modifier = Modifier.fillMaxWidth().height(48.dp)) {
                 Text("Сохранить")
             }
         }
     }
 
-    if (!isEditing) {
-        TextButton(onClick = onEditClick) {
+    if (!state.isEditing) {
+        TextButton(onClick = actions.onEditClick) {
             Icon(Icons.Default.Edit, contentDescription = null)
             Spacer(modifier = Modifier.width(AppSpacing.xs))
             Text("Редактировать профиль")
