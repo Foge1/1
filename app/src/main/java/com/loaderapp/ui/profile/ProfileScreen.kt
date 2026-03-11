@@ -2,19 +2,56 @@ package com.loaderapp.ui.profile
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.Cake
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Payments
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.WorkHistory
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberDatePickerState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -24,10 +61,11 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.loaderapp.core.common.UiState
+import com.loaderapp.core.ui.theme.AppSpacing
 import com.loaderapp.domain.model.UserModel
 import com.loaderapp.domain.model.UserRoleModel
 import com.loaderapp.presentation.profile.ProfileStats
@@ -39,16 +77,10 @@ import com.loaderapp.ui.components.LoadingView
 import com.loaderapp.ui.components.LocalTopBarHeightPx
 import com.loaderapp.ui.components.scrollableGradientBackground
 import java.text.SimpleDateFormat
-import java.util.*
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
 
-/**
- * Экран профиля пользователя (Диспетчер и Грузчик).
- *
- * Использует [AppScaffold] — единый frosted-glass TopBar.
- * Иконка Edit убрана из топбара — редактирование через inline-кнопку в контенте.
- * topBarHeight из [AppScaffoldScope] — реальная высота, без хардкода.
- */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
     userId: Long,
@@ -67,43 +99,36 @@ fun ProfileScreen(
         when (val state = userState) {
             is UiState.Loading -> LoadingView()
             is UiState.Error -> ErrorView(message = state.message.asString(), onRetry = null)
-            is UiState.Success ->
+            is UiState.Success -> {
                 ProfileContent(
                     user = state.data,
                     stats = stats,
                     topPadding = topBarDp,
-                    bottomPadding = 0.dp,
-                    onSaveProfile = { name, phone, birthDate ->
-                        viewModel.saveProfile(name, phone, birthDate)
-                    },
+                    onSaveProfile = viewModel::saveProfile,
                 )
+            }
             is UiState.Idle -> Unit
         }
     }
 }
-
-// ── Основной контент профиля ──────────────────────────────────────────────────
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ProfileContent(
     user: UserModel,
     stats: ProfileStats,
-    topPadding: androidx.compose.ui.unit.Dp,
-    bottomPadding: androidx.compose.ui.unit.Dp,
+    topPadding: Dp,
     onSaveProfile: (name: String, phone: String, birthDate: Long?) -> Unit,
 ) {
     val haptic = LocalHapticFeedback.current
+    val dateFormat = remember { SimpleDateFormat("dd.MM.yyyy", Locale.getDefault()) }
     var isEditing by remember { mutableStateOf(false) }
     var editName by remember(user.name) { mutableStateOf(user.name) }
     var editPhone by remember(user.phone) { mutableStateOf(user.phone) }
     var editBirthDate by remember(user.birthDate) { mutableStateOf(user.birthDate) }
     var showDatePicker by remember { mutableStateOf(false) }
 
-    val primary = MaterialTheme.colorScheme.primary
-    val isLoader = user.role == UserRoleModel.LOADER
-    val dateFormat = remember { SimpleDateFormat("dd.MM.yyyy", Locale.getDefault()) }
-    val age = calculateAge(user.birthDate)
+    val age = remember(user.birthDate) { calculateAge(user.birthDate) }
     val memberSince = remember(user.createdAt) { SimpleDateFormat("MMMM yyyy", Locale("ru")).format(Date(user.createdAt)) }
 
     Column(
@@ -111,22 +136,21 @@ private fun ProfileContent(
             Modifier
                 .fillMaxSize()
                 .scrollableGradientBackground()
-                .verticalScroll(rememberScrollState())
-                .padding(top = topPadding, bottom = bottomPadding + 16.dp),
+                .padding(top = topPadding, start = AppSpacing.lg, end = AppSpacing.lg, bottom = AppSpacing.lg),
+        verticalArrangement = Arrangement.spacedBy(AppSpacing.lg),
     ) {
-        ProfileHeaderSection(
+        AvatarCard(
             user = user,
-            primary = primary,
-            isLoader = isLoader,
             age = age,
             memberSince = memberSince,
         )
 
-        ProfileStatsSection(stats = stats, isLoader = isLoader, primary = primary)
+        StatsGrid(
+            userRole = user.role,
+            stats = stats,
+        )
 
-        Spacer(Modifier.height(8.dp))
-        HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
-        Spacer(Modifier.height(16.dp))
+        HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.35f))
 
         ProfileDataSection(
             user = user,
@@ -136,21 +160,16 @@ private fun ProfileContent(
             editBirthDate = editBirthDate,
             dateFormat = dateFormat,
             age = age,
-            actions =
-                ProfileDataActions(
-                    onNameChange = { editName = it },
-                    onPhoneChange = { editPhone = it },
-                    onShowDatePicker = { showDatePicker = true },
-                    onSave = {
-                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                        onSaveProfile(editName, editPhone, editBirthDate)
-                        isEditing = false
-                    },
-                    onEditClick = { isEditing = true },
-                ),
+            onNameChange = { editName = it },
+            onPhoneChange = { editPhone = it },
+            onShowDatePicker = { showDatePicker = true },
+            onSave = {
+                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                onSaveProfile(editName, editPhone, editBirthDate)
+                isEditing = false
+            },
+            onEditClick = { isEditing = true },
         )
-
-        Spacer(Modifier.height(24.dp))
     }
 
     if (showDatePicker) {
@@ -165,199 +184,153 @@ private fun ProfileContent(
     }
 }
 
-private fun calculateAge(birthDate: Long?): Int? =
-    birthDate?.let { ts ->
-        val birth = Calendar.getInstance().apply { timeInMillis = ts }
-        val now = Calendar.getInstance()
-        var years = now.get(Calendar.YEAR) - birth.get(Calendar.YEAR)
-        if (now.get(Calendar.DAY_OF_YEAR) < birth.get(Calendar.DAY_OF_YEAR)) years--
-        years
-    }
-
 @Composable
-private fun ProfileHeaderSection(
+private fun AvatarCard(
     user: UserModel,
-    primary: Color,
-    isLoader: Boolean,
     age: Int?,
     memberSince: String,
 ) {
-    Column(
-        modifier = Modifier.fillMaxWidth().padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
+    val primary = MaterialTheme.colorScheme.primary
+    Card(
+        shape = MaterialTheme.shapes.medium,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f)),
     ) {
-        Box(
-            modifier =
-                Modifier
-                    .size(88.dp)
-                    .clip(CircleShape)
-                    .background(Brush.radialGradient(listOf(primary.copy(0.3f), primary.copy(0.15f)))),
-            contentAlignment = Alignment.Center,
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(AppSpacing.xxl),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(AppSpacing.sm),
         ) {
-            Text(text = user.name.take(2).uppercase(), fontSize = 32.sp, fontWeight = FontWeight.ExtraBold, color = primary)
-        }
-
-        Spacer(Modifier.height(14.dp))
-        Text(user.name, fontSize = 22.sp, fontWeight = FontWeight.Bold)
-        Spacer(Modifier.height(6.dp))
-
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            Surface(shape = RoundedCornerShape(20.dp), color = primary.copy(alpha = 0.12f)) {
+            Box(
+                modifier =
+                    Modifier
+                        .size(84.dp)
+                        .background(
+                            brush = Brush.radialGradient(listOf(primary.copy(alpha = 0.3f), primary.copy(alpha = 0.1f))),
+                            shape = CircleShape,
+                        ),
+                contentAlignment = Alignment.Center,
+            ) {
                 Text(
-                    text = if (isLoader) "Грузчик" else "Диспетчер",
-                    fontSize = 13.sp,
+                    text = user.name.take(2).uppercase(),
+                    style = MaterialTheme.typography.headlineMedium,
                     color = primary,
-                    fontWeight = FontWeight.Medium,
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                    fontWeight = FontWeight.Bold,
                 )
             }
-            if (age != null) {
-                Surface(shape = RoundedCornerShape(20.dp), color = MaterialTheme.colorScheme.surfaceVariant) {
-                    Text(text = "$age лет", fontSize = 13.sp, modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp))
+
+            Text(
+                text = user.name,
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.SemiBold,
+            )
+
+            Row(horizontalArrangement = Arrangement.spacedBy(AppSpacing.xs)) {
+                RoleChip(role = user.role)
+                if (age != null) {
+                    Surface(
+                        shape = MaterialTheme.shapes.small,
+                        color = MaterialTheme.colorScheme.surfaceVariant,
+                    ) {
+                        Text(
+                            text = "$age лет",
+                            style = MaterialTheme.typography.labelMedium,
+                            modifier = Modifier.padding(horizontal = AppSpacing.md, vertical = AppSpacing.xs),
+                        )
+                    }
                 }
             }
-        }
 
-        Spacer(Modifier.height(6.dp))
-        Text(text = "В сервисе с $memberSince", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(
+                text = "В сервисе с $memberSince",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
     }
 }
 
 @Composable
-private fun ProfileStatsSection(
-    stats: ProfileStats,
-    isLoader: Boolean,
-    primary: Color,
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+private fun RoleChip(role: UserRoleModel) {
+    Surface(
+        shape = MaterialTheme.shapes.small,
+        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.14f),
     ) {
-        if (isLoader) {
-            MiniStatCard(
-                modifier = Modifier.weight(1f),
-                value = "${stats.completedOrders}",
-                label = "выполнено",
-                icon = Icons.Default.CheckCircle,
-                color = primary,
-            )
-            MiniStatCard(
-                modifier = Modifier.weight(1f),
-                value = "${stats.totalEarnings.toInt()} ₽",
-                label = "заработано",
-                icon = Icons.Default.Payments,
-                color = Color(0xFF27AE60),
-            )
-        } else {
-            MiniStatCard(
-                modifier = Modifier.weight(1f),
-                value = "${stats.completedOrders}",
-                label = "выполнено",
-                icon = Icons.Default.CheckCircle,
-                color = primary,
-            )
-            MiniStatCard(
-                modifier = Modifier.weight(1f),
-                value = "${stats.activeOrders}",
-                label = "активных",
-                icon = Icons.Default.WorkHistory,
-                color = Color(0xFFE67E22),
-            )
+        Text(
+            text = if (role == UserRoleModel.LOADER) "Грузчик" else "Диспетчер",
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.padding(horizontal = AppSpacing.md, vertical = AppSpacing.xs),
+        )
+    }
+}
+
+@Composable
+private fun StatsGrid(
+    userRole: UserRoleModel,
+    stats: ProfileStats,
+) {
+    val gridItems =
+        listOf(
+            StatItem("Выполнено", stats.completedOrders.toString(), Icons.Default.CheckCircle, MaterialTheme.colorScheme.primary),
+            StatItem(
+                "Рейтинг",
+                if (stats.averageRating > 0f) "%.1f".format(stats.averageRating) else "—",
+                Icons.Default.Star,
+                Color(0xFFEAB308),
+            ),
+            StatItem(
+                "Активных",
+                if (userRole == UserRoleModel.DISPATCHER) stats.activeOrders.toString() else "—",
+                Icons.Default.WorkHistory,
+                Color(0xFFE67E22),
+            ),
+            StatItem(
+                "Доход",
+                if (userRole == UserRoleModel.LOADER) "${stats.totalEarnings.toInt()} ₽" else "—",
+                Icons.Default.Payments,
+                Color(0xFF22C55E),
+            ),
+        )
+
+    LazyVerticalGrid(
+        columns = GridCells.Fixed(2),
+        horizontalArrangement = Arrangement.spacedBy(AppSpacing.md),
+        verticalArrangement = Arrangement.spacedBy(AppSpacing.md),
+        userScrollEnabled = false,
+        modifier = Modifier.fillMaxWidth().height(188.dp),
+        contentPadding = PaddingValues(0.dp),
+    ) {
+        items(gridItems) { item ->
+            StatCard(item = item)
         }
     }
 }
 
-private data class ProfileDataActions(
-    val onNameChange: (String) -> Unit,
-    val onPhoneChange: (String) -> Unit,
-    val onShowDatePicker: () -> Unit,
-    val onSave: () -> Unit,
-    val onEditClick: () -> Unit,
+private data class StatItem(
+    val label: String,
+    val value: String,
+    val icon: ImageVector,
+    val tint: Color,
 )
 
 @Composable
-private fun ProfileDataSection(
-    user: UserModel,
-    isEditing: Boolean,
-    editName: String,
-    editPhone: String,
-    editBirthDate: Long?,
-    dateFormat: SimpleDateFormat,
-    age: Int?,
-    actions: ProfileDataActions,
-) {
-    val primary = MaterialTheme.colorScheme.primary
-
-    Text(
-        text = "Личные данные",
-        fontSize = 13.sp,
-        fontWeight = FontWeight.SemiBold,
-        color = primary,
-        letterSpacing = 0.8.sp,
-        modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
-    )
-
-    AnimatedVisibility(visible = !isEditing) {
-        Column {
-            ProfileInfoRow(Icons.Default.Person, "Имя", user.name.ifBlank { "—" })
-            ProfileInfoRow(Icons.Default.Phone, "Телефон", user.phone.ifBlank { "Не указан" })
-            ProfileInfoRow(
-                icon = Icons.Default.Cake,
-                label = "Дата рождения",
-                value = user.birthDate?.let { dateFormat.format(Date(it)) + (age?.let { years -> " ($years лет)" } ?: "") } ?: "Не указана",
-            )
-        }
-    }
-
-    AnimatedVisibility(visible = isEditing) {
-        Column(modifier = Modifier.padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            OutlinedTextField(
-                value = editName,
-                onValueChange = actions.onNameChange,
-                label = { Text("Имя") },
-                leadingIcon = { Icon(Icons.Default.Person, null) },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words),
-                shape = RoundedCornerShape(12.dp),
-            )
-            OutlinedTextField(
-                value = editPhone,
-                onValueChange = actions.onPhoneChange,
-                label = { Text("Телефон") },
-                leadingIcon = { Icon(Icons.Default.Phone, null) },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-                shape = RoundedCornerShape(12.dp),
-                placeholder = { Text("+7 999 000 00 00") },
-            )
-            OutlinedButton(onClick = actions.onShowDatePicker, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp)) {
-                Icon(Icons.Default.Cake, null, modifier = Modifier.size(18.dp))
-                Spacer(Modifier.width(8.dp))
-                Text(
-                    text = editBirthDate?.let { "ДР: " + dateFormat.format(Date(it)) } ?: "Указать дату рождения",
-                    fontWeight = FontWeight.Normal,
-                )
+private fun StatCard(item: StatItem) {
+    Card(
+        shape = MaterialTheme.shapes.medium,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f)),
+    ) {
+        Column(
+            modifier = Modifier.fillMaxSize().padding(AppSpacing.md),
+            verticalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Icon(imageVector = item.icon, contentDescription = null, tint = item.tint)
+            Column {
+                Text(text = item.value, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                Text(text = item.label, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-            Button(onClick = actions.onSave, modifier = Modifier.fillMaxWidth().height(48.dp), shape = RoundedCornerShape(12.dp)) {
-                Text("Сохранить", fontWeight = FontWeight.SemiBold)
-            }
-            Spacer(Modifier.height(4.dp))
-        }
-    }
-
-    if (!isEditing) {
-        Spacer(Modifier.height(8.dp))
-        TextButton(onClick = actions.onEditClick, modifier = Modifier.padding(horizontal = 16.dp)) {
-            Icon(Icons.Default.Edit, null, modifier = Modifier.size(16.dp))
-            Spacer(Modifier.width(6.dp))
-            Text("Редактировать профиль")
         }
     }
 }
-
-// ── Вспомогательные компоненты ────────────────────────────────────────────────
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -368,11 +341,10 @@ private fun BirthDatePickerDialog(
 ) {
     val state =
         rememberDatePickerState(
-            initialSelectedDateMillis =
-                initialDate
-                    ?: Calendar.getInstance().apply { add(Calendar.YEAR, -25) }.timeInMillis,
+            initialSelectedDateMillis = initialDate ?: Calendar.getInstance().apply { add(Calendar.YEAR, -25) }.timeInMillis,
             yearRange = 1950..2010,
         )
+
     DatePickerDialog(
         onDismissRequest = onDismiss,
         confirmButton = {
@@ -380,17 +352,97 @@ private fun BirthDatePickerDialog(
                 Text("Выбрать")
             }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Отмена") } },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Отмена")
+            }
+        },
     ) {
         DatePicker(
             state = state,
             title = {
                 Text(
                     text = "Дата рождения",
-                    modifier = Modifier.padding(start = 24.dp, top = 16.dp),
+                    modifier = Modifier.padding(start = AppSpacing.xxl, top = AppSpacing.lg),
                 )
             },
         )
+    }
+}
+
+@Composable
+private fun ProfileDataSection(
+    user: UserModel,
+    isEditing: Boolean,
+    editName: String,
+    editPhone: String,
+    editBirthDate: Long?,
+    dateFormat: SimpleDateFormat,
+    age: Int?,
+    onNameChange: (String) -> Unit,
+    onPhoneChange: (String) -> Unit,
+    onShowDatePicker: () -> Unit,
+    onSave: () -> Unit,
+    onEditClick: () -> Unit,
+) {
+    Text(
+        text = "Личные данные",
+        style = MaterialTheme.typography.titleMedium,
+        color = MaterialTheme.colorScheme.primary,
+    )
+
+    AnimatedVisibility(visible = !isEditing) {
+        Column {
+            ProfileInfoRow(Icons.Default.Person, "Имя", user.name.ifBlank { "—" })
+            ProfileInfoRow(Icons.Default.Phone, "Телефон", user.phone.ifBlank { "Не указан" })
+            ProfileInfoRow(
+                Icons.Default.Cake,
+                "Дата рождения",
+                user.birthDate?.let { "${dateFormat.format(Date(it))}${age?.let { years -> " ($years лет)" } ?: ""}" } ?: "Не указана",
+            )
+        }
+    }
+
+    AnimatedVisibility(visible = isEditing) {
+        Column(verticalArrangement = Arrangement.spacedBy(AppSpacing.md)) {
+            OutlinedTextField(
+                value = editName,
+                onValueChange = onNameChange,
+                label = { Text("Имя") },
+                leadingIcon = { Icon(Icons.Default.Person, contentDescription = null) },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words),
+            )
+            OutlinedTextField(
+                value = editPhone,
+                onValueChange = onPhoneChange,
+                label = { Text("Телефон") },
+                leadingIcon = { Icon(Icons.Default.Phone, contentDescription = null) },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+            )
+            OutlinedButton(
+                onClick = onShowDatePicker,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Icon(Icons.Default.Cake, contentDescription = null)
+                Spacer(modifier = Modifier.width(AppSpacing.sm))
+                Text(editBirthDate?.let { "ДР: ${dateFormat.format(Date(it))}" } ?: "Указать дату рождения")
+            }
+            Button(onClick = onSave, modifier = Modifier.fillMaxWidth().height(48.dp)) {
+                Text("Сохранить")
+            }
+        }
+    }
+
+    if (!isEditing) {
+        TextButton(onClick = onEditClick) {
+            Icon(Icons.Default.Edit, contentDescription = null)
+            Spacer(modifier = Modifier.width(AppSpacing.xs))
+            Text("Редактировать профиль")
+        }
     }
 }
 
@@ -401,44 +453,30 @@ private fun ProfileInfoRow(
     value: String,
 ) {
     Row(
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 12.dp),
+        modifier = Modifier.fillMaxWidth().padding(vertical = AppSpacing.sm),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Icon(
             imageVector = icon,
             contentDescription = null,
             tint = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.size(22.dp),
+            modifier = Modifier.size(20.dp),
         )
-        Spacer(Modifier.width(16.dp))
+        Spacer(modifier = Modifier.width(AppSpacing.md))
         Column {
-            Text(label, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Text(value, fontSize = 15.sp, fontWeight = FontWeight.Medium)
+            Text(text = label, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(text = value, style = MaterialTheme.typography.bodyLarge)
         }
     }
 }
 
-@Composable
-private fun MiniStatCard(
-    modifier: Modifier,
-    value: String,
-    label: String,
-    icon: ImageVector,
-    color: Color,
-) {
-    Card(
-        modifier = modifier,
-        elevation = CardDefaults.cardElevation(0.dp),
-        shape = RoundedCornerShape(12.dp),
-    ) {
-        Column(modifier = Modifier.padding(14.dp)) {
-            Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(20.dp))
-            Spacer(Modifier.height(6.dp))
-            Text(value, fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, color = color)
-            Text(label, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+private fun calculateAge(birthDate: Long?): Int? =
+    birthDate?.let { ts ->
+        val birth = Calendar.getInstance().apply { timeInMillis = ts }
+        val now = Calendar.getInstance()
+        var years = now.get(Calendar.YEAR) - birth.get(Calendar.YEAR)
+        if (now.get(Calendar.DAY_OF_YEAR) < birth.get(Calendar.DAY_OF_YEAR)) {
+            years--
         }
+        years
     }
-}
