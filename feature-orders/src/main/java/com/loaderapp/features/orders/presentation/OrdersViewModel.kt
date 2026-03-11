@@ -10,7 +10,6 @@ import com.loaderapp.features.orders.presentation.mapper.toUiModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -33,6 +32,7 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 import javax.inject.Inject
+import javax.inject.Named
 
 @HiltViewModel
 class OrdersViewModel
@@ -41,7 +41,7 @@ class OrdersViewModel
         private val observeOrderUiModels: ObserveOrderUiModelsUseCase,
         private val ordersOrchestrator: OrdersOrchestrator,
         private val appLogger: AppLogger,
-        private val historyComputationDispatcher: CoroutineDispatcher = Dispatchers.Default,
+        @Named("historyDispatcher") private val historyComputationDispatcher: CoroutineDispatcher,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(OrdersUiState())
         val uiState: StateFlow<OrdersUiState> = _uiState.asStateFlow()
