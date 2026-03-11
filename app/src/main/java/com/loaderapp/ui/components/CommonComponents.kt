@@ -88,9 +88,7 @@ fun ErrorView(
 }
 
 @Composable
-fun LoadingView(
-    modifier: Modifier = Modifier,
-) {
+fun LoadingView(modifier: Modifier = Modifier) {
     Box(
         modifier = modifier.fillMaxSize(),
         contentAlignment = Alignment.Center,

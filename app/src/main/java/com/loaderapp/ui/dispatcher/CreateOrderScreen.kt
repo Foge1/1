@@ -149,8 +149,7 @@ fun CreateOrderScreen(
                         .fillMaxSize()
                         .padding(
                             padding,
-                        )
-                        .verticalScroll(rememberScrollState())
+                        ).verticalScroll(rememberScrollState())
                         .padding(horizontal = 16.dp, vertical = 12.dp)
                         .imePadding(),
                 vmState = vmState,

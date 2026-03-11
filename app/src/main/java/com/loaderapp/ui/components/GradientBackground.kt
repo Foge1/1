@@ -64,6 +64,4 @@ fun GradientBackground(
  * ) { ... }
  * ```
  */
-fun Modifier.scrollableGradientBackground(): Modifier {
-    return this.background(appScreenGradientBrush())
-}
+fun Modifier.scrollableGradientBackground(): Modifier = this.background(appScreenGradientBrush())
