@@ -36,7 +36,7 @@ fun FadingEdgeLazyColumn(
     state: LazyListState = rememberLazyListState(),
     content: LazyListScope.() -> Unit,
 ) {
-    val bgColor = androidx.compose.material3.MaterialTheme.colorScheme.background
+    val bgColor = appScreenBackgroundBottomColor()
 
     Box(modifier = modifier) {
         LazyColumn(

@@ -1,25 +1,46 @@
 package com.loaderapp.ui.components
 
-import androidx.compose.animation.core.*
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.loaderapp.core.ui.theme.AppColors
 import com.loaderapp.core.ui.theme.AppSpacing
 
-/**
- * Компонент пустого состояния
- */
 @Composable
 fun EmptyStateView(
     icon: ImageVector = Icons.Default.Search,
@@ -27,20 +48,90 @@ fun EmptyStateView(
     message: String? = null,
     modifier: Modifier = Modifier,
 ) {
+    StateMessageView(
+        icon = icon,
+        iconTint = AppColors.MutedForeground,
+        title = title,
+        subtitle = message,
+        modifier = modifier,
+    )
+}
+
+@Composable
+fun ErrorView(
+    message: String,
+    onRetry: (() -> Unit)? = null,
+    modifier: Modifier = Modifier,
+) {
+    StateMessageView(
+        icon = Icons.Default.Error,
+        iconTint = AppColors.Destructive,
+        title = "Ошибка",
+        subtitle = message,
+        modifier = modifier,
+        action =
+            if (onRetry != null) {
+                {
+                    OutlinedButton(
+                        onClick = onRetry,
+                        colors =
+                            ButtonDefaults.outlinedButtonColors(
+                                contentColor = AppColors.Destructive,
+                            ),
+                    ) {
+                        Text("Повторить")
+                    }
+                }
+            } else {
+                null
+            },
+    )
+}
+
+@Composable
+fun LoadingView(modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center,
+    ) {
+        CircularProgressIndicator(
+            color = AppColors.Primary,
+            strokeWidth = 2.dp,
+        )
+    }
+}
+
+@Composable
+private fun StateMessageView(
+    icon: ImageVector,
+    iconTint: Color,
+    title: String,
+    subtitle: String?,
+    modifier: Modifier = Modifier,
+    action: (@Composable () -> Unit)? = null,
+) {
     Column(
         modifier = modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
+        Box(
             modifier =
                 Modifier
-                    .size(80.dp)
-                    .alpha(0.4f),
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
+                    .size(48.dp)
+                    .background(
+                        color = AppColors.Muted,
+                        shape = MaterialTheme.shapes.extraLarge,
+                    ),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                modifier = Modifier.size(20.dp),
+                tint = iconTint,
+            )
+        }
 
         Spacer(Modifier.height(AppSpacing.lg))
 
@@ -52,101 +143,24 @@ fun EmptyStateView(
             textAlign = TextAlign.Center,
         )
 
-        if (message != null) {
+        if (!subtitle.isNullOrBlank()) {
             Spacer(Modifier.height(AppSpacing.sm))
-
             Text(
-                text = message,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                text = subtitle,
+                style = MaterialTheme.typography.bodySmall,
+                color = AppColors.MutedForeground,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.padding(horizontal = AppSpacing.xxxl),
             )
         }
-    }
-}
 
-/**
- * Компонент ошибки
- */
-@Composable
-fun ErrorView(
-    message: String,
-    onRetry: (() -> Unit)? = null,
-    modifier: Modifier = Modifier,
-) {
-    Column(
-        modifier = modifier.fillMaxSize(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-    ) {
-        Icon(
-            imageVector = Icons.Default.Error,
-            contentDescription = null,
-            modifier = Modifier.size(80.dp),
-            tint = MaterialTheme.colorScheme.error,
-        )
-
-        Spacer(Modifier.height(AppSpacing.lg))
-
-        Text(
-            text = "Ошибка",
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.SemiBold,
-            color = MaterialTheme.colorScheme.error,
-        )
-
-        Spacer(Modifier.height(AppSpacing.sm))
-
-        Text(
-            text = message,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.padding(horizontal = AppSpacing.xxxl),
-        )
-
-        if (onRetry != null) {
+        if (action != null) {
             Spacer(Modifier.height(AppSpacing.lg))
-
-            Button(onClick = onRetry) {
-                Text("Повторить")
-            }
+            action()
         }
     }
 }
 
-/**
- * Компонент загрузки
- */
-@Composable
-fun LoadingView(
-    message: String = "Загрузка...",
-    modifier: Modifier = Modifier,
-) {
-    Column(
-        modifier = modifier.fillMaxSize(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-    ) {
-        CircularProgressIndicator(
-            modifier = Modifier.size(48.dp),
-            color = MaterialTheme.colorScheme.primary,
-        )
-
-        Spacer(Modifier.height(AppSpacing.lg))
-
-        Text(
-            text = message,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-    }
-}
-
-/**
- * Скелетон для карточки заказа (shimmer эффект)
- */
 @Composable
 fun SkeletonOrderCard(modifier: Modifier = Modifier) {
     val infiniteTransition = rememberInfiniteTransition(label = "shimmer")
@@ -169,7 +183,6 @@ fun SkeletonOrderCard(modifier: Modifier = Modifier) {
             modifier = Modifier.padding(AppSpacing.lg),
             verticalArrangement = Arrangement.spacedBy(AppSpacing.sm),
         ) {
-            // Заголовок
             Box(
                 modifier =
                     Modifier
@@ -179,7 +192,6 @@ fun SkeletonOrderCard(modifier: Modifier = Modifier) {
                         .shimmerBackground(),
             )
 
-            // Описание
             Box(
                 modifier =
                     Modifier
@@ -191,8 +203,7 @@ fun SkeletonOrderCard(modifier: Modifier = Modifier) {
 
             Spacer(Modifier.height(AppSpacing.xs))
 
-            // Параметры
-            Row(
+            androidx.compose.foundation.layout.Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
