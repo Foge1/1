@@ -36,14 +36,14 @@ import com.loaderapp.features.orders.domain.OrderStatus
 import com.loaderapp.features.orders.presentation.OrdersUiState
 import com.loaderapp.features.orders.presentation.OrdersViewModel
 import com.loaderapp.features.orders.presentation.ResponsesViewModel
+import com.loaderapp.navigation.Route
 import com.loaderapp.presentation.dispatcher.DispatcherStatsUiState
 import com.loaderapp.presentation.dispatcher.DispatcherStatsViewModel
-import com.loaderapp.navigation.Route
 import com.loaderapp.presentation.session.SessionViewModel
 import com.loaderapp.ui.components.AppBottomBar
 import com.loaderapp.ui.components.BottomNavItem
-import com.loaderapp.ui.dispatcher.CreateOrderScreen
 import com.loaderapp.ui.components.StatsBarUiModel
+import com.loaderapp.ui.dispatcher.CreateOrderScreen
 import com.loaderapp.ui.dispatcher.DispatcherScreen
 import com.loaderapp.ui.dispatcher.ResponsesScreen
 import com.loaderapp.ui.history.HistoryScreen
@@ -165,7 +165,10 @@ private fun MainNavHost(
     NavHost(
         navController = navController,
         startDestination = Route.Home.route,
-        modifier = Modifier.fillMaxSize().padding(top = topPadding),
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .padding(top = topPadding),
         enterTransition = { fadeIn(tween(200)) },
         exitTransition = { fadeOut(tween(150)) },
         popEnterTransition = { fadeIn(tween(200)) },

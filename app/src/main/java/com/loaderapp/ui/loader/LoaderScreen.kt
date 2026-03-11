@@ -488,7 +488,6 @@ private fun OrdersListPage(
     }
 }
 
-
 @Composable
 private fun RoleStubLabel(
     label: String,
@@ -504,7 +503,8 @@ private fun RoleStubLabel(
             text = label,
             style = MaterialTheme.typography.labelLarge,
             color = AppColors.MutedForeground,
-            modifier = Modifier.padding(horizontal = AppSpacing.md, vertical = AppSpacing.sm),
+            modifier =
+                Modifier.padding(horizontal = AppSpacing.md, vertical = AppSpacing.sm),
         )
     }
 }

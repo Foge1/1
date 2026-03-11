@@ -28,14 +28,16 @@ class DispatcherStatsViewModel
 
         init {
             viewModelScope.launch {
-                authSessionApi.observeCurrentUser()
+                authSessionApi
+                    .observeCurrentUser()
                     .flatMapLatest { user ->
                         if (user == null || user.role != UserRoleModel.DISPATCHER) {
                             flowOf(null)
                         } else {
                             getDispatcherStatsUseCase(GetDispatcherStatsParams(user.id))
                         }
-                    }.collect { stats ->
+                    }
+                    .collect { stats ->
                         _uiState.update {
                             it.copy(
                                 active = stats?.activeOrders ?: 0,
