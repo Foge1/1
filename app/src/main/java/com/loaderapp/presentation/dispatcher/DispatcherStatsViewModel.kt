@@ -36,8 +36,7 @@ class DispatcherStatsViewModel
                         } else {
                             getDispatcherStatsUseCase(GetDispatcherStatsParams(user.id))
                         }
-                    }
-                    .collect { stats ->
+                    }.collect { stats ->
                         _uiState.update {
                             it.copy(
                                 active = stats?.activeOrders ?: 0,

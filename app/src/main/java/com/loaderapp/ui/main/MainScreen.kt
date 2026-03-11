@@ -257,9 +257,7 @@ private fun HomeRoute(
 
 private const val EMPTY_INCOME_VALUE = "—"
 
-private fun DispatcherStatsUiState.toStatsBarUiModel(
-    ordersState: OrdersUiState?,
-): StatsBarUiModel {
+private fun DispatcherStatsUiState.toStatsBarUiModel(ordersState: OrdersUiState?): StatsBarUiModel {
     val canceledCount = ordersState?.historyOrders?.count { it.order.status == OrderStatus.CANCELED } ?: 0
     return StatsBarUiModel(
         active = active.toString(),

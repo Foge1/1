@@ -370,13 +370,12 @@ private fun DispatcherOrdersPage(
 }
 
 @Composable
-private fun RoleStubLabel(
-    label: String,
-) {
+private fun RoleStubLabel(label: String) {
     Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = AppSpacing.lg),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = AppSpacing.lg),
         shape = RoundedCornerShape(AppSpacing.sm),
         color = AppColors.Surface,
     ) {
