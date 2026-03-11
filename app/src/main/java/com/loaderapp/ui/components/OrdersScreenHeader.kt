@@ -39,6 +39,8 @@ fun OrdersScreenHeader(
     title: String,
     subtitle: String?,
     role: OrdersScreenRole,
+    onSearchClick: (() -> Unit)? = null,
+    onNotificationsClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
     Row(
@@ -77,19 +79,23 @@ fun OrdersScreenHeader(
             }
         }
 
-        IconButton(onClick = {}) {
-            Icon(
-                imageVector = Icons.Outlined.Search,
-                contentDescription = "Поиск",
-                tint = AppColors.Foreground,
-            )
+        if (onSearchClick != null) {
+            IconButton(onClick = onSearchClick) {
+                Icon(
+                    imageVector = Icons.Outlined.Search,
+                    contentDescription = "Поиск",
+                    tint = AppColors.Foreground,
+                )
+            }
         }
-        IconButton(onClick = {}) {
-            Icon(
-                imageVector = Icons.Outlined.NotificationsNone,
-                contentDescription = "Уведомления",
-                tint = AppColors.Foreground,
-            )
+        if (onNotificationsClick != null) {
+            IconButton(onClick = onNotificationsClick) {
+                Icon(
+                    imageVector = Icons.Outlined.NotificationsNone,
+                    contentDescription = "Уведомления",
+                    tint = AppColors.Foreground,
+                )
+            }
         }
     }
 }
