@@ -42,7 +42,7 @@ import com.loaderapp.core.ui.components.button.AppDangerButton
 import com.loaderapp.core.ui.components.button.AppPrimaryButton
 import com.loaderapp.core.ui.components.button.AppSecondaryButton
 import com.loaderapp.core.ui.theme.AppColors
-import com.loaderapp.core.ui.theme.AppMotion
+import com.loaderapp.core.ui.theme.tweenMedium
 import com.loaderapp.core.ui.theme.AppShapes
 import com.loaderapp.core.ui.theme.AppSpacing
 import com.loaderapp.domain.model.OrderModel
@@ -69,7 +69,7 @@ fun OrderCard(
     val scale by
         animateFloatAsState(
             targetValue = if (enabled && isPressed) 0.97f else 1f,
-            animationSpec = AppMotion.tweenMedium(),
+            animationSpec = tweenMedium(),
             label = "order_card_scale",
         )
 

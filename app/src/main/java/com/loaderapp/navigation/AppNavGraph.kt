@@ -8,6 +8,7 @@ import androidx.navigation.*
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.loaderapp.core.ui.theme.AppMotion
+import com.loaderapp.core.ui.theme.tweenMedium
 import com.loaderapp.features.orders.presentation.navigateToOrderDetail
 import com.loaderapp.features.orders.presentation.orderDetailRoute
 import com.loaderapp.presentation.session.SessionDestination
@@ -52,8 +53,8 @@ fun AppNavGraph(
     NavHost(
         navController = navController,
         startDestination = startDestination,
-        enterTransition = { fadeIn(AppMotion.tweenMedium()) },
-        exitTransition = { fadeOut(AppMotion.tweenMedium()) },
+        enterTransition = { fadeIn(tweenMedium()) },
+        exitTransition = { fadeOut(tweenMedium()) },
     ) {
         composable(
             route = Route.Splash.route,
@@ -106,7 +107,7 @@ fun AppNavGraph(
                         tween(durationMillis = AppMotion.DURATION_LONG, easing = AppMotion.EASING_STANDARD),
                     ) { it / 5 }
             },
-            exitTransition = { fadeOut(AppMotion.tweenMedium()) },
+            exitTransition = { fadeOut(tweenMedium()) },
         ) {
             RoleSelectionScreen(
                 isLoading = sessionState.isLoading,

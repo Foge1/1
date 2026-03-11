@@ -39,7 +39,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import com.loaderapp.core.ui.theme.AppColors
-import com.loaderapp.core.ui.theme.AppMotion
+import com.loaderapp.core.ui.theme.tweenMedium
 import com.loaderapp.core.ui.theme.AppSpacing
 import com.loaderapp.core.ui.theme.ShapeStatusPill
 import com.loaderapp.ui.theme.LoaderAppTheme
@@ -82,7 +82,7 @@ fun SwipeableTabs(
         if (initialPage != pagerState.currentPage) {
             pagerState.animateScrollToPage(
                 page = initialPage,
-                animationSpec = AppMotion.tweenMedium(),
+                animationSpec = tweenMedium(),
             )
         }
     }
@@ -102,7 +102,7 @@ fun SwipeableTabs(
                 scope.launch {
                     pagerState.animateScrollToPage(
                         page = index,
-                        animationSpec = AppMotion.tweenMedium(),
+                        animationSpec = tweenMedium(),
                     )
                 }
             },

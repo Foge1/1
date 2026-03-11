@@ -4,9 +4,7 @@ import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.Easing
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.SpringSpec
-import androidx.compose.animation.core.TweenSpec
 import androidx.compose.animation.core.spring
-import androidx.compose.animation.core.tween
 
 object AppMotion {
     const val DURATION_SHORT = 150
@@ -28,17 +26,5 @@ object AppMotion {
         spring(
             dampingRatio = Spring.DampingRatioLowBouncy,
             stiffness = Spring.StiffnessLow,
-        )
-
-    fun <T> tweenMedium(): TweenSpec<T> =
-        tween(
-            durationMillis = DURATION_MEDIUM,
-            easing = EASING_STANDARD,
-        )
-
-    fun <T> tweenLong(): TweenSpec<T> =
-        tween(
-            durationMillis = DURATION_LONG,
-            easing = EASING_STANDARD,
         )
 }

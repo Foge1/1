@@ -14,8 +14,8 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
 import com.loaderapp.R
 import com.loaderapp.core.ui.theme.AppColors
-import com.loaderapp.core.ui.theme.AppMotion
 import com.loaderapp.core.ui.theme.ShapeStatusPill
+import com.loaderapp.core.ui.theme.tweenMedium
 import com.loaderapp.domain.model.OrderStatusModel
 import com.loaderapp.ui.theme.LoaderAppTheme
 
@@ -25,7 +25,7 @@ fun StatusChip(
     modifier: Modifier = Modifier,
 ) {
     val chipState = status.toStatusChipUiState()
-    val colorAnimationSpec = AppMotion.tweenMedium<Color>()
+    val colorAnimationSpec = tweenMedium<Color>()
     val containerColor =
         animateColorAsState(
             targetValue = chipState.containerColor,

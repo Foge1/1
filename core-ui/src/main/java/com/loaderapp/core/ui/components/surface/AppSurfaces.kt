@@ -24,7 +24,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
-import com.loaderapp.core.ui.theme.AppMotion
+import com.loaderapp.core.ui.theme.tweenMedium
 import com.loaderapp.core.ui.theme.ShapeCard
 
 @Composable
@@ -237,7 +237,7 @@ private fun Modifier.cardPressScale(
     val scale by
         animateFloatAsState(
             targetValue = if (enabled && isPressed) 0.97f else 1f,
-            animationSpec = AppMotion.tweenMedium(),
+            animationSpec = tweenMedium(),
             label = "surface_card_scale",
         )
 

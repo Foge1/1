@@ -30,7 +30,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.loaderapp.core.ui.theme.AppMotion
+import com.loaderapp.core.ui.theme.tweenLong
+import com.loaderapp.core.ui.theme.tweenMedium
 import com.loaderapp.domain.model.UserRoleModel
 import com.loaderapp.features.orders.presentation.OrdersUiState
 import com.loaderapp.features.orders.presentation.OrdersViewModel
@@ -166,10 +167,10 @@ private fun MainNavHost(
             Modifier
                 .fillMaxSize()
                 .padding(top = topPadding),
-        enterTransition = { fadeIn(AppMotion.tweenMedium()) },
-        exitTransition = { fadeOut(AppMotion.tweenMedium()) },
-        popEnterTransition = { fadeIn(AppMotion.tweenMedium()) },
-        popExitTransition = { fadeOut(AppMotion.tweenMedium()) },
+        enterTransition = { fadeIn(tweenMedium()) },
+        exitTransition = { fadeOut(tweenMedium()) },
+        popEnterTransition = { fadeIn(tweenMedium()) },
+        popExitTransition = { fadeOut(tweenMedium()) },
     ) {
         composable(Route.Home.route) {
             HomeRoute(
@@ -213,12 +214,12 @@ private fun MainNavHost(
         composable(
             route = Route.CreateOrder.route,
             enterTransition = {
-                slideInVertically(AppMotion.tweenLong()) { it / 6 } +
-                    fadeIn(AppMotion.tweenLong())
+                slideInVertically(tweenLong()) { it / 6 } +
+                    fadeIn(tweenLong())
             },
             exitTransition = {
-                slideOutVertically(AppMotion.tweenLong()) { it / 6 } +
-                    fadeOut(AppMotion.tweenMedium())
+                slideOutVertically(tweenLong()) { it / 6 } +
+                    fadeOut(tweenMedium())
             },
         ) {
             CreateOrderScreen(onBack = { navController.popBackStack() })

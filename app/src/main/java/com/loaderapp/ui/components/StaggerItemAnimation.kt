@@ -16,10 +16,10 @@ fun Modifier.staggeredItemAppearance(
     index: Int,
 ): Modifier {
     val alpha = remember { Animatable(0f) }
-    val translationOffset = remember { Animatable(StaggerDefaults.InitialTranslationDp.value) }
+    val translationOffset = remember { Animatable(StaggerDefaults.INITIAL_TRANSLATION_DP.value) }
 
     LaunchedEffect(index) {
-        val delayMillis = (index * StaggerDefaults.DelayStepMillis).coerceAtMost(StaggerDefaults.MaxDelayMillis)
+        val delayMillis = (index * StaggerDefaults.DELAY_STEP_MILLIS).coerceAtMost(StaggerDefaults.MAX_DELAY_MILLIS)
         alpha.animateTo(
             targetValue = 1f,
             animationSpec = tween(
@@ -46,7 +46,7 @@ fun Modifier.staggeredItemAppearance(
 }
 
 private object StaggerDefaults {
-    val InitialTranslationDp = 10.dp
-    const val DelayStepMillis = 24
-    const val MaxDelayMillis = 168
+    val INITIAL_TRANSLATION_DP = 10.dp
+    const val DELAY_STEP_MILLIS = 24
+    const val MAX_DELAY_MILLIS = 168
 }

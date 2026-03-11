@@ -40,6 +40,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.tooling.preview.Preview
 import com.loaderapp.core.ui.theme.AppColors
 import com.loaderapp.core.ui.theme.AppMotion
+import com.loaderapp.core.ui.theme.tweenMedium
 import com.loaderapp.core.ui.theme.AppSpacing
 import com.loaderapp.core.ui.theme.ShapeBottomBar
 import com.loaderapp.core.ui.theme.ShapeStatusPill
@@ -149,18 +150,18 @@ private fun rememberBottomNavItemVisuals(isSelected: Boolean): BottomNavItemVisu
     )
     val capsuleAlpha by animateFloatAsState(
         targetValue = if (isSelected) ACTIVE_CAPSULE_ALPHA else 0f,
-        animationSpec = AppMotion.tweenMedium(),
+        animationSpec = tweenMedium(),
         label = "bottomNavCapsuleAlpha",
     )
     val indicatorAlpha by animateFloatAsState(
         targetValue = if (isSelected) ACTIVE_INDICATOR_ALPHA else INACTIVE_INDICATOR_ALPHA,
-        animationSpec = AppMotion.tweenMedium(),
+        animationSpec = tweenMedium(),
         label = "bottomNavIndicatorAlpha",
     )
 
     val contentColor by animateColorAsState(
         targetValue = if (isSelected) AppColors.Primary else AppColors.MutedForeground,
-        animationSpec = AppMotion.tweenMedium(),
+        animationSpec = tweenMedium(),
         label = "bottomNavContentColor",
     )
 
