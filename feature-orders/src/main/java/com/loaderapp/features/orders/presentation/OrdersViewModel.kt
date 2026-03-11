@@ -9,6 +9,7 @@ import com.loaderapp.features.orders.domain.usecase.UseCaseResult
 import com.loaderapp.features.orders.presentation.mapper.toUiModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -40,6 +41,7 @@ class OrdersViewModel
         private val observeOrderUiModels: ObserveOrderUiModelsUseCase,
         private val ordersOrchestrator: OrdersOrchestrator,
         private val appLogger: AppLogger,
+        private val historyComputationDispatcher: CoroutineDispatcher = Dispatchers.Default,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(OrdersUiState())
         val uiState: StateFlow<OrdersUiState> = _uiState.asStateFlow()
@@ -164,7 +166,7 @@ class OrdersViewModel
                         .debounce(250)
                         .mapLatest { query ->
                             val snapshot = _uiState.value
-                            withContext(Dispatchers.Default) {
+                            withContext(historyComputationDispatcher) {
                                 buildHistoryState(
                                     query = query,
                                     historyOrders = snapshot.historyOrders,
