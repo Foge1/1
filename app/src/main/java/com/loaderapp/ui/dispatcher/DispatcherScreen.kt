@@ -57,9 +57,8 @@ import com.loaderapp.ui.components.OrdersScreenHeader
 import com.loaderapp.ui.components.OrdersScreenRole
 import com.loaderapp.ui.components.OrdersSegmentedTabs
 import com.loaderapp.ui.components.OrdersTabCounts
-import com.loaderapp.ui.components.RoleSelector
 import com.loaderapp.ui.components.StatsBar
-import com.loaderapp.ui.components.toStatsBarUiModel
+import com.loaderapp.ui.components.StatsBarUiModel
 import com.loaderapp.ui.main.LocalBottomNavHeight
 
 private object DispatcherScreenLayoutDefaults {
@@ -80,6 +79,7 @@ private object DispatcherScreenLayoutDefaults {
 @Composable
 fun DispatcherScreen(
     viewModel: OrdersViewModel,
+    stats: StatsBarUiModel,
     onOrderClick: (Long) -> Unit,
     onNavigateToCreateOrder: () -> Unit,
 ) {
@@ -105,10 +105,10 @@ fun DispatcherScreen(
                         role = OrdersScreenRole.Dispatcher,
                     )
                     Spacer(modifier = Modifier.height(AppSpacing.md))
-                    RoleSelector(currentRole = OrdersScreenRole.Dispatcher)
+                    RoleStubLabel(label = "Диспетчер")
                     Spacer(modifier = Modifier.height(AppSpacing.md))
                     StatsBar(
-                        stats = state.toStatsBarUiModel(),
+                        stats = stats,
                         modifier = Modifier.padding(horizontal = AppSpacing.lg),
                     )
                     Spacer(modifier = Modifier.height(AppSpacing.md))
@@ -366,5 +366,26 @@ private fun DispatcherOrdersPage(
             )
             Spacer(Modifier.height(DispatcherScreenLayoutDefaults.ListItemSpacing))
         }
+    }
+}
+
+
+@Composable
+private fun RoleStubLabel(
+    label: String,
+) {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = AppSpacing.lg),
+        shape = RoundedCornerShape(AppSpacing.sm),
+        color = AppColors.Surface,
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelLarge,
+            color = AppColors.MutedForeground,
+            modifier = Modifier.padding(horizontal = AppSpacing.md, vertical = AppSpacing.sm),
+        )
     }
 }

@@ -45,6 +45,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.loaderapp.core.ui.theme.AppColors
 import com.loaderapp.core.ui.theme.AppSpacing
 import com.loaderapp.features.orders.domain.OrderApplicationStatus
 import com.loaderapp.features.orders.presentation.DispatcherHistoryUiState
@@ -63,7 +64,6 @@ import com.loaderapp.ui.components.OrdersScreenHeader
 import com.loaderapp.ui.components.OrdersScreenRole
 import com.loaderapp.ui.components.OrdersSegmentedTabs
 import com.loaderapp.ui.components.OrdersTabCounts
-import com.loaderapp.ui.components.RoleSelector
 import com.loaderapp.ui.components.StatsBar
 import com.loaderapp.ui.components.toStatsBarUiModel
 import com.loaderapp.ui.main.LocalBottomNavHeight
@@ -140,7 +140,7 @@ private fun LoaderScreenContent(
             role = OrdersScreenRole.Loader,
         )
         Spacer(modifier = Modifier.height(AppSpacing.md))
-        RoleSelector(currentRole = OrdersScreenRole.Loader)
+        RoleStubLabel(label = "Грузчик")
         Spacer(modifier = Modifier.height(AppSpacing.md))
         StatsBar(
             stats = state.toStatsBarUiModel(),
@@ -485,5 +485,26 @@ private fun OrdersListPage(
             )
             Spacer(Modifier.height(LoaderScreenLayoutDefaults.ListItemSpacing))
         }
+    }
+}
+
+
+@Composable
+private fun RoleStubLabel(
+    label: String,
+) {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = AppSpacing.lg),
+        shape = RoundedCornerShape(AppSpacing.sm),
+        color = AppColors.Surface,
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelLarge,
+            color = AppColors.MutedForeground,
+            modifier = Modifier.padding(horizontal = AppSpacing.md, vertical = AppSpacing.sm),
+        )
     }
 }

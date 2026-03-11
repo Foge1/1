@@ -32,13 +32,18 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.loaderapp.domain.model.UserRoleModel
+import com.loaderapp.features.orders.domain.OrderStatus
+import com.loaderapp.features.orders.presentation.OrdersUiState
 import com.loaderapp.features.orders.presentation.OrdersViewModel
 import com.loaderapp.features.orders.presentation.ResponsesViewModel
+import com.loaderapp.presentation.dispatcher.DispatcherStatsUiState
+import com.loaderapp.presentation.dispatcher.DispatcherStatsViewModel
 import com.loaderapp.navigation.Route
 import com.loaderapp.presentation.session.SessionViewModel
 import com.loaderapp.ui.components.AppBottomBar
 import com.loaderapp.ui.components.BottomNavItem
 import com.loaderapp.ui.dispatcher.CreateOrderScreen
+import com.loaderapp.ui.components.StatsBarUiModel
 import com.loaderapp.ui.dispatcher.DispatcherScreen
 import com.loaderapp.ui.dispatcher.ResponsesScreen
 import com.loaderapp.ui.history.HistoryScreen
@@ -113,6 +118,7 @@ fun MainScreen(
                 userRole = user.role,
                 userId = user.id,
                 dispatcherOrdersVm = dispatcherOrdersVm,
+                dispatcherOrdersState = dispatcherOrdersState,
                 onOrderClick = onOrderClick,
                 onSwitchRole = { sessionViewModel.logout() },
             )
@@ -152,6 +158,7 @@ private fun MainNavHost(
     userRole: UserRoleModel,
     userId: Long,
     dispatcherOrdersVm: OrdersViewModel?,
+    dispatcherOrdersState: OrdersUiState?,
     onOrderClick: (Long, Boolean) -> Unit,
     onSwitchRole: () -> Unit,
 ) {
@@ -168,6 +175,7 @@ private fun MainNavHost(
             HomeRoute(
                 role = userRole,
                 dispatcherOrdersVm = dispatcherOrdersVm,
+                dispatcherOrdersState = dispatcherOrdersState,
                 onOrderClick = onOrderClick,
                 onNavigateToCreateOrder = {
                     if (navController.currentDestination?.route != Route.CreateOrder.route) {
@@ -216,14 +224,19 @@ private fun MainNavHost(
 private fun HomeRoute(
     role: UserRoleModel,
     dispatcherOrdersVm: OrdersViewModel?,
+    dispatcherOrdersState: OrdersUiState?,
     onOrderClick: (Long, Boolean) -> Unit,
     onNavigateToCreateOrder: () -> Unit,
 ) {
     when (role) {
         UserRoleModel.DISPATCHER -> {
             val ordersVm = dispatcherOrdersVm ?: hiltViewModel<OrdersViewModel>()
+            val statsVm: DispatcherStatsViewModel = hiltViewModel()
+            val statsState by statsVm.uiState.collectAsState()
+
             DispatcherScreen(
                 viewModel = ordersVm,
+                stats = statsState.toStatsBarUiModel(dispatcherOrdersState),
                 onOrderClick = { orderId -> onOrderClick(orderId, true) },
                 onNavigateToCreateOrder = onNavigateToCreateOrder,
             )
@@ -237,4 +250,18 @@ private fun HomeRoute(
             )
         }
     }
+}
+
+private const val EMPTY_INCOME_VALUE = "—"
+
+private fun DispatcherStatsUiState.toStatsBarUiModel(
+    ordersState: OrdersUiState?,
+): StatsBarUiModel {
+    val canceledCount = ordersState?.historyOrders?.count { it.order.status == OrderStatus.CANCELED } ?: 0
+    return StatsBarUiModel(
+        active = active.toString(),
+        completed = completed.toString(),
+        canceled = canceledCount.toString(),
+        income = EMPTY_INCOME_VALUE,
+    )
 }

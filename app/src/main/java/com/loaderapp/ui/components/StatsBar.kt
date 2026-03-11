@@ -77,7 +77,7 @@ fun StatsBar(
         )
         StatsCard(
             icon = Icons.Outlined.AccountBalanceWallet,
-            iconTint = AppColors.StatIncomeAmber,
+            iconTint = AppColors.Accent,
             value = stats.income,
             label = "Доход",
             modifier = Modifier.weight(1f),
