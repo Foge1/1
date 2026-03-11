@@ -100,9 +100,11 @@ class HistoryViewModel
                 return this
             }
             return filter { order ->
-                order.title.contains(normalizedQuery, ignoreCase = true) ||
+                order.id.toString().contains(normalizedQuery, ignoreCase = true) ||
                     order.address.contains(normalizedQuery, ignoreCase = true) ||
-                    order.comment?.contains(normalizedQuery, ignoreCase = true) == true
+                    order.cargoDescription.contains(normalizedQuery, ignoreCase = true) ||
+                    order.comment.contains(normalizedQuery, ignoreCase = true) ||
+                    order.status.getDisplayName().contains(normalizedQuery, ignoreCase = true)
             }
         }
     }
