@@ -25,6 +25,7 @@ import com.loaderapp.features.orders.domain.usecase.WithdrawApplicationUseCase
 import com.loaderapp.features.orders.testing.MainDispatcherRule
 import com.loaderapp.features.orders.testing.TestAppLogger
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -410,6 +411,7 @@ class OrdersViewModelTest {
     private fun TestScope.buildViewModel(
         repository: TestOrdersRepository,
         userProvider: CurrentUserProvider,
+        historyComputationDispatcher: CoroutineDispatcher = mainDispatcherRule.dispatcher,
     ): OrdersViewModel {
         val stateMachine = OrderStateMachine(OrdersLimits())
         val applyUseCase = ApplyToOrderUseCase(repository, userProvider, stateMachine)
@@ -435,6 +437,7 @@ class OrdersViewModelTest {
                 ),
             ordersOrchestrator = orchestrator,
             appLogger = testAppLogger,
+            historyComputationDispatcher = historyComputationDispatcher,
         ).also { createdViewModels += it }
     }
 

@@ -11,18 +11,14 @@ import androidx.core.view.WindowCompat
 import com.loaderapp.core.ui.theme.CoreUiDarkColorScheme
 
 @Composable
-fun LoaderAppTheme(
-    darkTheme: Boolean = true,
-    content: @Composable () -> Unit,
-) {
-    val isDarkTheme = darkTheme
+fun LoaderAppTheme(content: @Composable () -> Unit) {
     val view = LocalView.current
     if (!view.isInEditMode) {
         SideEffect {
             val window = (view.context as Activity).window
             window.statusBarColor = Color.Transparent.toArgb()
             WindowCompat.setDecorFitsSystemWindows(window, false)
-            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !isDarkTheme
+            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = false
         }
     }
     MaterialTheme(
