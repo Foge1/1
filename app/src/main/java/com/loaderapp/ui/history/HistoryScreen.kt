@@ -5,7 +5,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.lazy.LazyListScope
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.History
 import androidx.compose.runtime.Composable
@@ -31,6 +31,7 @@ import com.loaderapp.ui.components.FadingEdgeLazyColumn
 import com.loaderapp.ui.components.LoadingView
 import com.loaderapp.ui.components.LocalTopBarHeightPx
 import com.loaderapp.ui.components.OrderCard
+import com.loaderapp.ui.components.staggeredItemAppearance
 import com.loaderapp.ui.main.LocalBottomNavHeight
 
 @Composable
@@ -134,8 +135,12 @@ private fun LazyListScope.historyResultsSection(
             )
         }
     } else {
-        items(orders, key = { it.id }) { order ->
-            OrderCard(order = order, onClick = { onOrderClick(order.id) })
+        itemsIndexed(items = orders, key = { _, item -> item.id }) { index, order ->
+            OrderCard(
+                order = order,
+                onClick = { onOrderClick(order.id) },
+                modifier = Modifier.staggeredItemAppearance(index = index),
+            )
             Spacer(modifier = Modifier.height(AppSpacing.md))
         }
     }

@@ -1,6 +1,5 @@
 package com.loaderapp.ui.main
 
-import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
@@ -31,6 +30,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.loaderapp.core.ui.theme.AppMotion
 import com.loaderapp.domain.model.UserRoleModel
 import com.loaderapp.features.orders.presentation.OrdersUiState
 import com.loaderapp.features.orders.presentation.OrdersViewModel
@@ -166,10 +166,10 @@ private fun MainNavHost(
             Modifier
                 .fillMaxSize()
                 .padding(top = topPadding),
-        enterTransition = { fadeIn(tween(200)) },
-        exitTransition = { fadeOut(tween(150)) },
-        popEnterTransition = { fadeIn(tween(200)) },
-        popExitTransition = { fadeOut(tween(150)) },
+        enterTransition = { fadeIn(AppMotion.tweenMedium()) },
+        exitTransition = { fadeOut(AppMotion.tweenMedium()) },
+        popEnterTransition = { fadeIn(AppMotion.tweenMedium()) },
+        popExitTransition = { fadeOut(AppMotion.tweenMedium()) },
     ) {
         composable(Route.Home.route) {
             HomeRoute(
@@ -212,8 +212,14 @@ private fun MainNavHost(
 
         composable(
             route = Route.CreateOrder.route,
-            enterTransition = { slideInVertically(tween(320)) { it / 6 } + fadeIn(tween(260)) },
-            exitTransition = { slideOutVertically(tween(260)) { it / 6 } + fadeOut(tween(200)) },
+            enterTransition = {
+                slideInVertically(AppMotion.tweenLong()) { it / 6 } +
+                    fadeIn(AppMotion.tweenLong())
+            },
+            exitTransition = {
+                slideOutVertically(AppMotion.tweenLong()) { it / 6 } +
+                    fadeOut(AppMotion.tweenMedium())
+            },
         ) {
             CreateOrderScreen(onBack = { navController.popBackStack() })
         }

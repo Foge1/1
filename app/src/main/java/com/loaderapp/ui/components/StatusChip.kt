@@ -1,7 +1,6 @@
 package com.loaderapp.ui.components
 
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -26,11 +25,7 @@ fun StatusChip(
     modifier: Modifier = Modifier,
 ) {
     val chipState = status.toStatusChipUiState()
-    val colorAnimationSpec =
-        tween<Color>(
-            durationMillis = AppMotion.DURATION_MEDIUM,
-            easing = AppMotion.EASING_STANDARD,
-        )
+    val colorAnimationSpec = AppMotion.tweenMedium<Color>()
     val containerColor =
         animateColorAsState(
             targetValue = chipState.containerColor,

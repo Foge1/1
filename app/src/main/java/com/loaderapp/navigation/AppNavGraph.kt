@@ -7,6 +7,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.*
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import com.loaderapp.core.ui.theme.AppMotion
 import com.loaderapp.features.orders.presentation.navigateToOrderDetail
 import com.loaderapp.features.orders.presentation.orderDetailRoute
 import com.loaderapp.presentation.session.SessionDestination
@@ -51,13 +52,27 @@ fun AppNavGraph(
     NavHost(
         navController = navController,
         startDestination = startDestination,
-        enterTransition = { fadeIn(tween(300)) },
-        exitTransition = { fadeOut(tween(200)) },
+        enterTransition = { fadeIn(AppMotion.tweenMedium()) },
+        exitTransition = { fadeOut(AppMotion.tweenMedium()) },
     ) {
         composable(
             route = Route.Splash.route,
-            enterTransition = { fadeIn(tween(500, easing = FastOutSlowInEasing)) },
-            exitTransition = { fadeOut(tween(350)) },
+            enterTransition = {
+                fadeIn(
+                    tween(
+                        durationMillis = AppMotion.DURATION_LONG,
+                        easing = AppMotion.EASING_STANDARD,
+                    ),
+                )
+            },
+            exitTransition = {
+                fadeOut(
+                    tween(
+                        durationMillis = AppMotion.DURATION_LONG,
+                        easing = AppMotion.EASING_STANDARD,
+                    ),
+                )
+            },
         ) {
             SplashScreen(
                 isSessionResolved = destination.isResolved,
@@ -81,10 +96,17 @@ fun AppNavGraph(
         composable(
             route = Route.Auth.route,
             enterTransition = {
-                fadeIn(tween(400)) +
-                    slideInHorizontally(tween(420, easing = FastOutSlowInEasing)) { it / 5 }
+                fadeIn(
+                    tween(
+                        durationMillis = AppMotion.DURATION_LONG,
+                        easing = AppMotion.EASING_STANDARD,
+                    ),
+                ) +
+                    slideInHorizontally(
+                        tween(durationMillis = AppMotion.DURATION_LONG, easing = AppMotion.EASING_STANDARD),
+                    ) { it / 5 }
             },
-            exitTransition = { fadeOut(tween(220)) },
+            exitTransition = { fadeOut(AppMotion.tweenMedium()) },
         ) {
             RoleSelectionScreen(
                 isLoading = sessionState.isLoading,

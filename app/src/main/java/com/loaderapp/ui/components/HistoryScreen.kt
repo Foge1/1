@@ -74,10 +74,11 @@ fun HistoryScreen(
                     Text(section.count.toString(), style = MaterialTheme.typography.labelMedium)
                 }
                 Spacer(Modifier.height(AppSpacing.sm))
-                section.items.forEach { item ->
+                section.items.forEachIndexed { itemIndex, item ->
                     OrderCard(
                         order = item.order.toLegacyOrderModel(),
                         onClick = { onOrderClick(item.order.order.id) },
+                        modifier = Modifier.staggeredItemAppearance(index = itemIndex),
                     )
                     Spacer(Modifier.height(10.dp))
                 }

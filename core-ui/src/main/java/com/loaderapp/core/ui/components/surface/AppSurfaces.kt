@@ -1,6 +1,10 @@
 package com.loaderapp.core.ui.components.surface
 
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
@@ -15,8 +19,12 @@ import androidx.compose.material3.CardElevation
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
+import com.loaderapp.core.ui.theme.AppMotion
 import com.loaderapp.core.ui.theme.ShapeCard
 
 @Composable
@@ -167,25 +175,14 @@ private fun AppFilledSurfaceCard(
     elevation: CardElevation,
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    if (onClick != null) {
-        Card(
-            onClick = onClick,
-            modifier = modifier,
-            enabled = enabled,
-            shape = ShapeCard,
-            colors = colors,
-            elevation = elevation,
-            content = content,
-        )
-    } else {
-        Card(
-            modifier = modifier,
-            shape = ShapeCard,
-            colors = colors,
-            elevation = elevation,
-            content = content,
-        )
-    }
+    val cardModifier = modifier.cardPressScale(onClick = onClick, enabled = enabled)
+    Card(
+        modifier = cardModifier,
+        shape = ShapeCard,
+        colors = colors,
+        elevation = elevation,
+        content = content,
+    )
 }
 
 @Composable
@@ -198,27 +195,15 @@ private fun AppOutlinedSurfaceCard(
     elevation: CardElevation,
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    if (onClick != null) {
-        OutlinedCard(
-            onClick = onClick,
-            modifier = modifier,
-            enabled = enabled,
-            shape = ShapeCard,
-            border = border,
-            colors = colors,
-            elevation = elevation,
-            content = content,
-        )
-    } else {
-        OutlinedCard(
-            modifier = modifier,
-            shape = ShapeCard,
-            border = border,
-            colors = colors,
-            elevation = elevation,
-            content = content,
-        )
-    }
+    val cardModifier = modifier.cardPressScale(onClick = onClick, enabled = enabled)
+    OutlinedCard(
+        modifier = cardModifier,
+        shape = ShapeCard,
+        border = border,
+        colors = colors,
+        elevation = elevation,
+        content = content,
+    )
 }
 
 @Composable
@@ -230,25 +215,43 @@ private fun AppElevatedSurfaceCard(
     elevation: CardElevation,
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    if (onClick != null) {
-        ElevatedCard(
-            onClick = onClick,
-            modifier = modifier,
+    val cardModifier = modifier.cardPressScale(onClick = onClick, enabled = enabled)
+    ElevatedCard(
+        modifier = cardModifier,
+        shape = ShapeCard,
+        colors = colors,
+        elevation = elevation,
+        content = content,
+    )
+}
+
+@Composable
+private fun Modifier.cardPressScale(
+    onClick: (() -> Unit)?,
+    enabled: Boolean,
+): Modifier {
+    if (onClick == null) return this
+
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val scale by
+        animateFloatAsState(
+            targetValue = if (enabled && isPressed) 0.97f else 1f,
+            animationSpec = AppMotion.tweenMedium(),
+            label = "surface_card_scale",
+        )
+
+    return this
+        .graphicsLayer {
+            scaleX = scale
+            scaleY = scale
+        }
+        .clickable(
             enabled = enabled,
-            shape = ShapeCard,
-            colors = colors,
-            elevation = elevation,
-            content = content,
+            interactionSource = interactionSource,
+            indication = null,
+            onClick = onClick,
         )
-    } else {
-        ElevatedCard(
-            modifier = modifier,
-            shape = ShapeCard,
-            colors = colors,
-            elevation = elevation,
-            content = content,
-        )
-    }
 }
 
 @Composable
