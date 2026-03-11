@@ -4,16 +4,26 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+
+private val GradientBackgroundStart = Color(0xFF0F2227)
+private val GradientBackgroundEnd = Color(0xFF0F1416)
+
+internal fun appScreenGradientBrush(endY: Float = Float.POSITIVE_INFINITY): Brush =
+    Brush.verticalGradient(
+        colors = listOf(GradientBackgroundStart, GradientBackgroundEnd),
+        endY = endY,
+    )
+
+internal fun appScreenBackgroundBottomColor(): Color = GradientBackgroundEnd
 
 /**
  * Переиспользуемый полноэкранный градиентный фон.
  *
- * Цвета: primaryContainer (верх, слабый оттенок) → background (низ).
- * Использует color tokens текущей темы (dark-only).
+ * Цвета: #0F2227 (верх) → #0F1416 (низ).
  *
  * Используется на всех экранах кроме Профиля, где контент скроллится.
  * Для скролл-экранов используй [scrollableGradientBackground].
@@ -23,14 +33,11 @@ fun GradientBackground(
     modifier: Modifier = Modifier,
     content: @Composable BoxScope.() -> Unit,
 ) {
-    val topColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.18f)
-    val bottomColor = MaterialTheme.colorScheme.background
-
     Box(
         modifier =
             modifier
                 .fillMaxSize()
-                .background(Brush.verticalGradient(listOf(topColor, bottomColor))),
+                .background(appScreenGradientBrush()),
         content = content,
     )
 }
@@ -57,14 +64,6 @@ fun GradientBackground(
  * ) { ... }
  * ```
  */
-@Composable
 fun Modifier.scrollableGradientBackground(): Modifier {
-    val topColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.18f)
-    val bottomColor = MaterialTheme.colorScheme.background
-    return this.background(
-        Brush.verticalGradient(
-            colors = listOf(topColor, bottomColor),
-            endY = Float.POSITIVE_INFINITY,
-        ),
-    )
+    return this.background(appScreenGradientBrush())
 }

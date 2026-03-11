@@ -1,34 +1,32 @@
 package com.loaderapp.ui.components
 
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.loaderapp.core.ui.theme.AppSpacing
 
-/**
- * Единый TopBar для всего приложения.
- *
- * Полностью прозрачный фон — TopBar «плавает» поверх градиентного
- * контента экрана. Цвета шрифта и иконок берутся из [MaterialTheme.colorScheme.onSurface]
- * и одинаково читаемы на светлом градиентном фоне.
- *
- * Почему убран gradient-фон самого TopBar:
- * На экране Профиля контент скроллится, и градиент GradientTopBar (surface→transparent)
- * накладывался поверх градиента контента (primaryContainer→background), создавая
- * видимую «полосу». Правильное решение — TopBar прозрачный, единственный
- * источник цвета фона — сам контент/GradientBackground.
- *
- * @param title              Заголовок экрана
- * @param navigationIcon     Иконка назад (null = не показывать)
- * @param onNavigationClick  Обработчик клика по navigationIcon
- * @param actions            Слот для action-кнопок справа
- */
+private val TopBarOverlayHeight = 96.dp
+
 @Composable
 fun GradientTopBar(
     title: String,
@@ -37,6 +35,18 @@ fun GradientTopBar(
     onNavigationClick: () -> Unit = {},
     actions: @Composable RowScope.() -> Unit = {},
 ) {
+    Box(
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .height(TopBarOverlayHeight)
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(appScreenBackgroundBottomColor(), Color.Transparent),
+                    ),
+                ),
+    )
+
     Box(
         modifier =
             modifier

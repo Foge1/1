@@ -15,6 +15,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -29,6 +30,7 @@ import com.loaderapp.domain.model.OrderRules
 import com.loaderapp.presentation.dispatcher.CreateOrderViewModel
 import com.loaderapp.presentation.dispatcher.NavigationEvent
 import com.loaderapp.presentation.dispatcher.OrderDayOption
+import com.loaderapp.ui.components.GradientBackground
 import com.loaderapp.ui.components.GradientTopBar
 import com.loaderapp.ui.theme.GoldStar
 import java.text.SimpleDateFormat
@@ -130,31 +132,35 @@ fun CreateOrderScreen(
             },
         )
 
-    Scaffold(
-        topBar = {
-            GradientTopBar(
-                title = "Новый заказ",
-                navigationIcon = Icons.Default.ArrowBack,
-                onNavigationClick = onBack,
+    GradientBackground {
+        Scaffold(
+            containerColor = Color.Transparent,
+            topBar = {
+                GradientTopBar(
+                    title = "Новый заказ",
+                    navigationIcon = Icons.Default.ArrowBack,
+                    onNavigationClick = onBack,
+                )
+            },
+        ) { padding ->
+            CreateOrderContent(
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .padding(
+                            padding,
+                        )
+                        .verticalScroll(rememberScrollState())
+                        .padding(horizontal = 16.dp, vertical = 12.dp)
+                        .imePadding(),
+                vmState = vmState,
+                formState = formState,
+                uiState = uiState,
+                primary = primary,
+                dateFormatter = dateFormatter,
+                callbacks = callbacks,
             )
-        },
-    ) { padding ->
-        CreateOrderContent(
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .padding(
-                        padding,
-                    ).verticalScroll(rememberScrollState())
-                    .padding(horizontal = 16.dp, vertical = 12.dp)
-                    .imePadding(),
-            vmState = vmState,
-            formState = formState,
-            uiState = uiState,
-            primary = primary,
-            dateFormatter = dateFormatter,
-            callbacks = callbacks,
-        )
+        }
     }
 
     if (uiState.showDatePicker) {
