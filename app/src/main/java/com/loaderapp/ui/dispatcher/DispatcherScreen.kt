@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Assignment
@@ -40,8 +39,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
 import com.loaderapp.core.ui.theme.AppColors
+import com.loaderapp.core.ui.theme.AppShapes
 import com.loaderapp.core.ui.theme.AppSpacing
 import com.loaderapp.features.orders.presentation.DispatcherHistoryUiState
 import com.loaderapp.features.orders.presentation.OrderUiModel
@@ -67,10 +66,10 @@ private object DispatcherScreenLayoutDefaults {
     val FabHorizontalPadding = AppSpacing.lg
     val FabBottomPadding = AppSpacing.lg
     val SnackbarBottomPadding = AppSpacing.sm
-    val HistoryBottomPadding = 80.dp
+    val HistoryBottomPadding = AppSpacing.xxxl + AppSpacing.xxxl + AppSpacing.lg
     val ListHorizontalPadding = AppSpacing.lg
     val ListTopPadding = AppSpacing.md
-    val ListBottomPadding = 80.dp
+    val ListBottomPadding = AppSpacing.xxxl + AppSpacing.xxxl + AppSpacing.lg
     val ListItemSpacing = AppSpacing.md
 }
 
@@ -223,7 +222,7 @@ private fun StaffingOrderActions(
         )
 
         if (order.canCancel) {
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(AppSpacing.sm))
             CancelOutlinedButton(pending = pending, onClick = { showCancelDialog = true })
         }
     }
@@ -274,7 +273,7 @@ private fun CancelOutlinedButton(
         onClick = onClick,
         enabled = !pending,
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
+        shape = AppShapes.small,
         colors =
             ButtonDefaults.outlinedButtonColors(
                 contentColor = MaterialTheme.colorScheme.error,
@@ -283,9 +282,9 @@ private fun CancelOutlinedButton(
         Icon(
             imageVector = Icons.Outlined.Cancel,
             contentDescription = null,
-            modifier = Modifier.size(16.dp),
+            modifier = Modifier.size(AppSpacing.lg),
         )
-        Spacer(Modifier.width(6.dp))
+        Spacer(Modifier.width(AppSpacing.sm - AppSpacing.xxs))
         Text(if (pending) "Подождите..." else "Отменить заказ")
     }
 }
@@ -349,7 +348,7 @@ private fun DispatcherOrdersPage(
 
     FadingEdgeLazyColumn(
         modifier = Modifier.fillMaxSize(),
-        bottomFadeHeight = 36.dp,
+        bottomFadeHeight = AppSpacing.xxxl + AppSpacing.xs,
         contentPadding =
             PaddingValues(
                 start = DispatcherScreenLayoutDefaults.ListHorizontalPadding,
@@ -379,7 +378,7 @@ private fun RoleStubLabel(label: String) {
             Modifier
                 .fillMaxWidth()
                 .padding(horizontal = AppSpacing.lg),
-        shape = RoundedCornerShape(AppSpacing.sm),
+        shape = AppShapes.extraSmall,
         color = AppColors.Surface,
     ) {
         Text(

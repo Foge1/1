@@ -20,7 +20,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
 import com.loaderapp.core.ui.theme.AppSpacing
 import com.loaderapp.features.orders.presentation.DispatcherHistoryUiState
 import com.loaderapp.features.orders.presentation.mapper.toLegacyOrderModel
@@ -33,6 +32,9 @@ fun HistoryScreen(
     bottomPadding: Dp,
     modifier: Modifier = Modifier,
 ) {
+    val bottomFadeHeight = AppSpacing.xxxl + AppSpacing.xs
+    val itemSpacing = AppSpacing.sm + AppSpacing.xxs
+
     Column(
         modifier =
             modifier
@@ -61,7 +63,7 @@ fun HistoryScreen(
 
         FadingEdgeLazyColumn(
             modifier = Modifier.fillMaxSize(),
-            bottomFadeHeight = 36.dp,
+            bottomFadeHeight = bottomFadeHeight,
             contentPadding = PaddingValues(top = AppSpacing.md, bottom = bottomPadding),
         ) {
             itemsIndexed(state.sections, key = { _, section -> section.key }) { index, section ->
@@ -79,7 +81,7 @@ fun HistoryScreen(
                         order = item.order.toLegacyOrderModel(),
                         onClick = { onOrderClick(item.order.order.id) },
                     )
-                    Spacer(Modifier.height(10.dp))
+                    Spacer(Modifier.height(itemSpacing))
                 }
                 if (index < state.sections.lastIndex) {
                     HorizontalDivider(
