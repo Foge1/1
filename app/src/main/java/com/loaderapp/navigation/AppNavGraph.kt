@@ -1,12 +1,20 @@
 package com.loaderapp.navigation
 
-import androidx.compose.animation.*
-import androidx.compose.animation.core.*
-import androidx.compose.runtime.*
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.navigation.*
+import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.navArgument
+import com.loaderapp.core.ui.theme.AppMotion
 import com.loaderapp.features.orders.presentation.navigateToOrderDetail
 import com.loaderapp.features.orders.presentation.orderDetailRoute
 import com.loaderapp.presentation.session.SessionDestination
@@ -36,6 +44,7 @@ fun AppNavGraph(
                     }
                 }
             }
+
             is SessionDestination.Main -> {
                 val cur = navController.currentDestination?.route
                 if (cur == Route.Auth.route) {
@@ -44,6 +53,7 @@ fun AppNavGraph(
                     }
                 }
             }
+
             else -> Unit
         }
     }
@@ -51,13 +61,13 @@ fun AppNavGraph(
     NavHost(
         navController = navController,
         startDestination = startDestination,
-        enterTransition = { fadeIn(tween(300)) },
-        exitTransition = { fadeOut(tween(200)) },
+        enterTransition = { fadeIn(animationSpec = AppMotion.tweenMedium()) },
+        exitTransition = { fadeOut(animationSpec = AppMotion.tweenMedium()) },
     ) {
         composable(
             route = Route.Splash.route,
-            enterTransition = { fadeIn(tween(500, easing = FastOutSlowInEasing)) },
-            exitTransition = { fadeOut(tween(350)) },
+            enterTransition = { fadeIn(animationSpec = AppMotion.tweenLong()) },
+            exitTransition = { fadeOut(animationSpec = AppMotion.tweenLong()) },
         ) {
             SplashScreen(
                 isSessionResolved = destination.isResolved,
@@ -68,10 +78,12 @@ fun AppNavGraph(
                             navController.navigate(Route.Main.route) {
                                 popUpTo(Route.Splash.route) { inclusive = true }
                             }
+
                         is SessionDestination.Auth ->
                             navController.navigate(Route.Auth.route) {
                                 popUpTo(Route.Splash.route) { inclusive = true }
                             }
+
                         else -> Unit
                     }
                 },
@@ -81,10 +93,16 @@ fun AppNavGraph(
         composable(
             route = Route.Auth.route,
             enterTransition = {
-                fadeIn(tween(400)) +
-                    slideInHorizontally(tween(420, easing = FastOutSlowInEasing)) { it / 5 }
+                fadeIn(animationSpec = AppMotion.tweenLong()) +
+                    slideInHorizontally(
+                        animationSpec = tween(AppMotion.DURATION_LONG, easing = AppMotion.EASING_STANDARD),
+                    ) { it / 5 }
             },
-            exitTransition = { fadeOut(tween(220)) },
+            exitTransition = {
+                fadeOut(
+                    animationSpec = tween(AppMotion.DURATION_MEDIUM, easing = AppMotion.EASING_STANDARD),
+                )
+            },
         ) {
             RoleSelectionScreen(
                 isLoading = sessionState.isLoading,

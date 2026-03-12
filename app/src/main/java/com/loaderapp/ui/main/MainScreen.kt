@@ -31,6 +31,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.loaderapp.core.ui.theme.AppMotion
 import com.loaderapp.domain.model.UserRoleModel
 import com.loaderapp.features.orders.presentation.OrdersUiState
 import com.loaderapp.features.orders.presentation.OrdersViewModel
@@ -166,10 +167,10 @@ private fun MainNavHost(
             Modifier
                 .fillMaxSize()
                 .padding(top = topPadding),
-        enterTransition = { fadeIn(tween(200)) },
-        exitTransition = { fadeOut(tween(150)) },
-        popEnterTransition = { fadeIn(tween(200)) },
-        popExitTransition = { fadeOut(tween(150)) },
+        enterTransition = { fadeIn(animationSpec = AppMotion.tweenMedium()) },
+        exitTransition = { fadeOut(animationSpec = tween(AppMotion.DURATION_SHORT, easing = AppMotion.EASING_STANDARD)) },
+        popEnterTransition = { fadeIn(animationSpec = AppMotion.tweenMedium()) },
+        popExitTransition = { fadeOut(animationSpec = tween(AppMotion.DURATION_SHORT, easing = AppMotion.EASING_STANDARD)) },
     ) {
         composable(Route.Home.route) {
             HomeRoute(
@@ -212,8 +213,17 @@ private fun MainNavHost(
 
         composable(
             route = Route.CreateOrder.route,
-            enterTransition = { slideInVertically(tween(320)) { it / 6 } + fadeIn(tween(260)) },
-            exitTransition = { slideOutVertically(tween(260)) { it / 6 } + fadeOut(tween(200)) },
+            enterTransition = {
+                slideInVertically(
+                    animationSpec = tween(AppMotion.DURATION_LONG, easing = AppMotion.EASING_STANDARD),
+                ) { it / 6 } +
+                    fadeIn(animationSpec = tween(AppMotion.DURATION_LONG, easing = AppMotion.EASING_STANDARD))
+            },
+            exitTransition = {
+                slideOutVertically(
+                    animationSpec = AppMotion.tweenMedium(),
+                ) { it / 6 } + fadeOut(animationSpec = AppMotion.tweenMedium())
+            },
         ) {
             CreateOrderScreen(onBack = { navController.popBackStack() })
         }

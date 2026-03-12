@@ -1,6 +1,5 @@
 package com.loaderapp.core.ui.theme
 
-import androidx.compose.animation.core.AnimationSpec
 import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.Easing
 import androidx.compose.animation.core.Spring
@@ -31,13 +30,13 @@ object AppMotion {
             stiffness = Spring.StiffnessLow,
         )
 
-    fun tweenMedium(): AnimationSpec<Float> =
+    fun <T> tweenMedium(): TweenSpec<T> =
         tween(
             durationMillis = DURATION_MEDIUM,
             easing = EASING_STANDARD,
         )
 
-    fun tweenLong(): TweenSpec<Float> =
+    fun <T> tweenLong(): TweenSpec<T> =
         tween(
             durationMillis = DURATION_LONG,
             easing = EASING_STANDARD,
