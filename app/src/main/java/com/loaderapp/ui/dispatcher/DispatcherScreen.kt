@@ -24,7 +24,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -57,8 +56,6 @@ import com.loaderapp.ui.components.OrdersScreenHeader
 import com.loaderapp.ui.components.OrdersScreenRole
 import com.loaderapp.ui.components.OrdersSegmentedTabs
 import com.loaderapp.ui.components.OrdersTabCounts
-import com.loaderapp.ui.components.StatsBar
-import com.loaderapp.ui.components.StatsBarUiModel
 import com.loaderapp.ui.components.staggeredListItemAppearance
 import com.loaderapp.ui.main.LocalBottomNavHeight
 
@@ -80,7 +77,6 @@ private object DispatcherScreenLayoutDefaults {
 @Composable
 fun DispatcherScreen(
     viewModel: OrdersViewModel,
-    stats: StatsBarUiModel,
     onOrderClick: (Long) -> Unit,
     onNavigateToCreateOrder: () -> Unit,
 ) {
@@ -104,13 +100,6 @@ fun DispatcherScreen(
                         title = "Заказы",
                         subtitle = "Управление заказами",
                         role = OrdersScreenRole.Dispatcher,
-                    )
-                    Spacer(modifier = Modifier.height(AppSpacing.md))
-                    RoleStubLabel(label = "Диспетчер")
-                    Spacer(modifier = Modifier.height(AppSpacing.md))
-                    StatsBar(
-                        stats = stats,
-                        modifier = Modifier.padding(horizontal = AppSpacing.lg),
                     )
                     Spacer(modifier = Modifier.height(AppSpacing.md))
 
@@ -368,25 +357,5 @@ private fun DispatcherOrdersPage(
             )
             Spacer(Modifier.height(DispatcherScreenLayoutDefaults.ListItemSpacing))
         }
-    }
-}
-
-@Composable
-private fun RoleStubLabel(label: String) {
-    Surface(
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .padding(horizontal = AppSpacing.lg),
-        shape = AppShapes.extraSmall,
-        color = AppColors.Surface,
-    ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelLarge,
-            color = AppColors.MutedForeground,
-            modifier =
-                Modifier.padding(horizontal = AppSpacing.md, vertical = AppSpacing.sm),
-        )
     }
 }
