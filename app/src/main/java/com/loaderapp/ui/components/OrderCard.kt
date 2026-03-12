@@ -232,7 +232,6 @@ private fun OrderCardCommentBlock(comment: String) {
         modifier =
             Modifier
                 .padding(top = AppSpacing.lg)
-                .fillMaxWidth()
                 .background(
                     color = AppColors.Muted,
                     shape = AppShapes.extraSmall,
@@ -252,7 +251,6 @@ private fun OrderCardCommentBlock(comment: String) {
             color = AppColors.MutedForeground,
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.weight(1f),
         )
     }
 }
