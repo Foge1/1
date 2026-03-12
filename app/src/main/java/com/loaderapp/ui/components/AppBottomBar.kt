@@ -22,6 +22,7 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Icon
@@ -114,6 +115,7 @@ private fun BottomNavItemView(
             modifier
                 .clickable(
                     interactionSource = interactionSource,
+                    indication = rememberRipple(),
                     onClick = onClick,
                 ).padding(vertical = AppSpacing.xs),
         horizontalAlignment = Alignment.CenterHorizontally,
