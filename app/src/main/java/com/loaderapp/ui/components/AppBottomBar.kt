@@ -21,7 +21,6 @@ import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
@@ -260,7 +259,6 @@ private fun AppBottomBarPreview() {
                 listOf(
                     BottomNavItem(Icons.Default.Home, "Заказы"),
                     BottomNavItem(Icons.Default.History, "Отклики", badgeCount = 3),
-                    BottomNavItem(Icons.Default.Star, "Рейтинг"),
                     BottomNavItem(Icons.Default.Person, "Профиль"),
                     BottomNavItem(Icons.Default.Settings, "Настройки"),
                 ),

@@ -13,7 +13,6 @@ import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.LocalShipping
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -72,7 +71,6 @@ private fun tabsForRole(
     return listOf(
         TabConfig(Route.Home.route, BottomNavItem(homeIcon, "Заказы")),
         middleTab,
-        TabConfig(Route.Rating.route, BottomNavItem(Icons.Default.Star, "Рейтинг")),
         TabConfig(Route.Profile.route, BottomNavItem(Icons.Default.Person, "Профиль")),
         TabConfig(Route.Settings.route, BottomNavItem(Icons.Default.Settings, "Настройки")),
     )
@@ -93,7 +91,7 @@ fun MainScreen(
     val currentRoute = navBackStack?.destination?.route
     val tabs = tabsForRole(user.role, dispatcherOrdersState?.responsesBadge?.totalResponses ?: 0)
     val isFullscreen = currentRoute in FULLSCREEN_ROUTES
-    val selectedIndex = tabs.indexOfFirst { it.route == currentRoute }.coerceAtLeast(0)
+    val selectedIndex = tabs.indexOfFirst { it.route == currentRoute }
 
     Scaffold(
         bottomBar = {
@@ -203,7 +201,14 @@ private fun MainNavHost(
         }
 
         composable(Route.Rating.route) { RatingScreen() }
-        composable(Route.Profile.route) { ProfileScreen(userId = userId) }
+        composable(Route.Profile.route) {
+            ProfileScreen(
+                userId = userId,
+                onNavigateToRating = {
+                    navController.navigate(Route.Rating.route) { launchSingleTop = true }
+                },
+            )
+        }
         composable(Route.Settings.route) { SettingsScreen(onSwitchRole = onSwitchRole) }
 
         composable(

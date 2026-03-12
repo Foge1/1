@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -56,6 +57,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
@@ -85,6 +87,7 @@ import java.util.Locale
 @Composable
 fun ProfileScreen(
     userId: Long,
+    onNavigateToRating: () -> Unit,
     viewModel: ProfileViewModel = hiltViewModel(),
 ) {
     val userState by viewModel.userState.collectAsState()
@@ -106,6 +109,7 @@ fun ProfileScreen(
                     stats = stats,
                     topPadding = topBarDp,
                     onSaveProfile = viewModel::saveProfile,
+                    onNavigateToRating = onNavigateToRating,
                 )
             }
             is UiState.Idle -> Unit
@@ -120,6 +124,7 @@ private fun ProfileContent(
     stats: ProfileStats,
     topPadding: Dp,
     onSaveProfile: (name: String, phone: String, birthDate: Long?) -> Unit,
+    onNavigateToRating: () -> Unit,
 ) {
     val haptic = LocalHapticFeedback.current
     val dateFormat = remember { SimpleDateFormat("dd.MM.yyyy", Locale.getDefault()) }
@@ -149,6 +154,7 @@ private fun ProfileContent(
         StatsGrid(
             userRole = user.role,
             stats = stats,
+            onNavigateToRating = onNavigateToRating,
         )
 
         HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.35f))
@@ -282,6 +288,7 @@ private fun RoleChip(role: UserRoleModel) {
 private fun StatsGrid(
     userRole: UserRoleModel,
     stats: ProfileStats,
+    onNavigateToRating: () -> Unit,
 ) {
     val gridItems =
         listOf(
@@ -291,6 +298,7 @@ private fun StatsGrid(
                 if (stats.averageRating > 0f) "%.1f".format(stats.averageRating) else "—",
                 Icons.Default.Star,
                 AppColors.Accent,
+                onClick = onNavigateToRating,
             ),
             StatItem(
                 "Активных",
@@ -325,11 +333,22 @@ private data class StatItem(
     val value: String,
     val icon: ImageVector,
     val tint: Color,
+    val onClick: (() -> Unit)? = null,
 )
 
 @Composable
 private fun StatCard(item: StatItem) {
+    val cardModifier =
+        item.onClick?.let { onClick ->
+            Modifier.selectable(
+                selected = false,
+                onClick = onClick,
+                role = Role.Button,
+            )
+        } ?: Modifier
+
     Card(
+        modifier = cardModifier,
         shape = MaterialTheme.shapes.medium,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f)),
     ) {
