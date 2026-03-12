@@ -65,6 +65,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.loaderapp.core.common.UiState
+import com.loaderapp.core.ui.theme.AppColors
 import com.loaderapp.core.ui.theme.AppSpacing
 import com.loaderapp.domain.model.UserModel
 import com.loaderapp.domain.model.UserRoleModel
@@ -289,19 +290,19 @@ private fun StatsGrid(
                 "Рейтинг",
                 if (stats.averageRating > 0f) "%.1f".format(stats.averageRating) else "—",
                 Icons.Default.Star,
-                Color(0xFFEAB308),
+                AppColors.Accent,
             ),
             StatItem(
                 "Активных",
                 if (userRole == UserRoleModel.DISPATCHER) stats.activeOrders.toString() else "—",
                 Icons.Default.WorkHistory,
-                Color(0xFFE67E22),
+                AppColors.StatusCanceledFg,
             ),
             StatItem(
                 "Доход",
                 if (userRole == UserRoleModel.LOADER) "${stats.totalEarnings.toInt()} ₽" else "—",
                 Icons.Default.Payments,
-                Color(0xFF22C55E),
+                AppColors.StatusStaffingFg,
             ),
         )
 

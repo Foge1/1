@@ -21,11 +21,12 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.loaderapp.core.ui.theme.AppSpacing
 
-private val TopBarOverlayHeight = 96.dp
+private object GradientTopBarDefaults {
+    val OverlayHeight = AppSpacing.xxxl * 3
+    val TitleStartPaddingWithNavigation = AppSpacing.xxxl + AppSpacing.xl + AppSpacing.xs
+}
 
 @Composable
 fun GradientTopBar(
@@ -39,7 +40,7 @@ fun GradientTopBar(
         modifier =
             modifier
                 .fillMaxWidth()
-                .height(TopBarOverlayHeight)
+                .height(GradientTopBarDefaults.OverlayHeight)
                 .background(
                     Brush.verticalGradient(
                         colors = listOf(appScreenBackgroundBottomColor(), Color.Transparent),
@@ -69,15 +70,15 @@ fun GradientTopBar(
 
         Text(
             text = title,
-            fontSize = 22.sp,
+            style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onSurface,
             modifier =
                 Modifier
                     .align(Alignment.CenterStart)
                     .padding(
-                        start = if (navigationIcon != null) 56.dp else AppSpacing.md,
-                        end = 56.dp,
+                        start = if (navigationIcon != null) GradientTopBarDefaults.TitleStartPaddingWithNavigation else AppSpacing.md,
+                        end = GradientTopBarDefaults.TitleStartPaddingWithNavigation,
                     ),
         )
 

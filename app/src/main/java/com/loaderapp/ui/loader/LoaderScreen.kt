@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.SearchOff
@@ -44,8 +43,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.loaderapp.core.ui.theme.AppColors
+import com.loaderapp.core.ui.theme.AppShapes
 import com.loaderapp.core.ui.theme.AppSpacing
 import com.loaderapp.features.orders.domain.OrderApplicationStatus
 import com.loaderapp.features.orders.presentation.DispatcherHistoryUiState
@@ -70,7 +69,7 @@ import com.loaderapp.ui.components.toStatsBarUiModel
 import com.loaderapp.ui.main.LocalBottomNavHeight
 
 private object LoaderScreenLayoutDefaults {
-    val HistoryBottomPadding = 72.dp
+    val HistoryBottomPadding = AppSpacing.xxxl + AppSpacing.xxxl + AppSpacing.sm
     val SnackbarBottomPadding = AppSpacing.sm
     val ListHorizontalPadding = AppSpacing.lg
     val ListTopPadding = AppSpacing.md
@@ -276,7 +275,7 @@ private fun LoaderAvailableActions(
             OrderApplicationStatus.SELECTED -> {
                 SelectedBadge()
                 if (order.canWithdraw) {
-                    Spacer(Modifier.height(8.dp))
+                    Spacer(Modifier.height(AppSpacing.sm))
                     WithdrawButton(
                         pending = pending,
                         disabledReason = null, // canWithdraw == true → кнопка активна
@@ -324,15 +323,15 @@ private fun ApplyButton(
             Icon(
                 imageVector = Icons.Rounded.PersonAdd,
                 contentDescription = null,
-                modifier = Modifier.size(16.dp),
+                modifier = Modifier.size(AppSpacing.lg),
             )
-            Spacer(Modifier.width(8.dp))
+            Spacer(Modifier.width(AppSpacing.sm))
             Text(if (pending) "Подождите..." else "Отозваться")
         }
 
         // Причина блокировки видна только когда кнопка disabled и нет pending-операции.
         if (!enabled && !pending && disabledReason != null) {
-            Spacer(Modifier.height(6.dp))
+            Spacer(Modifier.height(AppSpacing.sm - AppSpacing.xxs))
             DisabledReasonHint(disabledReason)
         }
     }
@@ -357,14 +356,14 @@ private fun WithdrawButton(
             Icon(
                 imageVector = Icons.Outlined.Cancel,
                 contentDescription = null,
-                modifier = Modifier.size(16.dp),
+                modifier = Modifier.size(AppSpacing.lg),
             )
-            Spacer(Modifier.width(8.dp))
+            Spacer(Modifier.width(AppSpacing.sm))
             Text(if (pending) "Подождите..." else "Отозвать отклик")
         }
 
         if (disabledReason != null && !pending) {
-            Spacer(Modifier.height(6.dp))
+            Spacer(Modifier.height(AppSpacing.sm - AppSpacing.xxs))
             DisabledReasonHint(disabledReason)
         }
     }
@@ -374,21 +373,21 @@ private fun WithdrawButton(
 private fun SelectedBadge() {
     Surface(
         color = MaterialTheme.colorScheme.primaryContainer,
-        shape = RoundedCornerShape(8.dp),
+        shape = AppShapes.extraSmall,
         modifier = Modifier.fillMaxWidth(),
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+            modifier = Modifier.padding(horizontal = AppSpacing.md, vertical = AppSpacing.sm),
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(
                 imageVector = Icons.Default.CheckCircle,
                 contentDescription = null,
-                modifier = Modifier.size(16.dp),
+                modifier = Modifier.size(AppSpacing.lg),
                 tint = MaterialTheme.colorScheme.onPrimaryContainer,
             )
-            Spacer(Modifier.width(6.dp))
+            Spacer(Modifier.width(AppSpacing.sm - AppSpacing.xxs))
             Text(
                 text = "Вы отобраны",
                 style =
@@ -410,17 +409,13 @@ private fun DisabledReasonHint(reason: String) {
         Icon(
             imageVector = Icons.Outlined.Info,
             contentDescription = null,
-            modifier = Modifier.size(12.dp),
+            modifier = Modifier.size(AppSpacing.md),
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        Spacer(Modifier.width(4.dp))
+        Spacer(Modifier.width(AppSpacing.xs))
         Text(
             text = reason,
-            style =
-                MaterialTheme.typography.labelSmall.copy(
-                    fontSize = 11.sp,
-                    lineHeight = 15.sp,
-                ),
+            style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Start,
         )
@@ -437,7 +432,7 @@ private fun SecondaryOutlinedButton(
         onClick = onClick,
         enabled = !pending,
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
+        shape = AppShapes.small,
         colors =
             ButtonDefaults.outlinedButtonColors(
                 contentColor = MaterialTheme.colorScheme.error,
@@ -467,7 +462,7 @@ private fun OrdersListPage(
 
     FadingEdgeLazyColumn(
         modifier = Modifier.fillMaxSize(),
-        bottomFadeHeight = 36.dp,
+        bottomFadeHeight = AppSpacing.xxxl + AppSpacing.xs,
         contentPadding =
             PaddingValues(
                 start = LoaderScreenLayoutDefaults.ListHorizontalPadding,
@@ -497,7 +492,7 @@ private fun RoleStubLabel(label: String) {
             Modifier
                 .fillMaxWidth()
                 .padding(horizontal = AppSpacing.lg),
-        shape = RoundedCornerShape(AppSpacing.sm),
+        shape = AppShapes.extraSmall,
         color = AppColors.Surface,
     ) {
         Text(
