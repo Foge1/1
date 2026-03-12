@@ -12,7 +12,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
@@ -65,6 +65,7 @@ import com.loaderapp.ui.components.OrdersScreenRole
 import com.loaderapp.ui.components.OrdersSegmentedTabs
 import com.loaderapp.ui.components.OrdersTabCounts
 import com.loaderapp.ui.components.StatsBar
+import com.loaderapp.ui.components.staggeredListItemAppearance
 import com.loaderapp.ui.components.toStatsBarUiModel
 import com.loaderapp.ui.main.LocalBottomNavHeight
 
@@ -475,11 +476,12 @@ private fun OrdersListPage(
                 bottom = bottomNavHeight + LoaderScreenLayoutDefaults.ListBottomPadding,
             ),
     ) {
-        items(orders, key = { it.order.id }) { order ->
+        itemsIndexed(orders, key = { _, order -> order.order.id }) { index, order ->
             val pending = pendingActions.contains(order.order.id)
             OrderCard(
                 order = order.toLegacyOrderModel(),
                 onClick = { onOrderClick(order.order.id) },
+                modifier = Modifier.staggeredListItemAppearance(index = index),
                 enabled = !pending,
                 actionContent = { actionSlot(order) },
             )

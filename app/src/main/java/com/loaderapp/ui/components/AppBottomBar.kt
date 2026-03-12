@@ -1,6 +1,7 @@
 package com.loaderapp.ui.components
 
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -113,7 +114,6 @@ private fun BottomNavItemView(
             modifier
                 .clickable(
                     interactionSource = interactionSource,
-                    indication = null,
                     onClick = onClick,
                 ).padding(vertical = AppSpacing.xs),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -157,9 +157,15 @@ private fun rememberBottomNavItemVisuals(isSelected: Boolean): BottomNavItemVisu
         label = "bottomNavIndicatorAlpha",
     )
 
+    val contentColor by animateColorAsState(
+        targetValue = if (isSelected) AppColors.Primary else AppColors.MutedForeground,
+        animationSpec = AppMotion.tweenMedium(),
+        label = "bottomNavContentColor",
+    )
+
     return BottomNavItemVisuals(
         scale = scale,
-        contentColor = if (isSelected) AppColors.Primary else AppColors.MutedForeground,
+        contentColor = contentColor,
         capsuleAlpha = capsuleAlpha,
         indicatorAlpha = indicatorAlpha,
     )
