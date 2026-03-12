@@ -33,7 +33,6 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.loaderapp.core.ui.theme.AppMotion
 import com.loaderapp.domain.model.UserRoleModel
-import com.loaderapp.features.orders.presentation.OrdersUiState
 import com.loaderapp.features.orders.presentation.OrdersViewModel
 import com.loaderapp.features.orders.presentation.ResponsesViewModel
 import com.loaderapp.navigation.Route
@@ -154,7 +153,6 @@ private fun MainNavHost(
     userRole: UserRoleModel,
     userId: Long,
     dispatcherOrdersVm: OrdersViewModel?,
-    dispatcherOrdersState: OrdersUiState?,
     onOrderClick: (Long, Boolean) -> Unit,
     onSwitchRole: () -> Unit,
 ) {
