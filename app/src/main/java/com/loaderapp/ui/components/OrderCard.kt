@@ -219,7 +219,7 @@ private fun OrderCardMetaRow(
         verticalArrangement = Arrangement.spacedBy(AppSpacing.sm),
     ) {
         MetaChip(icon = Icons.Rounded.LocalShipping, text = order.cargoDescription)
-        MetaChip(icon = Icons.Rounded.Timer, text = "${order.estimatedHours} ч")
+        MetaChip(icon = Icons.Rounded.Timer, text = formatOrderDuration(order.estimatedHours))
         MetaChip(icon = Icons.Rounded.Groups, text = "$currentWorkers/${order.requiredWorkers}")
     }
 }
@@ -232,12 +232,13 @@ private fun OrderCardCommentBlock(comment: String) {
         modifier =
             Modifier
                 .padding(top = AppSpacing.lg)
+                .fillMaxWidth()
                 .background(
                     color = AppColors.Muted,
                     shape = AppShapes.extraSmall,
                 ).padding(horizontal = AppSpacing.md, vertical = AppSpacing.sm),
         horizontalArrangement = Arrangement.spacedBy(AppSpacing.sm),
-        verticalAlignment = Alignment.Top,
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         Icon(
             imageVector = Icons.Rounded.Message,
@@ -380,6 +381,8 @@ fun formatOrderTime(order: OrderModel): String =
     } else {
         SimpleDateFormat("HH:mm", Locale("ru")).format(Date(order.dateTime))
     }
+
+fun formatOrderDuration(estimatedHours: Int): String = "от ${estimatedHours.coerceAtLeast(1)} ч"
 
 @Composable
 fun OrderMetaChips(
