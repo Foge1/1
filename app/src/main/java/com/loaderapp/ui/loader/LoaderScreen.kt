@@ -42,7 +42,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
-import com.loaderapp.core.ui.theme.AppColors
 import com.loaderapp.core.ui.theme.AppShapes
 import com.loaderapp.core.ui.theme.AppSpacing
 import com.loaderapp.features.orders.domain.OrderApplicationStatus
@@ -62,9 +61,7 @@ import com.loaderapp.ui.components.OrdersScreenHeader
 import com.loaderapp.ui.components.OrdersScreenRole
 import com.loaderapp.ui.components.OrdersSegmentedTabs
 import com.loaderapp.ui.components.OrdersTabCounts
-import com.loaderapp.ui.components.StatsBar
 import com.loaderapp.ui.components.staggeredListItemAppearance
-import com.loaderapp.ui.components.toStatsBarUiModel
 import com.loaderapp.ui.main.LocalBottomNavHeight
 
 private object LoaderScreenLayoutDefaults {
@@ -139,14 +136,6 @@ private fun LoaderScreenContent(
             role = OrdersScreenRole.Loader,
         )
         Spacer(modifier = Modifier.height(AppSpacing.md))
-        RoleStubLabel(label = "Грузчик")
-        Spacer(modifier = Modifier.height(AppSpacing.md))
-        StatsBar(
-            stats = state.toStatsBarUiModel(),
-            modifier = Modifier.padding(horizontal = AppSpacing.lg),
-        )
-        Spacer(modifier = Modifier.height(AppSpacing.md))
-
         LoaderOrdersTabsContent(
             state = state,
             selectedTab = selectedTab,
@@ -481,25 +470,5 @@ private fun OrdersListPage(
             )
             Spacer(Modifier.height(LoaderScreenLayoutDefaults.ListItemSpacing))
         }
-    }
-}
-
-@Composable
-private fun RoleStubLabel(label: String) {
-    Surface(
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .padding(horizontal = AppSpacing.lg),
-        shape = AppShapes.extraSmall,
-        color = AppColors.Surface,
-    ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelLarge,
-            color = AppColors.MutedForeground,
-            modifier =
-                Modifier.padding(horizontal = AppSpacing.md, vertical = AppSpacing.sm),
-        )
     }
 }
