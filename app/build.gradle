@@ -1,0 +1,216 @@
+plugins {
+    id 'loaderapp.jvm'
+    id 'loaderapp.lint'
+    id 'com.android.application'
+    id 'org.jetbrains.kotlin.android'
+    id 'kotlin-kapt'
+    id 'com.google.dagger.hilt.android'
+}
+
+def quoteBuildConfigString = { value ->
+    def escaped = value.toString().replace("\\", "\\\\").replace("\"", "\\\"")
+    return "\"${escaped}\""
+}
+
+def readSigningValue = { name ->
+    def envValue = System.getenv(name)
+    if (envValue != null && !envValue.trim().isEmpty()) {
+        return envValue
+    }
+    def gradleValue = project.findProperty(name)?.toString()
+    if (gradleValue != null && !gradleValue.trim().isEmpty()) {
+        return gradleValue
+    }
+    return null
+}
+
+def releaseKeystorePath = readSigningValue("KEYSTORE_PATH")
+def releaseKeystorePassword = readSigningValue("KEYSTORE_PASSWORD")
+def releaseKeyAlias = readSigningValue("KEY_ALIAS")
+def releaseKeyPassword = readSigningValue("KEY_PASSWORD")
+def hasReleaseSigning = [
+    releaseKeystorePath,
+    releaseKeystorePassword,
+    releaseKeyAlias,
+    releaseKeyPassword
+].every { value -> value != null }
+
+// IMPORTANT:
+// buildConfigField values must be precomputed.
+// Do NOT pass Gradle expressions directly — they break generated Java.
+
+android {
+    namespace 'com.loaderapp'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId "com.loaderapp"
+        minSdk 24
+        targetSdk 34
+        versionCode 1
+        versionName "1.0"
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        vectorDrawables {
+            useSupportLibrary true
+        }
+    }
+
+    flavorDimensions += "env"
+
+    productFlavors {
+        dev {
+            dimension "env"
+            applicationIdSuffix ".dev"
+            versionNameSuffix "-dev"
+            resValue "string", "app_name", "Loader App (Dev)"
+            buildConfigField "String", "BASE_URL", quoteBuildConfigString("https://api-dev.loaderapp.local/")
+            buildConfigField "boolean", "ENABLE_VERBOSE_LOGGING", "true"
+            buildConfigField "String", "ENV_NAME", quoteBuildConfigString("dev")
+        }
+
+        stage {
+            dimension "env"
+            applicationIdSuffix ".stage"
+            versionNameSuffix "-stage"
+            resValue "string", "app_name", "Loader App (Stage)"
+            buildConfigField "String", "BASE_URL", quoteBuildConfigString("https://api-stage.loaderapp.local/")
+            buildConfigField "boolean", "ENABLE_VERBOSE_LOGGING", "true"
+            buildConfigField "String", "ENV_NAME", quoteBuildConfigString("stage")
+        }
+
+        prod {
+            dimension "env"
+            resValue "string", "app_name", "Loader App"
+            buildConfigField "String", "BASE_URL", quoteBuildConfigString("https://api.loaderapp.local/")
+            buildConfigField "boolean", "ENABLE_VERBOSE_LOGGING", "false"
+            buildConfigField "String", "ENV_NAME", quoteBuildConfigString("prod")
+        }
+    }
+
+    signingConfigs {
+        if (hasReleaseSigning) {
+            release {
+                storeFile file(releaseKeystorePath)
+                storePassword releaseKeystorePassword
+                keyAlias releaseKeyAlias
+                keyPassword releaseKeyPassword
+            }
+        }
+    }
+
+    buildTypes {
+        debug {
+            buildConfigField "String", "SENTRY_DSN", quoteBuildConfigString("")
+        }
+
+        release {
+            def sentryDsnRelease = project.findProperty("SENTRY_DSN") ?: ""
+            buildConfigField "String", "SENTRY_DSN", quoteBuildConfigString(sentryDsnRelease)
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            if (hasReleaseSigning) {
+                signingConfig signingConfigs.release
+            }
+        }
+    }
+
+    compileOptions {
+        coreLibraryDesugaringEnabled true
+    }
+
+    kotlinOptions {
+        freeCompilerArgs += [
+            '-opt-in=androidx.compose.foundation.ExperimentalFoundationApi',
+            '-opt-in=androidx.compose.material3.ExperimentalMaterial3Api',
+            '-opt-in=androidx.compose.material.ExperimentalMaterialApi'
+        ]
+    }
+
+    buildFeatures {
+        buildConfig true
+        compose true
+    }
+
+    composeOptions {
+        kotlinCompilerExtensionVersion = libs.versions.composeCompiler.get()
+    }
+
+    packagingOptions {
+        resources {
+            excludes += '/META-INF/{AL2.0,LGPL2.1}'
+        }
+    }
+
+    sourceSets {
+        androidTest.assets.srcDirs += files("$projectDir/schemas")
+    }
+}
+
+kapt {
+    correctErrorTypes true
+    arguments {
+        arg("room.schemaLocation", "$projectDir/schemas")
+    }
+}
+
+dependencies {
+    implementation project(':core')
+    implementation project(':core-ui')
+    implementation project(':feature-orders')
+
+    // Core Android
+    implementation libs.androidx.core.ktx
+    implementation libs.androidx.lifecycle.runtime.ktx
+    implementation libs.androidx.activity.compose
+
+    // Compose
+    implementation platform(libs.androidx.compose.bom)
+    implementation libs.androidx.compose.ui
+    implementation libs.androidx.compose.ui.graphics
+    implementation libs.androidx.compose.ui.tooling.preview
+    implementation libs.androidx.compose.foundation
+    implementation libs.androidx.compose.material3
+    implementation libs.androidx.compose.material.icons.extended
+    implementation libs.androidx.compose.material
+    implementation libs.androidx.navigation.compose
+
+    // Room
+    implementation libs.androidx.room.runtime
+    implementation libs.androidx.room.ktx
+    kapt libs.androidx.room.compiler
+
+    // ViewModel
+    implementation libs.androidx.lifecycle.viewmodel.compose
+
+    // Coroutines
+    implementation libs.kotlinx.coroutines.android
+
+    // DataStore
+    implementation libs.androidx.datastore.preferences
+
+    // Hilt
+    implementation libs.hilt.android
+    kapt libs.hilt.compiler
+    implementation libs.androidx.hilt.navigation.compose
+
+    implementation libs.sentry.android
+
+    // Java time APIs for Compose Material3 Date/Time pickers on API < 26
+    coreLibraryDesugaring libs.desugar.jdk.libs
+
+    // Testing
+    testImplementation libs.junit4
+    testImplementation libs.kotlinx.coroutines.test
+    testImplementation libs.turbine
+    testImplementation 'androidx.test:core:1.5.0'
+    testImplementation 'org.robolectric:robolectric:4.11.1'
+    androidTestImplementation libs.androidx.test.ext.junit
+    androidTestImplementation libs.androidx.test.espresso.core
+    androidTestImplementation libs.androidx.room.testing
+    androidTestImplementation platform(libs.androidx.compose.bom)
+    androidTestImplementation libs.androidx.compose.ui.test.junit4
+    debugImplementation libs.androidx.compose.ui.tooling
+    debugImplementation libs.androidx.compose.ui.test.manifest
+}

@@ -1,0 +1,30 @@
+// Top-level build file where you can add configuration options common to all sub-projects/modules.
+plugins {
+    alias(libs.plugins.android.application) apply false
+    alias(libs.plugins.android.library) apply false
+    alias(libs.plugins.kotlin.android) apply false
+    alias(libs.plugins.hilt.android) apply false
+}
+
+
+tasks.register('detektAll') {
+    group = 'verification'
+    description = 'Runs detekt across all modules.'
+    dependsOn(subprojects.collect { it.tasks.matching { task -> task.name == 'detekt' } })
+}
+
+tasks.register('ktlintCheckAll') {
+    group = 'verification'
+    description = 'Runs ktlint checks across all modules.'
+    dependsOn(subprojects.collect {
+        it.tasks.matching { t -> t.name == 'ktlintCheck' }
+    })
+}
+
+tasks.register('ktlintFormatAll') {
+    group = 'formatting'
+    description = 'Formats Kotlin sources across all modules using ktlint.'
+    dependsOn(subprojects.collect {
+        it.tasks.matching { t -> t.name == 'ktlintFormat' }
+    })
+}

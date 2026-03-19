@@ -1,0 +1,73 @@
+plugins {
+    id 'loaderapp.jvm'
+    id 'loaderapp.lint'
+    id 'com.android.library'
+    id 'org.jetbrains.kotlin.android'
+    id 'kotlin-kapt'
+    id 'com.google.dagger.hilt.android'
+}
+
+android {
+    namespace 'com.loaderapp.feature.orders'
+    compileSdk 34
+
+    defaultConfig {
+        minSdk 24
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+
+    buildFeatures {
+        compose true
+        buildConfig false
+    }
+
+    composeOptions {
+        kotlinCompilerExtensionVersion = libs.versions.composeCompiler.get()
+    }
+
+    sourceSets {
+        androidTest.assets.srcDirs += files(file("$projectDir/schemas"))
+    }
+}
+
+kapt {
+    correctErrorTypes true
+    arguments {
+        arg("room.schemaLocation", file("$projectDir/schemas").path)
+    }
+}
+
+dependencies {
+    implementation project(':core')
+    implementation project(':core-ui')
+
+    implementation platform(libs.androidx.compose.bom)
+    implementation libs.androidx.compose.ui
+    implementation libs.androidx.compose.foundation
+    implementation libs.androidx.compose.material3
+    implementation libs.androidx.navigation.compose
+    implementation libs.androidx.hilt.navigation.compose
+
+    implementation libs.androidx.lifecycle.viewmodel.ktx
+
+    implementation libs.kotlinx.coroutines.android
+
+    implementation libs.androidx.room.runtime
+    implementation libs.androidx.room.ktx
+    kapt libs.androidx.room.compiler
+
+    implementation libs.hilt.android
+    kapt libs.hilt.compiler
+
+    testImplementation libs.junit4
+    testImplementation libs.kotlinx.coroutines.test
+    testImplementation libs.turbine
+    testImplementation 'androidx.test:core:1.5.0'
+    testImplementation 'org.robolectric:robolectric:4.11.1'
+
+    androidTestImplementation libs.androidx.test.ext.junit
+    androidTestImplementation libs.androidx.test.espresso.core
+    androidTestImplementation libs.androidx.room.testing
+}

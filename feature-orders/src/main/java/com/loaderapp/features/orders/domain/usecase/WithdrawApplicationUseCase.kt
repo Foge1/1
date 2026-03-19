@@ -1,0 +1,48 @@
+package com.loaderapp.features.orders.domain.usecase
+
+import com.loaderapp.features.orders.domain.OrderRulesContext
+import com.loaderapp.features.orders.domain.OrderStateMachine
+import com.loaderapp.features.orders.domain.Role
+import com.loaderapp.features.orders.domain.repository.OrdersRepository
+import com.loaderapp.features.orders.domain.session.CurrentUserProvider
+import com.loaderapp.features.orders.domain.toDisplayMessage
+import javax.inject.Inject
+
+/**
+ * Грузчик отзывает свой отклик.
+ *
+ * Правила: актор — LOADER, у него есть активный отклик (APPLIED или SELECTED),
+ * заказ — в статусе STAFFING.
+ */
+class WithdrawApplicationUseCase
+    @Inject
+    constructor(
+        private val repository: OrdersRepository,
+        private val currentUserProvider: CurrentUserProvider,
+        private val stateMachine: OrderStateMachine,
+    ) {
+        suspend operator fun invoke(orderId: Long): UseCaseResult<Unit> {
+            val actor = currentUserProvider.requireCurrentUserOnce()
+
+            if (actor.role != Role.LOADER) {
+                return UseCaseResult.Failure("Только грузчик может отозвать отклик")
+            }
+
+            val order =
+                repository.getOrderById(orderId)
+                    ?: return UseCaseResult.Failure("Заказ не найден")
+
+            val actions = stateMachine.actionsFor(order, actor, OrderRulesContext())
+
+            if (!actions.canWithdraw) {
+                return UseCaseResult.Failure(
+                    actions.withdrawDisabledReason?.toDisplayMessage() ?: "Нельзя отозвать отклик",
+                )
+            }
+
+            return runCatchingUseCase("Не удалось отозвать отклик") {
+                repository.withdrawApplication(orderId, actor.id)
+                Unit
+            }
+        }
+    }

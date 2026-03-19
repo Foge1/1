@@ -1,0 +1,68 @@
+name: Android PR CI
+
+on:
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  pr-checks:
+    name: PR checks (quality, tests, dev debug, prod release smoke)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Android build environment
+        uses: ./.github/actions/android-build-setup
+
+      - name: Static analysis and unit tests
+        run: |
+          ./gradlew \
+            detektAll \
+            ktlintCheckAll \
+            testDebugUnitTest \
+            --stacktrace
+
+      - name: Build smoke targets
+        id: build_smoke
+        run: |
+          ./gradlew \
+            :app:assembleDevDebug \
+            :app:assembleProdRelease \
+            --stacktrace
+
+      - name: Upload lint and unit test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: quality-and-test-reports
+          path: |
+            **/build/reports/tests/**
+            **/build/reports/detekt/**
+            **/build/reports/ktlint/**
+          if-no-files-found: warn
+          retention-days: 7
+
+      - name: Upload devDebug APK
+        if: ${{ steps.build_smoke.outcome == 'success' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: LoaderApp-devDebug-apk
+          path: |
+            app/build/outputs/apk/**/devDebug/*.apk
+            app/build/outputs/apk/dev/debug/*.apk
+            app/build/outputs/apk/devDevDebug/*.apk
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Upload prodRelease APK
+        if: ${{ steps.build_smoke.outcome == 'success' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: LoaderApp-prodRelease-apk
+          path: |
+            app/build/outputs/apk/**/prodRelease/*.apk
+            app/build/outputs/apk/prod/release/*.apk
+          if-no-files-found: warn
+          retention-days: 7

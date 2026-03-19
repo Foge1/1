@@ -1,0 +1,156 @@
+build:
+  maxIssues: 0
+
+config:
+  validation: true
+  warningsAsErrors: false
+
+processors:
+  active: true
+
+console-reports:
+  active: true
+
+comments:
+  active: false
+
+output-reports:
+  active: true
+
+complexity:
+  active: true
+  CognitiveComplexMethod:
+    active: true
+    threshold: 18
+  CyclomaticComplexMethod:
+    active: true
+    threshold: 20
+  LongMethod:
+    active: true
+    threshold: 140
+  LongParameterList:
+    active: true
+    functionThreshold: 10
+    constructorThreshold: 12
+    ignoreDefaultParameters: true
+  NestedBlockDepth:
+    active: true
+    threshold: 4
+  TooManyFunctions:
+    active: true
+    thresholdInClasses: 20
+    thresholdInObjects: 20
+    thresholdInInterfaces: 25
+    thresholdInFiles: 25
+    excludes:
+      - '**/features/orders/data/LegacyOrderRepositoryAdapter.kt'
+
+coroutines:
+  active: true
+  GlobalCoroutineUsage:
+    active: true
+  InjectDispatcher:
+    active: true
+  RedundantSuspendModifier:
+    active: true
+  SleepInsteadOfDelay:
+    active: true
+
+empty-blocks:
+  active: false
+
+exceptions:
+  active: true
+  SwallowedException:
+    active: true
+  TooGenericExceptionCaught:
+    active: true
+  TooGenericExceptionThrown:
+    active: true
+
+naming:
+  active: true
+  FunctionNaming:
+    active: true
+    functionPattern: '[a-z][a-zA-Z0-9]*'
+    ignoreAnnotated:
+      - Composable
+      - Preview
+      - Test
+    excludes:
+      - '**/test/**'
+      - '**/androidTest/**'
+  VariableNaming:
+    active: true
+    variablePattern: '[a-z][A-Za-z0-9]*'
+    privateVariablePattern: '(_)?[a-z][A-Za-z0-9]*'
+    excludes:
+      - '**/test/**'
+      - '**/androidTest/**'
+  ClassNaming:
+    active: true
+    classPattern: '[A-Z][a-zA-Z0-9]*'
+  ObjectPropertyNaming:
+    active: true
+    constantPattern: '[A-Z][_A-Z0-9]*'
+    propertyPattern: '[A-Za-z][_A-Za-z0-9]*'
+    privatePropertyPattern: '(_)?[a-z][A-Za-z0-9]*'
+  PackageNaming:
+    active: false
+  TopLevelPropertyNaming:
+    active: false
+  MatchingDeclarationName:
+    active: false
+
+performance:
+  active: true
+
+potential-bugs:
+  active: true
+  ImplicitDefaultLocale:
+    active: false
+  NullableToStringCall:
+    active: true
+  UnnecessarySafeCall:
+    active: true
+  UnsafeCast:
+    active: true
+
+style:
+  active: true
+  ForbiddenImport:
+    active: true
+    imports:
+      # Guardrail 1: UI layer should not depend on app data/persistence implementations.
+      - 'com.loaderapp.data.*'
+      - 'com.loaderapp.data..*'
+      - 'com.loaderapp.di.data.*'
+      - 'com.loaderapp.di.data..*'
+      # Guardrail 2: feature modules should not depend on app module internals.
+      - 'com.loaderapp.di.*'
+      - 'com.loaderapp.di..*'
+      - 'com.loaderapp.LoaderApplication'
+      - 'com.loaderapp.MainActivity'
+    includes:
+      - '**/src/main/java/com/loaderapp/ui/**'
+      - '**/feature-*/src/main/java/**'
+  MagicNumber:
+    active: false
+  WildcardImport:
+    active: false
+  ReturnCount:
+    active: false
+  ThrowsCount:
+    active: false
+  MaxLineLength:
+    active: false
+  NewLineAtEndOfFile:
+    active: false
+  BracesOnIfStatements:
+    active: false
+    singleLine: "never"
+    multiLine: "always"
+  UnusedPrivateMember:
+    active: true
+    ignoreAnnotated:
+      - Preview
